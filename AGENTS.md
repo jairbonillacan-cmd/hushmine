@@ -1,0 +1,66 @@
+# AGENTS.md: HUSHMINE / Grisú
+
+Guía para agentes de IA (Claude Code, Opus) y para personas que trabajen en el repositorio.
+El plan completo está en `PLAN_v4.md`; las decisiones de arquitectura, en `docs/adr/`.
+
+## Qué es
+
+**HUSHMINE** es un juego competitivo de minería en vóxeles, sucesor espiritual de Infiniminer. **Grisú** es el motor propio en Rust + wgpu que vive dentro del mismo workspace.
+
+## Estructura
+
+| Crate | Papel |
+|---|---|
+| `grisu-render` | wgpu: GPU, cámara, cubo, captura sin ventana |
+| `grisu-platform` | Ventana winit y bucle principal (trait `App`) |
+| `hush-sim` | Reglas y simulación determinista, sin gráficos |
+| `hush-client` | Binario `hushmine` (el juego) |
+| `hush-cli` | Binario `hush-cli` (sim, shot, gpu) |
+
+**Regla de dependencias:** ningún crate `grisu-*` depende de un crate `hush-*`.
+
+## Comandos de verificación
+
+Ejecútalos antes de dar una tarea por terminada:
+
+```bash
+cargo fmt --all
+cargo clippy --workspace --all-targets -- -D warnings
+cargo nextest run --workspace
+cargo run -p hush-cli -- shot --out out/shot.png
+cargo run -p hush-cli -- sim --seed 42 --report out/sim.json
+cargo run -p hush-cli -- gpu
+cargo run -p hush-client
+cargo deny check licenses bans sources
+```
+
+Qué hace cada uno, en orden:
+
+1. Formatea el código.
+2. Pasa el analizador con los avisos tratados como errores.
+3. Ejecuta todas las pruebas.
+4. Genera una captura PNG sin ventana. **Ábrela y mírala.**
+5. Simula una partida; `broken_invariants` debe estar vacío.
+6. Muestra la GPU y el backend en uso.
+7. Abre el juego con ventana; Escape lo cierra.
+8. Revisa las licencias de las dependencias.
+
+Con `HUSH_REQUIRE_GPU=1`, las pruebas de GPU fallan en vez de saltarse cuando no hay adaptador.
+**El directorio de compilación es global en esta máquina:** los binarios están en `C:\Users\T490s\fossil-target\` (lo indica `cargo metadata`).
+
+## Reglas
+
+- **Nada de `unsafe`** (`unsafe_code = "forbid"` en el workspace). Si algún día hace falta FFI, irá en un módulo aislado y revisado.
+- **El servidor y la simulación no hacen `panic!`** ante datos externos: devuelven `Result`.
+- **Simulación determinista:** en `hush-sim`, enteros y punto fijo. Ni `f32`/`f64` en el estado, ni aleatoriedad del sistema (usar `hush_sim::Rng`), ni recorrer un `HashMap` cuando el orden importa.
+- **El cliente solo dibuja, suena y envía órdenes;** las reglas viven en `hush-sim`.
+- **Archivos pequeños:** un sistema por archivo, 400 líneas como máximo.
+- **Cada funcionalidad llega con pruebas.** Si es visual, también con una escena de captura que se pueda revisar.
+- **Las versiones de wgpu y winit están fijadas.** Se actualizan solo en una tarea dedicada al cerrar un hito.
+- **Nuevas dependencias:** solo con licencia permisiva (`deny.toml`) y un registro en `docs/adr/`.
+- **Idioma:** identificadores en inglés; comentarios, mensajes y documentación en español. El texto visible del juego irá en inglés como idioma fuente (Fluent).
+
+## Problemas conocidos
+
+- **Windows + Intel UHD 620 (driver 31.0.101.2137):** el loader de Vulkan termina el proceso al crear la instancia. Por eso `grisu_render::default_backends()` usa DX12 + GL en Windows. Se puede forzar otro backend con `WGPU_BACKEND`.
+- **Avisos de versiones duplicadas en `cargo deny`:** vienen de combinar winit 0.30 con wgpu 30. No bloquean y se revisarán al pasar a winit 0.31 cuando sea estable.

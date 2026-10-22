@@ -1,0 +1,43 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.99"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[workspace.dependencies]
+grisu-render = { path = "crates/grisu-render" }
+grisu-platform = { path = "crates/grisu-platform" }
+hush-sim = { path = "crates/hush-sim" }
+
+anyhow = "1"
+bytemuck = { version = "1", features = ["derive"] }
+clap = { version = "4", features = ["derive"] }
+glam = { version = "0.34", features = ["bytemuck"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+log = "0.4"
+env_logger = "0.11"
+pollster = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+wgpu = "30"
+winit = "0.30"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+
+# Dependencias optimizadas también en desarrollo: wgpu y la generación de
+# imágenes son muy lentas sin optimizar.
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

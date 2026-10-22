@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-test:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar toolchain (rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+
+      # Vulkan por software (lavapipe) para que las pruebas de GPU y las
+      # capturas funcionen en Linux sin tarjeta gráfica.
+      - name: Vulkan por software (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mesa-vulkan-drivers libvulkan1
+          echo "HUSH_REQUIRE_GPU=1" >> "$GITHUB_ENV"
+          echo "WGPU_BACKEND=vulkan" >> "$GITHUB_ENV"
+
+      - name: Formato
+        if: runner.os == 'Linux'
+        run: cargo fmt --all --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Pruebas
+        run: cargo nextest run --workspace
+
+      - name: Compilar release
+        run: cargo build --workspace --release
+
+      - name: Simulación y captura (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cargo run --release -p hush-cli -- sim --seed 42 --report out/sim.json
+          cargo run --release -p hush-cli -- shot --out out/cube.png
+
+      - name: Subir capturas e informes
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: shots-and-reports
+          path: out/
+
+  deny:
+    name: Licencias y dependencias
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check licenses bans sources
