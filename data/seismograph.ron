@@ -1,0 +1,58 @@
+// Configuración del Sismógrafo de HUSHMINE.
+// Todas las magnitudes de medidor están en milésimas de punto porcentual (0 a 100_000).
+// Todos los tiempos están en ticks a 30 Hz (1 s = 30 ticks).
+SeismographConfig(
+    min_value: 0,
+    max_value: 100_000,
+    tick_rate: 30,
+    passive_growth: PassiveGrowth(
+        total_value: 100_000,
+        total_ticks: 28_800,
+    ),
+    thresholds: [
+        Threshold(
+            id: Stir,
+            name_en: "Stir",
+            name_es: "Revuelo",
+            value: 25_000,
+        ),
+        Threshold(
+            id: Breathe,
+            name_en: "Breathe",
+            name_es: "Respira",
+            value: 50_000,
+        ),
+        Threshold(
+            id: Restless,
+            name_en: "Restless",
+            name_es: "Inquietud",
+            value: 75_000,
+        ),
+        Threshold(
+            id: Wake,
+            name_en: "Wake",
+            name_es: "Despertar",
+            value: 100_000,
+        ),
+    ],
+    noise_sources: NoiseSources(
+        explosion: 3_000,
+        electric_discharge: 200,
+        lava_flow: 200,
+        bucket_line_per_tick: 1,
+        dig_block: 0,
+    ),
+    wake: WakeConfig(
+        duration_ticks: 2_700,
+        bucket_stop_remaining_ticks: 900,
+        heart_cash_value: 1_500,
+        lava_rise_interval_ticks: 90,
+    ),
+    provisional_relief: ReliefConfig(
+        offering_gold_cost: 100,
+        offering_reduction: 2_500,
+        offering_cooldown_ticks: 150,
+        brass_tally_reduction: 8_000,
+        max_tallies_per_shift: 2,
+    ),
+)
