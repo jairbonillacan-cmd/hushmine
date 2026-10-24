@@ -30,6 +30,7 @@ impl SimReport {
         thresholds_reached: Vec<SeismoThreshold>,
         awakening_tick: Option<u32>,
         mut tick_micros: Vec<f64>,
+        broken_invariants: Vec<String>,
     ) -> Self {
         tick_micros.sort_by(f64::total_cmp);
         Self {
@@ -42,7 +43,7 @@ impl SimReport {
             tick_p50_us: percentile(&tick_micros, 0.50),
             tick_p95_us: percentile(&tick_micros, 0.95),
             tick_max_us: tick_micros.last().copied().unwrap_or(0.0),
-            broken_invariants: Vec::new(),
+            broken_invariants,
         }
     }
 }
@@ -111,6 +112,7 @@ mod tests {
             ],
             Some(28_800),
             vec![10.0, 20.0, 30.0],
+            Vec::new(),
         );
         let json = serde_json::to_string(&report).unwrap();
         let back: SimReport = serde_json::from_str(&json).unwrap();
@@ -125,6 +127,7 @@ mod tests {
             ]
         );
         assert_eq!(back.awakening_tick, Some(28_800));
+        assert!(back.broken_invariants.is_empty());
     }
 
     #[test]

@@ -4,11 +4,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::altar::{Altar, AltarError, OFFERING_GOLD_COST};
 use crate::{
-    EventLog, MatchEventKind, NoiseSource, Rng, SeismoEvent, Seismograph, SimReport, Team,
+    Economy, EventLog, LootStore, MatchEventKind, NoiseSource, Rng, SeismoEvent, Seismograph,
+    SimReport, Team,
 };
 
 /// Ticks de simulación por segundo (servidor autoritativo a 30 Hz).
-pub const TICK_RATE: u32 = 30;
+pub const TICK_RATE: u32 = 30; // Se moverá a data/*.ron
 
 /// Configuración inicial de una partida simulada.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -29,16 +30,18 @@ impl Default for MatchConfig {
 
 /// Estado determinista de una partida de HUSHMINE.
 pub struct Simulation {
-    config: MatchConfig,
-    tick: u32,
-    rng: Rng,
-    seismograph: Seismograph,
-    altar: Altar,
-    event_log: EventLog,
-    awakening_tick: Option<u32>,
+    pub(crate) config: MatchConfig,
+    pub(crate) tick: u32,
+    pub(crate) rng: Rng,
+    pub(crate) seismograph: Seismograph,
+    pub(crate) altar: Altar,
+    pub(crate) economy: Economy,
+    pub(crate) loot: LootStore,
+    pub(crate) event_log: EventLog,
+    pub(crate) awakening_tick: Option<u32>,
     /// Huella acumulada del estado; dos simulaciones con las mismas entradas
     /// deben terminar con la misma huella en cualquier plataforma.
-    state_hash: u64,
+    pub(crate) state_hash: u64,
 }
 
 impl Simulation {
@@ -50,6 +53,8 @@ impl Simulation {
             tick: 0,
             seismograph: Seismograph::new(),
             altar: Altar::new(),
+            economy: Economy::with_default_team_size(),
+            loot: LootStore::new(),
             event_log: EventLog::new(),
             awakening_tick: None,
             state_hash: 0xCBF2_9CE4_8422_2325,
@@ -86,9 +91,12 @@ impl Simulation {
         self.awakening_tick
     }
 
-    /// Indica si la partida ha concluido (por alcanzar `max_ticks` o por finalizar el Despertar).
+    /// Indica si la partida ha concluido (por alcanzar `max_ticks`, por finalizar el
+    /// Despertar o por alcanzar la meta económica).
     pub fn is_finished(&self) -> bool {
-        self.tick >= self.config.max_ticks || self.seismograph.is_awakening_ended()
+        self.tick >= self.config.max_ticks
+            || self.seismograph.is_awakening_ended()
+            || self.economy.is_goal_reached()
     }
 
     /// Añade ruido al Sismógrafo y lo anota en el registro si el incremento es positivo.
@@ -102,13 +110,22 @@ impl Simulation {
     }
 
     /// Ofrenda un lote de oro ([`OFFERING_GOLD_COST`]) en el altar del equipo.
-    /// `carried_gold` es el oro que lleva el equipo; devuelve cuánto bajó el
-    /// Sismógrafo, o el motivo del rechazo.
+    /// `carried_gold` es el oro que lleva el equipo; si la economía de bancos
+    /// está activa, también exige y descuenta el coste del banco del equipo.
     pub fn offer_gold(&mut self, team: Team, carried_gold: u32) -> Result<u32, AltarError> {
         if self.seismograph.has_awakened() {
             return Err(AltarError::AltarClosed);
         }
-        let requested = self.altar.offer(self.tick, team, carried_gold)?;
+        let requested = if self.economy.is_active() {
+            let available = self.economy.bank(team).min(carried_gold);
+            let req = self.altar.offer(self.tick, team, available)?;
+            self.economy
+                .spend_for_offering(team, OFFERING_GOLD_COST)
+                .map_err(|_| AltarError::NotEnoughGold { carried: available })?;
+            req
+        } else {
+            self.altar.offer(self.tick, team, carried_gold)?
+        };
         let reduction = self.seismograph.relieve(requested);
         self.event_log.record(
             self.tick,
@@ -144,6 +161,19 @@ impl Simulation {
         }
 
         self.tick += 1;
+        for bag in self.loot.expire_due_bags(self.tick) {
+            let cash_value = bag.base_cash_value().unwrap_or(0);
+            let _ = self.economy.record_expired_bag_cash(cash_value);
+            self.event_log.record(
+                self.tick,
+                MatchEventKind::LootExpired {
+                    bag_id: bag.id,
+                    cash_value,
+                },
+                Some(bag.origin_team),
+            );
+        }
+
         let rng_event = self.rng.next_u64();
         let seismo_events = self.seismograph.step();
 
@@ -174,6 +204,14 @@ impl Simulation {
         self.state_hash = (self.state_hash ^ rng_event).wrapping_mul(0x0000_0100_0000_01B3);
         self.state_hash = (self.state_hash ^ u64::from(self.seismograph.level()))
             .wrapping_mul(0x0000_0100_0000_01B3);
+        if self.economy.is_active() || !self.loot.is_empty() {
+            self.state_hash = (self.state_hash ^ u64::from(self.economy.bank(Team::Copper)))
+                .wrapping_mul(0x0000_0100_0000_01B3);
+            self.state_hash = (self.state_hash ^ u64::from(self.economy.bank(Team::Cobalt)))
+                .wrapping_mul(0x0000_0100_0000_01B3);
+            self.state_hash =
+                (self.state_hash ^ (self.loot.len() as u64)).wrapping_mul(0x0000_0100_0000_01B3);
+        }
     }
 
     /// Ejecuta la simulación hasta su conclusión y devuelve el informe final.
@@ -184,6 +222,7 @@ impl Simulation {
             self.step();
             tick_micros.push(start.elapsed().as_secs_f64() * 1e6);
         }
+        let broken_invariants = self.check_invariants();
         SimReport::new(
             &self.config,
             self.tick,
@@ -191,6 +230,7 @@ impl Simulation {
             self.event_log.thresholds_reached(),
             self.awakening_tick,
             tick_micros,
+            broken_invariants,
         )
     }
 }
@@ -272,6 +312,33 @@ mod tests {
                 SeismoThreshold::Restless,
                 SeismoThreshold::Wake,
             ]
+        );
+        assert!(report.broken_invariants.is_empty());
+    }
+
+    #[test]
+    fn offer_gold_deducts_from_team_bank_and_rejects_insufficient_bank() {
+        let mut sim = Simulation::new(MatchConfig {
+            seed: 21,
+            max_ticks: 1_000,
+        });
+        sim.add_noise(NoiseSource::Custom(20_000), Some(Team::Copper));
+        sim.mine_gold(1, Team::Copper, 1).unwrap();
+        sim.deposit_player(1).unwrap();
+        assert_eq!(sim.economy().bank(Team::Copper), 100);
+
+        assert_eq!(sim.offer_gold(Team::Copper, 100), Ok(2_500));
+        assert_eq!(sim.economy().bank(Team::Copper), 0);
+        assert_eq!(sim.economy().total_offered_cash(), 100);
+        assert!(sim.check_invariants().is_empty());
+
+        // Avanzamos más allá del enfriamiento (150 ticks), pero el banco está a 0.
+        for _ in 0..150 {
+            sim.step();
+        }
+        assert_eq!(
+            sim.offer_gold(Team::Copper, 100),
+            Err(AltarError::NotEnoughGold { carried: 0 })
         );
     }
 }
