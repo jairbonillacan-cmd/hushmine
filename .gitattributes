@@ -1,0 +1,5 @@
+# Saltos de línea LF en todo el repositorio, también en Windows.
+# Los scripts de tools/ comparan archivos generados byte a byte.
+* text=auto eol=lf
+
+*.png binary
