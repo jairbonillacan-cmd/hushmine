@@ -12,7 +12,9 @@ publish = false
 [workspace.dependencies]
 grisu-render = { path = "crates/grisu-render" }
 grisu-platform = { path = "crates/grisu-platform" }
+grisu-voxel = { path = "crates/grisu-voxel" }
 hush-sim = { path = "crates/hush-sim" }
+hush-art = { path = "crates/hush-art" }
 
 anyhow = "1"
 bytemuck = { version = "1", features = ["derive"] }

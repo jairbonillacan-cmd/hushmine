@@ -1,45 +1,49 @@
-//! Cliente de HUSHMINE. En el hito 0 muestra un cubo de mineral girando.
+//! Cliente de HUSHMINE. En el hito 1 es una partida local de un jugador
+//! en la que se puede andar, cavar y poner bloques.
+//!
+//! Uso: `hushmine [--seed N]`.
 
-use grisu_platform::App;
-use grisu_render::{CubeRenderer, DepthTarget, Gpu, OrbitCamera, TextureData};
-
-/// Velocidad de giro del cubo de demostración, en radianes por segundo.
-const SPIN_SPEED: f32 = 0.6;
-
-#[derive(Default)]
-struct CubeDemo {
-    cube: Option<CubeRenderer>,
-    camera: OrbitCamera,
-}
-
-impl App for CubeDemo {
-    fn init(&mut self, gpu: &Gpu, surface_format: wgpu::TextureFormat) {
-        self.cube = Some(CubeRenderer::new(
-            &gpu.device,
-            &gpu.queue,
-            surface_format,
-            &TextureData::test_ore(),
-        ));
-    }
-
-    fn update(&mut self, dt: f32) {
-        self.camera.yaw += SPIN_SPEED * dt;
-    }
-
-    fn render(
-        &mut self,
-        gpu: &Gpu,
-        encoder: &mut wgpu::CommandEncoder,
-        color: &wgpu::TextureView,
-        depth: &DepthTarget,
-    ) {
-        if let Some(cube) = &self.cube {
-            cube.render(&gpu.queue, encoder, color, depth, &self.camera);
-        }
-    }
-}
+mod game;
 
 fn main() -> anyhow::Result<()> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
-    grisu_platform::run("HUSHMINE", CubeDemo::default())
+    let seed = parse_seed(std::env::args().skip(1))?;
+    grisu_platform::run("HUSHMINE", game::Game::new(seed)?)
+}
+
+/// Lee `--seed N`; por defecto, 42.
+fn parse_seed(mut args: impl Iterator<Item = String>) -> anyhow::Result<u64> {
+    let mut seed = 42;
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "--seed" => {
+                let value = args.next().unwrap_or_default();
+                seed = value
+                    .parse()
+                    .map_err(|_| anyhow::anyhow!("semilla inválida: {value:?}"))?;
+            }
+            other => anyhow::bail!("argumento desconocido: {other} (uso: hushmine [--seed N])"),
+        }
+    }
+    Ok(seed)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn args(list: &[&str]) -> impl Iterator<Item = String> {
+        list.iter()
+            .map(|s| (*s).to_owned())
+            .collect::<Vec<_>>()
+            .into_iter()
+    }
+
+    #[test]
+    fn parses_seed() {
+        assert_eq!(parse_seed(args(&[])).unwrap(), 42);
+        assert_eq!(parse_seed(args(&["--seed", "7"])).unwrap(), 7);
+        assert!(parse_seed(args(&["--seed", "x"])).is_err());
+        assert!(parse_seed(args(&["--fast"])).is_err());
+    }
 }

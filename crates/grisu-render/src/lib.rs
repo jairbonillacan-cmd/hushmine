@@ -4,18 +4,24 @@
 //! (`offscreen`), para que la IA pueda generar capturas desde la terminal.
 
 mod camera;
+mod crosshair;
 mod cube;
 mod depth;
 mod gpu;
 mod offscreen;
 mod texture;
+mod texture_array;
+mod voxel;
 
-pub use camera::OrbitCamera;
+pub use camera::{FlyCamera, OrbitCamera, View};
+pub use crosshair::CrosshairRenderer;
 pub use cube::CubeRenderer;
 pub use depth::DepthTarget;
 pub use gpu::{Gpu, default_backends};
-pub use offscreen::render_to_image;
+pub use offscreen::{OFFSCREEN_FORMAT, capture, render_to_image};
 pub use texture::TextureData;
+pub use texture_array::upload_texture_array;
+pub use voxel::{MeshStats, TerrainStyle, VoxelRenderer};
 
 /// Color de fondo: oscuridad de mina, ligeramente azulada.
 pub const CLEAR_COLOR: wgpu::Color = wgpu::Color {

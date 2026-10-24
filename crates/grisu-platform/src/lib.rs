@@ -1,6 +1,13 @@
 //! Grisú: ventana y bucle principal.
 //!
 //! El juego implementa [`App`] y no toca winit ni la superficie de wgpu.
+//!
+//! Un clic izquierdo captura el cursor (primera persona); Escape lo suelta
+//! y, si ya estaba suelto, cierra la ventana.
+
+mod input;
+
+pub use input::{Input, KeyCode, MouseButton};
 
 use std::sync::Arc;
 use std::time::Instant;
@@ -8,17 +15,17 @@ use std::time::Instant;
 use anyhow::{Context, Result};
 use grisu_render::{DepthTarget, Gpu};
 use winit::application::ApplicationHandler;
-use winit::event::{ElementState, KeyEvent, WindowEvent};
+use winit::event::{DeviceEvent, DeviceId, ElementState, KeyEvent, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
-use winit::keyboard::{Key, NamedKey};
-use winit::window::{Window, WindowId};
+use winit::keyboard::PhysicalKey;
+use winit::window::{CursorGrabMode, Window, WindowId};
 
 /// Lo que el juego aporta al bucle principal.
 pub trait App: 'static {
     /// Se llama una vez, cuando ya existen la GPU y la superficie.
     fn init(&mut self, gpu: &Gpu, surface_format: wgpu::TextureFormat);
     /// Avanza la lógica de presentación `dt` segundos.
-    fn update(&mut self, dt: f32);
+    fn update(&mut self, dt: f32, input: &Input);
     /// Graba el dibujo del fotograma.
     fn render(
         &mut self,
@@ -36,6 +43,7 @@ pub fn run(title: &str, app: impl App) -> Result<()> {
         title: title.to_owned(),
         app,
         state: None,
+        input: Input::default(),
         error: None,
     };
     event_loop.run_app(&mut runner)?;
@@ -49,6 +57,7 @@ struct Runner<A: App> {
     title: String,
     app: A,
     state: Option<WindowState>,
+    input: Input,
     error: Option<anyhow::Error>,
 }
 
@@ -114,11 +123,32 @@ impl WindowState {
         self.depth = DepthTarget::new(&self.gpu.device, width, height);
     }
 
-    fn frame(&mut self, app: &mut impl App) {
+    /// Captura o suelta el cursor. Devuelve si quedó capturado.
+    fn grab_cursor(&self, grab: bool) -> bool {
+        if !grab {
+            let _ = self.window.set_cursor_grab(CursorGrabMode::None);
+            self.window.set_cursor_visible(true);
+            return false;
+        }
+        // `Locked` no existe en Windows y `Confined` no existe en macOS.
+        let grabbed = self
+            .window
+            .set_cursor_grab(CursorGrabMode::Locked)
+            .or_else(|_| self.window.set_cursor_grab(CursorGrabMode::Confined))
+            .is_ok();
+        if grabbed {
+            self.window.set_cursor_visible(false);
+        } else {
+            log::warn!("no se pudo capturar el cursor");
+        }
+        grabbed
+    }
+
+    fn frame(&mut self, app: &mut impl App, input: &Input) {
         let now = Instant::now();
         let dt = (now - self.last_frame).as_secs_f32().min(0.25);
         self.last_frame = now;
-        app.update(dt);
+        app.update(dt, input);
 
         let frame = match self.surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(frame)
@@ -171,22 +201,59 @@ impl<A: App> ApplicationHandler for Runner<A> {
             return;
         };
         match event {
-            WindowEvent::CloseRequested
-            | WindowEvent::KeyboardInput {
+            WindowEvent::CloseRequested => event_loop.exit(),
+            WindowEvent::KeyboardInput {
                 event:
                     KeyEvent {
-                        logical_key: Key::Named(NamedKey::Escape),
-                        state: ElementState::Pressed,
+                        physical_key: PhysicalKey::Code(code),
+                        state: key_state,
                         ..
                     },
                 ..
-            } => event_loop.exit(),
+            } => {
+                let down = key_state == ElementState::Pressed;
+                if code == KeyCode::Escape && down {
+                    if self.input.cursor_grabbed() {
+                        let grabbed = state.grab_cursor(false);
+                        self.input.set_grabbed(grabbed);
+                    } else {
+                        event_loop.exit();
+                    }
+                } else {
+                    self.input.key(code, down);
+                }
+            }
+            WindowEvent::MouseInput {
+                state: button_state,
+                button,
+                ..
+            } => {
+                let down = button_state == ElementState::Pressed;
+                if down && !self.input.cursor_grabbed() {
+                    // El clic que captura el cursor no llega al juego.
+                    let grabbed = state.grab_cursor(true);
+                    self.input.set_grabbed(grabbed);
+                } else {
+                    self.input.button(button, down);
+                }
+            }
+            WindowEvent::Focused(false) => {
+                let grabbed = state.grab_cursor(false);
+                self.input.set_grabbed(grabbed);
+            }
             WindowEvent::Resized(size) => state.resize(size.width, size.height),
             WindowEvent::RedrawRequested => {
-                state.frame(&mut self.app);
+                state.frame(&mut self.app, &self.input);
+                self.input.end_frame();
                 state.window.request_redraw();
             }
             _ => {}
+        }
+    }
+
+    fn device_event(&mut self, _: &ActiveEventLoop, _: DeviceId, event: DeviceEvent) {
+        if let DeviceEvent::MouseMotion { delta } = event {
+            self.input.motion(delta.0, delta.1);
         }
     }
 }

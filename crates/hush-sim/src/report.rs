@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{MatchConfig, TICK_RATE};
+use crate::{EditStats, MatchConfig, TICK_RATE};
 
 /// Informe de una partida simulada. Es lo que lee la IA tras `hush-cli sim`.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -14,6 +14,8 @@ pub struct SimReport {
     pub tick_p50_us: f64,
     pub tick_p95_us: f64,
     pub tick_max_us: f64,
+    /// Bloques cavados por tipo, colocados y órdenes rechazadas.
+    pub edits: EditStats,
     /// Invariantes rotas durante la partida. Debe estar vacío.
     pub broken_invariants: Vec<String>,
 }
@@ -34,6 +36,7 @@ impl SimReport {
             tick_p50_us: percentile(&tick_micros, 0.50),
             tick_p95_us: percentile(&tick_micros, 0.95),
             tick_max_us: tick_micros.last().copied().unwrap_or(0.0),
+            edits: EditStats::default(),
             broken_invariants: Vec::new(),
         }
     }
@@ -69,7 +72,10 @@ mod tests {
         let report = crate::run(MatchConfig {
             seed: 9,
             max_ticks: 30,
-        });
+            bots: 2,
+            ..MatchConfig::default()
+        })
+        .unwrap();
         let json = serde_json::to_string(&report).unwrap();
         let back: SimReport = serde_json::from_str(&json).unwrap();
         assert_eq!(back.state_hash, report.state_hash);

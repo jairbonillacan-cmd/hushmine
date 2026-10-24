@@ -1,0 +1,15 @@
+[package]
+name = "hush-art"
+description = "HUSHMINE: texturas procedurales de los bloques"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+grisu-render.workspace = true
+hush-sim.workspace = true
+
+[lints]
+workspace = true

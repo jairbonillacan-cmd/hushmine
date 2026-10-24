@@ -3,18 +3,34 @@ use image::RgbaImage;
 
 use crate::{CubeRenderer, DepthTarget, Gpu, OrbitCamera, TextureData};
 
-const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8UnormSrgb;
+/// Formato del objetivo de color de las capturas.
+pub const OFFSCREEN_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8UnormSrgb;
+const FORMAT: wgpu::TextureFormat = OFFSCREEN_FORMAT;
 
-/// Dibuja la escena de prueba sin ventana y devuelve la imagen.
-///
-/// Es la base de `hush-cli shot`: permite a la IA ver el resultado del
-/// renderizado sin abrir el juego.
+/// Dibuja la escena de prueba (el cubo del hito 0) sin ventana.
 pub fn render_to_image(
     gpu: &Gpu,
     width: u32,
     height: u32,
     camera: &OrbitCamera,
     texture: &TextureData,
+) -> Result<RgbaImage> {
+    let cube = CubeRenderer::new(&gpu.device, &gpu.queue, FORMAT, texture);
+    capture(gpu, width, height, |encoder, view, depth| {
+        cube.render(&gpu.queue, encoder, view, depth, camera);
+    })
+}
+
+/// Dibuja sin ventana y devuelve la imagen.
+///
+/// `draw` graba el dibujo en un objetivo de formato [`OFFSCREEN_FORMAT`].
+/// Es la base de `hush-cli shot`: permite a la IA ver el resultado del
+/// renderizado sin abrir el juego.
+pub fn capture(
+    gpu: &Gpu,
+    width: u32,
+    height: u32,
+    draw: impl FnOnce(&mut wgpu::CommandEncoder, &wgpu::TextureView, &DepthTarget),
 ) -> Result<RgbaImage> {
     ensure!(width > 0 && height > 0, "tamaño de imagen inválido");
     let device = &gpu.device;
@@ -35,7 +51,6 @@ pub fn render_to_image(
     });
     let view = target.create_view(&wgpu::TextureViewDescriptor::default());
     let depth = DepthTarget::new(device, width, height);
-    let cube = CubeRenderer::new(device, &gpu.queue, FORMAT, texture);
 
     // Las filas copiadas a un búfer deben alinearse a 256 bytes.
     let unpadded_row = 4 * width;
@@ -51,7 +66,7 @@ pub fn render_to_image(
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
         label: Some("offscreen-encoder"),
     });
-    cube.render(&gpu.queue, &mut encoder, &view, &depth, camera);
+    draw(&mut encoder, &view, &depth);
     encoder.copy_texture_to_buffer(
         wgpu::TexelCopyTextureInfo {
             texture: &target,

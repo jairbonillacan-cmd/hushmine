@@ -14,8 +14,13 @@ path = "src/main.rs"
 [dependencies]
 anyhow.workspace = true
 env_logger.workspace = true
+glam.workspace = true
 grisu-platform.workspace = true
 grisu-render.workspace = true
+grisu-voxel.workspace = true
+hush-art.workspace = true
+hush-sim.workspace = true
+log.workspace = true
 wgpu.workspace = true
 
 [lints]

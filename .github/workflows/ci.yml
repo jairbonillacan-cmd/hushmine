@@ -53,8 +53,11 @@ jobs:
       - name: Simulación y captura (Linux)
         if: runner.os == 'Linux'
         run: |
-          cargo run --release -p hush-cli -- sim --seed 42 --report out/sim.json
-          cargo run --release -p hush-cli -- shot --out out/cube.png
+          cargo run --release -p hush-cli -- sim --seed 42 --bots 4 --report out/sim.json
+          cargo run --release -p hush-cli -- bench --seed 42 --out out/bench.json
+          for scene in cube terrain tunnel shaft dig; do
+            cargo run --release -p hush-cli -- shot --scene "$scene" --out "out/$scene.png"
+          done
 
       - name: Subir capturas e informes
         if: runner.os == 'Linux'

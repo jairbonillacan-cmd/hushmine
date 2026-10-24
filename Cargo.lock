@@ -763,10 +763,18 @@ dependencies = [
  "anyhow",
  "bytemuck",
  "glam",
+ "grisu-voxel",
  "image",
  "log",
  "pollster",
  "wgpu",
+]
+
+[[package]]
+name = "grisu-voxel"
+version = "0.0.1"
+dependencies = [
+ "bytemuck",
 ]
 
 [[package]]
@@ -814,13 +822,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e17592d60ebacc7d5e169f4663c5f84f9161cc90328abcfe8456f41e4dfcb284"
 
 [[package]]
+name = "hush-art"
+version = "0.0.1"
+dependencies = [
+ "grisu-render",
+ "hush-sim",
+]
+
+[[package]]
 name = "hush-cli"
 version = "0.0.1"
 dependencies = [
  "anyhow",
  "clap",
  "env_logger",
+ "glam",
  "grisu-render",
+ "grisu-voxel",
+ "hush-art",
  "hush-sim",
  "pollster",
  "serde_json",
@@ -832,8 +851,13 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "env_logger",
+ "glam",
  "grisu-platform",
  "grisu-render",
+ "grisu-voxel",
+ "hush-art",
+ "hush-sim",
+ "log",
  "wgpu",
 ]
 
@@ -841,6 +865,7 @@ dependencies = [
 name = "hush-sim"
 version = "0.0.1"
 dependencies = [
+ "grisu-voxel",
  "serde",
  "serde_json",
 ]

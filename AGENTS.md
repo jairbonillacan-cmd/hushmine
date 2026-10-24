@@ -11,11 +11,13 @@ El plan completo está en `PLAN_v4.md`; las decisiones de arquitectura, en `docs
 
 | Crate | Papel |
 |---|---|
-| `grisu-render` | wgpu: GPU, cámara, cubo, captura sin ventana |
-| `grisu-platform` | Ventana winit y bucle principal (trait `App`) |
-| `hush-sim` | Reglas y simulación determinista, sin gráficos |
+| `grisu-voxel` | Chunks de 16³, edición, mallas con oclusión ambiental, luz BFS, raycast DDA, colisión en punto fijo |
+| `grisu-render` | wgpu: GPU, cámaras, terreno, cruz de apuntar, captura sin ventana |
+| `grisu-platform` | Ventana winit, entrada (teclado y ratón) y bucle principal (trait `App`) |
+| `hush-sim` | Reglas y simulación determinista, sin gráficos: bloques, terreno, movimiento, cavar y poner |
+| `hush-art` | Texturas provisionales de los bloques y su emisión de luz |
 | `hush-client` | Binario `hushmine` (el juego) |
-| `hush-cli` | Binario `hush-cli` (sim, shot, gpu) |
+| `hush-cli` | Binario `hush-cli` (sim, shot, bench, gpu) |
 
 **Regla de dependencias:** ningún crate `grisu-*` depende de un crate `hush-*`.
 
@@ -27,10 +29,11 @@ Ejecútalos antes de dar una tarea por terminada:
 cargo fmt --all
 cargo clippy --workspace --all-targets -- -D warnings
 cargo nextest run --workspace
-cargo run -p hush-cli -- shot --out out/shot.png
-cargo run -p hush-cli -- sim --seed 42 --report out/sim.json
+cargo run -p hush-cli -- shot --scene tunnel --out out/tunnel.png
+cargo run -p hush-cli -- sim --seed 42 --bots 4 --report out/sim.json
+cargo run --release -p hush-cli -- bench --seed 42
 cargo run -p hush-cli -- gpu
-cargo run -p hush-client
+cargo run -p hush-client -- --seed 42
 cargo deny check licenses bans sources
 ```
 
@@ -39,14 +42,17 @@ Qué hace cada uno, en orden:
 1. Formatea el código.
 2. Pasa el analizador con los avisos tratados como errores.
 3. Ejecuta todas las pruebas.
-4. Genera una captura PNG sin ventana. **Ábrela y mírala.**
-5. Simula una partida; `broken_invariants` debe estar vacío.
-6. Muestra la GPU y el backend en uso.
-7. Abre el juego con ventana; Escape lo cierra.
-8. Revisa las licencias de las dependencias.
+4. Genera una captura PNG sin ventana. **Ábrela y mírala.** Escenas: `cube`, `terrain`, `tunnel`, `shaft` y `dig`.
+5. Simula una partida con bots que cavan; `broken_invariants` debe estar vacío.
+6. Mide terreno, luz y mallas de 64³; falla si pasan de 50 ms (solo con `--release`).
+7. Muestra la GPU y el backend en uso.
+8. Abre el juego con ventana (controles abajo).
+9. Revisa las licencias de las dependencias.
+
+**Controles del cliente:** clic para capturar el ratón; WASD para andar, espacio para saltar, clic izquierdo para cavar, clic derecho para poner y 1-6 para elegir bloque. Escape suelta el ratón y, si ya estaba suelto, cierra el juego.
 
 Con `HUSH_REQUIRE_GPU=1`, las pruebas de GPU fallan en vez de saltarse cuando no hay adaptador.
-**El directorio de compilación es global en esta máquina:** los binarios están en `C:\Users\T490s\fossil-target\` (lo indica `cargo metadata`).
+**El directorio de compilación puede ser global** en algunas máquinas (por ejemplo, `C:\Users\T490s\fossil-target\`); `cargo metadata` indica cuál es.
 
 ## Reglas
 
