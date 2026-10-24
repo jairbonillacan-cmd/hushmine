@@ -2,6 +2,8 @@
 
 Este documento establece las reglas visuales, cromáticas, geométricas y de accesibilidad para el conjunto de texturas 16×16 de **HUSHMINE** (motor **Grisú**). Todas las texturas se generan de forma procedural determinista a partir de la paleta cerrada definida en `tools/textures/palette.py`.
 
+> **Cambio previsto (propuesta, ADR 0003):** desde el hito 6 la resolución canónica pasa a **32×32**, con paleta ampliada. Las reglas de esta guía se mantienen y sus pruebas se aplican también a la versión reducida a 16×16. Ver `docs/graficos/03-texturas-32.md`.
+
 ---
 
 ## 1. Visión Estética: Estratigrafía Industrial (1931 / 1979)

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 240" width="800" height="240">
+  <title>HUSHMINE — Logo Proposal C: Copper vs. Cobalt Chasm</title>
+  <rect x="0" y="0" width="800" height="240" fill="#0A0B0E"/>
+  <polygon points="18,22 392,22 374,186 18,186" fill="#5E2C18" stroke="#C96832" stroke-width="3"/>
+  <polygon points="30,34 378,34 364,174 30,174" fill="#14161B" stroke="#944824" stroke-width="2"/>
+  <polygon points="408,22 782,22 782,186 426,186" fill="#1A2E54" stroke="#3B73C4" stroke-width="3"/>
+  <polygon points="422,34 770,34 770,174 436,174" fill="#14161B" stroke="#284C85" stroke-width="2"/>
+  <polygon points="384,14 416,14 434,226 366,226" fill="#8F3B1B"/>
+  <polygon points="392,18 408,18 422,222 378,222" fill="#F28A2E"/>
+  <polygon points="397,24 403,24 410,218 390,218" fill="#FFF08A"/>
+  <path d="M61.7,63.7 h17.9 v89.6 h-17.9 Z M107.8,63.7 h17.9 v89.6 h-17.9 Z M79.6,99.5 h28.2 v17.9 h-28.2 Z" fill="#0A0B0E"/>
+  <path d="M54.0,56.0 h17.9 v89.6 h-17.9 Z M100.1,56.0 h17.9 v89.6 h-17.9 Z M71.9,91.8 h28.2 v17.9 h-28.2 Z" fill="#F09246" stroke="#EDE6D3" stroke-width="2.2"/>
+  <path d="M139.8,63.7 h17.9 v73.0 h-17.9 Z M185.9,63.7 h17.9 v73.0 h-17.9 Z M139.8,135.4 h64.0 v17.9 h-64.0 Z" fill="#0A0B0E"/>
+  <path d="M132.1,56.0 h17.9 v73.0 h-17.9 Z M178.2,56.0 h17.9 v73.0 h-17.9 Z M132.1,127.7 h64.0 v17.9 h-64.0 Z" fill="#F09246" stroke="#EDE6D3" stroke-width="2.2"/>
+  <path d="M217.9,63.7 h64.0 v17.9 h-64.0 Z M217.9,80.3 h17.9 v28.2 h-17.9 Z M217.9,99.5 h64.0 v17.9 h-64.0 Z M263.9,108.5 h17.9 v28.2 h-17.9 Z M217.9,135.4 h64.0 v17.9 h-64.0 Z" fill="#0A0B0E"/>
+  <path d="M210.2,56.0 h64.0 v17.9 h-64.0 Z M210.2,72.6 h17.9 v28.2 h-17.9 Z M210.2,91.8 h64.0 v17.9 h-64.0 Z M256.2,100.8 h17.9 v28.2 h-17.9 Z M210.2,127.7 h64.0 v17.9 h-64.0 Z" fill="#F09246" stroke="#EDE6D3" stroke-width="2.2"/>
+  <path d="M295.9,63.7 h17.9 v89.6 h-17.9 Z M342.0,63.7 h17.9 v89.6 h-17.9 Z M313.9,99.5 h28.2 v17.9 h-28.2 Z" fill="#0A0B0E"/>
+  <path d="M288.2,56.0 h17.9 v89.6 h-17.9 Z M334.3,56.0 h17.9 v89.6 h-17.9 Z M306.2,91.8 h28.2 v17.9 h-28.2 Z" fill="#F09246" stroke="#EDE6D3" stroke-width="2.2"/>
+  <path d="M385.5,63.7 h16.6 v89.6 h-16.6 Z M432.9,63.7 h16.6 v89.6 h-16.6 Z M400.9,71.4 h16.6 v30.7 h-16.6 Z M417.5,71.4 h16.6 v30.7 h-16.6 Z M409.2,91.9 h16.6 v33.3 h-16.6 Z" fill="#0A0B0E"/>
+  <path d="M377.8,56.0 h16.6 v89.6 h-16.6 Z M425.2,56.0 h16.6 v89.6 h-16.6 Z M393.2,63.7 h16.6 v30.7 h-16.6 Z M409.8,63.7 h16.6 v30.7 h-16.6 Z M401.5,84.2 h16.6 v33.3 h-16.6 Z" fill="#5CA3F2" stroke="#EDE6D3" stroke-width="2.2"/>
+  <path d="M463.6,63.7 h64.0 v17.9 h-64.0 Z M486.7,80.3 h17.9 v56.3 h-17.9 Z M463.6,135.4 h64.0 v17.9 h-64.0 Z" fill="#0A0B0E"/>
+  <path d="M455.9,56.0 h64.0 v17.9 h-64.0 Z M479.0,72.6 h17.9 v56.3 h-17.9 Z M455.9,127.7 h64.0 v17.9 h-64.0 Z" fill="#5CA3F2" stroke="#EDE6D3" stroke-width="2.2"/>
+  <path d="M541.7,63.7 h17.9 v89.6 h-17.9 Z M587.8,63.7 h17.9 v89.6 h-17.9 Z M557.1,76.5 h17.9 v28.8 h-17.9 Z M572.4,102.1 h17.9 v28.8 h-17.9 Z" fill="#0A0B0E"/>
+  <path d="M534.0,56.0 h17.9 v89.6 h-17.9 Z M580.1,56.0 h17.9 v89.6 h-17.9 Z M549.4,68.8 h17.9 v28.8 h-17.9 Z M564.7,94.4 h17.9 v28.8 h-17.9 Z" fill="#5CA3F2" stroke="#EDE6D3" stroke-width="2.2"/>
+  <path d="M619.8,63.7 h17.9 v89.6 h-17.9 Z M636.4,63.7 h47.4 v17.9 h-47.4 Z M636.4,99.5 h37.1 v17.9 h-37.1 Z M636.4,135.4 h47.4 v17.9 h-47.4 Z" fill="#0A0B0E"/>
+  <path d="M612.1,56.0 h17.9 v89.6 h-17.9 Z M628.7,56.0 h47.4 v17.9 h-47.4 Z M628.7,91.8 h37.1 v17.9 h-37.1 Z M628.7,127.7 h47.4 v17.9 h-47.4 Z" fill="#5CA3F2" stroke="#EDE6D3" stroke-width="2.2"/>
+  <polygon points="382,178 418,178 430,190 430,212 418,224 382,224 370,212 370,190" fill="#D9B052" stroke="#0A0B0E" stroke-width="3"/>
+  <text x="400" y="207" fill="#1C1917" data-bg="#D9B052" font-family="'Chakra Petch', 'Share Tech Mono', monospace" font-size="16" font-weight="700" letter-spacing="1" text-anchor="middle">#41</text>
+  <text x="196" y="212" fill="#F09246" data-bg="#0A0B0E" font-family="'Chakra Petch', 'Share Tech Mono', monospace" font-size="13" font-weight="700" letter-spacing="3" text-anchor="middle">COPPER SYNDICATE</text>
+  <text x="604" y="212" fill="#5CA3F2" data-bg="#0A0B0E" font-family="'Chakra Petch', 'Share Tech Mono', monospace" font-size="13" font-weight="700" letter-spacing="3" text-anchor="middle">COBALT TRUST</text>
+</svg>

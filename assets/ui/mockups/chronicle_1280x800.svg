@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800">
+  <!-- HUSHMINE UI Mockup: chronicle (1280x800) | Safe margin: 32px -->
+  <rect x="0" y="0" width="1280" height="800" fill="#0A0B0E"/>
+  <rect x="32" y="32" width="1216" height="68" fill="#D8CEB8" stroke="#9E7B2F" stroke-width="2" rx="4"/>
+  <!-- ftl: chronicle-title -->
+  <text x="56" y="59" fill="#1C1917" data-bg="#D8CEB8" font-family="monospace" font-size="18" font-weight="bold" text-anchor="start">POST-SHIFT CHRONICLE · MOUNT ANIMA LOG 1979</text>
+  <text x="56" y="83" fill="#0A0B0E" data-bg="#D8CEB8" font-family="monospace" font-size="15" font-weight="bold" text-anchor="start">COPPER CREW VICTORY — $6,500 / $6,500 AT 11:24</text>
+  <rect x="32" y="112" width="620" height="656" fill="#07120A" stroke="#34B85A" stroke-width="2" rx="4"/>
+  <!-- ftl: chronicle-event-log -->
+  <text x="50" y="139" fill="#68F08E" data-bg="#07120A" font-family="monospace" font-size="15" font-weight="bold" text-anchor="start">SEISMOGRAPH TIMELINE &amp; 6 SHIFT MILESTONES</text>
+  <text x="50" y="175" fill="#EDE6D3" data-bg="#07120A" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">02:38 [25% STIR] FIRST TREMORS &amp; WHISTLERS</text>
+  <text x="50" y="207" fill="#68F08E" data-bg="#07120A" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">04:55 COPPER OFFERING ($100 -> -2.5%)</text>
+  <text x="50" y="239" fill="#FAAE3C" data-bg="#07120A" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">05:40 [50% BREATHE] MOTHER LODE CAVERN CRACKED OPEN</text>
+  <text x="50" y="271" fill="#68F08E" data-bg="#07120A" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">07:15 BRASS TALLY #14 RETURNED (-8.0%)</text>
+  <text x="50" y="303" fill="#FCD153" data-bg="#07120A" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">09:40 COBALT TRIGGERED 3 CHARGES -> [100% WAKE]</text>
+  <text x="50" y="335" fill="#F09246" data-bg="#07120A" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">11:24 COPPER LOCKED WINNING BUCKET LINE ($6,500)</text>
+  <polyline fill="none" stroke="#68F08E" stroke-width="2" points="50,732 82,730 114,734 147,727 179,738 212,722 244,744 277,716 309,742 342,725 374,748 406,713 439,744 471,724 504,737 536,728 569,733 601,731 634,732"/>
+  <rect x="676" y="112" width="572" height="157" fill="#14161B" stroke="#FCD153" stroke-width="2" rx="4"/>
+  <!-- ftl: chronicle-award-wakener -->
+  <text x="694" y="140" fill="#FCD153" data-bg="#14161B" font-family="monospace" font-size="15" font-weight="bold" text-anchor="start">THE WAKENER / DESPERTADOR</text>
+  <text x="694" y="169" fill="#EDE6D3" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">Most Seismic Noise Added: +18.4%</text>
+  <rect x="676" y="278" width="572" height="157" fill="#14161B" stroke="#68F08E" stroke-width="2" rx="4"/>
+  <!-- ftl: chronicle-award-sleep-guardian -->
+  <text x="694" y="306" fill="#68F08E" data-bg="#14161B" font-family="monospace" font-size="15" font-weight="bold" text-anchor="start">SLEEP GUARDIAN / GUARDIAN DEL SUENO</text>
+  <text x="694" y="335" fill="#EDE6D3" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">Most Offerings &amp; Tallies: $400 + 1 Tally</text>
+  <rect x="676" y="444" width="572" height="157" fill="#14161B" stroke="#F09246" stroke-width="2" rx="4"/>
+  <!-- ftl: chronicle-award-mole -->
+  <text x="694" y="472" fill="#F09246" data-bg="#14161B" font-family="monospace" font-size="15" font-weight="bold" text-anchor="start">THE MOLE / TOPO</text>
+  <text x="694" y="501" fill="#EDE6D3" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">Most Rock &amp; Ore Dug: 312 Blocks</text>
+  <rect x="676" y="610" width="572" height="157" fill="#14161B" stroke="#5CA3F2" stroke-width="2" rx="4"/>
+  <!-- ftl: chronicle-award-bucket-thief -->
+  <text x="694" y="638" fill="#5CA3F2" data-bg="#14161B" font-family="monospace" font-size="15" font-weight="bold" text-anchor="start">BUCKET THIEF / LADRON DE CANGILONES</text>
+  <text x="694" y="667" fill="#EDE6D3" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">Most Stolen Loot x1.25: $1,125</text>
+</svg>

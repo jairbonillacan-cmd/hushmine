@@ -8,6 +8,7 @@ Documentación canónica de mundo, historia, facciones, voces y sensibilidad cul
 - [los-41.md](los-41.md) — Registro nominal de los 41 mineros de 12 países desaparecidos en el turno de noche de 1931, sus fichas de latón y su revelación progresiva en la Temporada 1.
 - [vigia-radio.md](vigia-radio.md) — Guion bilingüe (inglés fuente ≤6 palabras y español) de las transmisiones de radio del Vigía para los 10 eventos clave del Sismógrafo y del turno.
 - [anima-consolidated.md](anima-consolidated.md) — Diez carteles de seguridad con iconografía sin texto y seis memorandos internos (1928–1931) de la compañía quebrada Anima Consolidated.
+- [../supervivencia/01-lore.md](../supervivencia/01-lore.md) — **Propuesta, pendiente de revisión:** lore del modo Historia, que ocurre en el Silencio, un mundo sin fechas que no es la Tierra. Comparte motivos con este canon, pero nunca confirma la conexión.
 - [folclore.md](folclore.md) — Raíces del folclore minero mundial (*tommyknockers*, *kobolds*, el Tío), su transformación en criaturas originales (los Silbadores, el Durmiente) y guía de sensibilidad cultural.
 
 ---

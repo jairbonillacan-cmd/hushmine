@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800">
+  <!-- HUSHMINE UI Mockup: hud (1280x800) | Safe margin: 32px -->
+  <rect x="0" y="0" width="1280" height="800" fill="#0A0B0E"/>
+  <line x1="32" y1="400" x2="1248" y2="400" stroke="#14161B" stroke-width="1"/>
+  <line x1="630" y1="400" x2="650" y2="400" stroke="#EDE6D3" stroke-width="2"/>
+  <line x1="640" y1="390" x2="640" y2="410" stroke="#EDE6D3" stroke-width="2"/>
+  <rect x="32" y="32" width="328" height="92" fill="#14161B" stroke="#C96832" stroke-width="2" rx="4"/>
+  <path d="M 46 52 L 58 64 L 46 76 M 56 52 L 68 64 L 56 76" fill="none" stroke="#F09246" stroke-width="3"/>
+  <!-- ftl: hud-bank-copper -->
+  <text x="78" y="55" fill="#F09246" data-bg="#14161B" font-family="monospace" font-size="15" font-weight="bold" text-anchor="start">COPPER CREW [CHEVRON]</text>
+  <text x="78" y="80" fill="#EDE6D3" data-bg="#14161B" font-family="monospace" font-size="18" font-weight="bold" text-anchor="start">$4,250 / $6,500</text>
+  <!-- ftl: hud-fame-badge -->
+  <text x="78" y="105" fill="#FCD153" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">FAME ACTIVE ≥60% (>=60%)</text>
+  <rect x="384" y="32" width="510" height="92" fill="#07120A" stroke="#34B85A" stroke-width="2" rx="4"/>
+  <line x1="396" y1="78" x2="882" y2="78" stroke="#12301B" stroke-width="1"/>
+  <polyline fill="none" stroke="#68F08E" stroke-width="2" points="400,75 426,73 453,77 479,71 506,79 532,67 559,85 585,62 612,83 639,69 665,87 692,60 718,84 745,68 771,79 798,72 824,76 851,74 878,75"/>
+  <!-- ftl: hud-seismograph-title -->
+  <!-- ftl: hud-seismograph -->
+  <text x="400" y="52" fill="#68F08E" data-bg="#07120A" font-family="monospace" font-size="15" font-weight="bold" text-anchor="start">SEISMOGRAPH · 54.2% [BREATHE]</text>
+  <text x="400" y="97" fill="#C8FFD6" data-bg="#07120A" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">25% STIR | 50% BREATHE | 75% RESTLESS | 100% WAKE</text>
+  <!-- ftl: hud-bucket-lines -->
+  <text x="400" y="114" fill="#FAAE3C" data-bg="#07120A" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">BUCKET LINES: 3 ACTIVE</text>
+  <rect x="919" y="32" width="329" height="92" fill="#14161B" stroke="#3B73C4" stroke-width="2" rx="4"/>
+  <path d="M 941 50 V 74 M 929 62 H 953" fill="none" stroke="#5CA3F2" stroke-width="3"/>
+  <!-- ftl: hud-bank-cobalt -->
+  <text x="963" y="55" fill="#5CA3F2" data-bg="#14161B" font-family="monospace" font-size="15" font-weight="bold" text-anchor="start">COBALT CREW [+ CROSS]</text>
+  <text x="963" y="80" fill="#EDE6D3" data-bg="#14161B" font-family="monospace" font-size="18" font-weight="bold" text-anchor="start">$3,100 / $6,500</text>
+  <text x="963" y="105" fill="#C4F4FC" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">FAME INACTIVE (&lt;60%)</text>
+  <rect x="384" y="134" width="510" height="45" fill="#07120A" stroke="#FAAE3C" stroke-width="2" rx="4"/>
+  <text x="400" y="147" fill="#FAAE3C" data-bg="#07120A" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">WATCHER RADIO · 4.82 MHz PTT</text>
+  <!-- ftl: watcher-breathe-1 -->
+  <text x="400" y="166" fill="#68F08E" data-bg="#07120A" font-family="monospace" font-size="15" font-weight="bold" text-anchor="start">"She's breathing. Get out."</text>
+  <rect x="32" y="634" width="486" height="134" fill="#14161B" stroke="#C96832" stroke-width="2" rx="4"/>
+  <!-- ftl: class-sapper -->
+  <text x="50" y="655" fill="#FAAE3C" data-bg="#14161B" font-family="monospace" font-size="18" font-weight="bold" text-anchor="start">CLASS: SAPPER</text>
+  <text x="50" y="677" fill="#EDE6D3" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">[1] BLASTING CAP   [2] WIRE CUTTERS</text>
+  <text x="50" y="699" fill="#F09246" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">[3] TEAM BLOCK (1 ORE)</text>
+  <text x="50" y="721" fill="#EDE6D3" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">[4] LADDER (1 ORE)</text>
+  <text x="50" y="743" fill="#FCD153" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">[5] EXPLOSIVE (10 ORE)</text>
+  <rect x="738" y="634" width="510" height="134" fill="#14161B" stroke="#D9B052" stroke-width="2" rx="4"/>
+  <!-- ftl: hud-cargo-ore -->
+  <text x="756" y="658" fill="#F09246" data-bg="#14161B" font-family="monospace" font-size="15" font-weight="bold" text-anchor="start">ORE: 14 / 20</text>
+  <!-- ftl: hud-cargo-bullion -->
+  <text x="756" y="687" fill="#E8BE54" data-bg="#14161B" font-family="monospace" font-size="15" font-weight="bold" text-anchor="start">BULLION: 6 / 10 ($800 · STOLEN x1.25)</text>
+  <!-- ftl: hud-brass-tallies -->
+  <text x="756" y="715" fill="#D9B052" data-bg="#14161B" font-family="monospace" font-size="15" font-weight="bold" text-anchor="start">BRASS TALLIES: 1 / 2 (#14 M. ALLER)</text>
+  <!-- ftl: hud-altar-offer -->
+  <text x="756" y="744" fill="#68F08E" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">[E] ALTAR OFFERING: $100 -> -2.5% SEISMO</text>
+</svg>

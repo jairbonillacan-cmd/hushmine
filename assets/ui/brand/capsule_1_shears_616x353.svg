@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 616 353" width="616" height="353">
+  <title>HUSHMINE — Steam Capsule 1: Bucket Line Sabotage (616x353)</title>
+  <rect x="0" y="0" width="616" height="353" fill="#0A0B0E"/>
+  <polygon points="0,0 616,0 616,254 0,287" fill="#16181F"/>
+  <rect x="0" y="275" width="616" height="78" fill="#8F3B1B"/>
+  <polygon points="0,292 160,279 348,298 522,282 616,295 616,353 0,353" fill="#D95B26"/>
+  <polygon points="0,315 214,303 415,321 616,308 616,353 0,353" fill="#F28A2E"/>
+  <rect x="0" y="333" width="616" height="20" fill="#FFF08A"/>
+  <line x1="0" y1="193" x2="283" y2="157" stroke="#5CA3F2" stroke-width="4"/>
+  <line x1="318" y1="167" x2="616" y2="242" stroke="#5CA3F2" stroke-width="4" stroke-dasharray="10,5"/>
+  <g transform="translate(115,190)">
+    <rect x="0" y="0" width="56" height="49" fill="#3B73C4" stroke="#5CA3F2" stroke-width="2"/>
+    <polygon points="6,0 18,-10 28,0" fill="#E8BE54"/>
+    <polygon points="22,0 32,-12 40,0" fill="#C4F4FC"/>
+  </g>
+  <g transform="translate(353,220) rotate(28)">
+    <rect x="0" y="0" width="56" height="49" fill="#284C85" stroke="#5CA3F2" stroke-width="2"/>
+    <rect x="8" y="34" width="10" height="10" fill="#E8BE54"/>
+    <polygon points="26,38 34,30 42,40 32,48" fill="#66C2D6"/>
+  </g>
+  <polygon points="187,29 297,151 273,177 158,55" fill="#C96832" stroke="#F09246" stroke-width="2.5"/>
+  <polygon points="192,275 297,167 273,141 163,246" fill="#944824" stroke="#F09246" stroke-width="2.5"/>
+  <polygon points="283,134 345,111 310,164" fill="#EDE6D3" stroke="#0A0B0E" stroke-width="2"/>
+  <polygon points="283,183 345,206 310,154" fill="#6C778C" stroke="#0A0B0E" stroke-width="2"/>
+  <circle cx="289" cy="159" r="10" fill="#D9B052" stroke="#0A0B0E" stroke-width="2"/>
+  <polygon points="302,157 332,128 318,160 350,170 313,174 326,203" fill="#FFF08A"/>
+  <rect x="356" y="22" width="241" height="137" rx="4" fill="#07120A" stroke="#C9302C" stroke-width="2.5"/>
+  <path d="M371.0,38.8 h6.2 v30.9 h-6.2 Z M386.9,38.8 h6.2 v30.9 h-6.2 Z M377.2,51.2 h9.7 v6.2 h-9.7 Z" fill="#0A0B0E"/>
+  <path d="M368.3,36.1 h6.2 v30.9 h-6.2 Z M384.2,36.1 h6.2 v30.9 h-6.2 Z M374.5,48.5 h9.7 v6.2 h-9.7 Z" fill="#EDE6D3" stroke="#D9B052" stroke-width="1.0"/>
+  <path d="M398.0,38.8 h6.2 v25.2 h-6.2 Z M413.9,38.8 h6.2 v25.2 h-6.2 Z M398.0,63.6 h22.1 v6.2 h-22.1 Z" fill="#0A0B0E"/>
+  <path d="M395.3,36.1 h6.2 v25.2 h-6.2 Z M411.2,36.1 h6.2 v25.2 h-6.2 Z M395.3,60.9 h22.1 v6.2 h-22.1 Z" fill="#EDE6D3" stroke="#D9B052" stroke-width="1.0"/>
+  <path d="M424.9,38.8 h22.1 v6.2 h-22.1 Z M424.9,44.5 h6.2 v9.7 h-6.2 Z M424.9,51.2 h22.1 v6.2 h-22.1 Z M440.8,54.3 h6.2 v9.7 h-6.2 Z M424.9,63.6 h22.1 v6.2 h-22.1 Z" fill="#0A0B0E"/>
+  <path d="M422.2,36.1 h22.1 v6.2 h-22.1 Z M422.2,41.8 h6.2 v9.7 h-6.2 Z M422.2,48.5 h22.1 v6.2 h-22.1 Z M438.1,51.6 h6.2 v9.7 h-6.2 Z M422.2,60.9 h22.1 v6.2 h-22.1 Z" fill="#EDE6D3" stroke="#D9B052" stroke-width="1.0"/>
+  <path d="M451.9,38.8 h6.2 v30.9 h-6.2 Z M467.8,38.8 h6.2 v30.9 h-6.2 Z M458.1,51.2 h9.7 v6.2 h-9.7 Z" fill="#0A0B0E"/>
+  <path d="M449.2,36.1 h6.2 v30.9 h-6.2 Z M465.1,36.1 h6.2 v30.9 h-6.2 Z M455.4,48.5 h9.7 v6.2 h-9.7 Z" fill="#EDE6D3" stroke="#D9B052" stroke-width="1.0"/>
+  <path d="M482.8,38.8 h5.7 v30.9 h-5.7 Z M499.2,38.8 h5.7 v30.9 h-5.7 Z M488.1,41.5 h5.7 v10.6 h-5.7 Z M493.9,41.5 h5.7 v10.6 h-5.7 Z M491.0,48.5 h5.7 v11.5 h-5.7 Z" fill="#0A0B0E"/>
+  <path d="M480.1,36.1 h5.7 v30.9 h-5.7 Z M496.5,36.1 h5.7 v30.9 h-5.7 Z M485.4,38.8 h5.7 v10.6 h-5.7 Z M491.2,38.8 h5.7 v10.6 h-5.7 Z M488.3,45.8 h5.7 v11.5 h-5.7 Z" fill="#F28A2E" stroke="#D9B052" stroke-width="1.0"/>
+  <path d="M509.8,38.8 h22.1 v6.2 h-22.1 Z M517.7,44.5 h6.2 v19.4 h-6.2 Z M509.8,63.6 h22.1 v6.2 h-22.1 Z" fill="#0A0B0E"/>
+  <path d="M507.1,36.1 h22.1 v6.2 h-22.1 Z M515.0,41.8 h6.2 v19.4 h-6.2 Z M507.1,60.9 h22.1 v6.2 h-22.1 Z" fill="#F28A2E" stroke="#D9B052" stroke-width="1.0"/>
+  <path d="M536.7,38.8 h6.2 v30.9 h-6.2 Z M552.7,38.8 h6.2 v30.9 h-6.2 Z M542.1,43.2 h6.2 v9.9 h-6.2 Z M547.4,52.1 h6.2 v9.9 h-6.2 Z" fill="#0A0B0E"/>
+  <path d="M534.0,36.1 h6.2 v30.9 h-6.2 Z M550.0,36.1 h6.2 v30.9 h-6.2 Z M539.4,40.5 h6.2 v9.9 h-6.2 Z M544.7,49.4 h6.2 v9.9 h-6.2 Z" fill="#F28A2E" stroke="#D9B052" stroke-width="1.0"/>
+  <path d="M563.7,38.8 h6.2 v30.9 h-6.2 Z M569.5,38.8 h16.4 v6.2 h-16.4 Z M569.5,51.2 h12.8 v6.2 h-12.8 Z M569.5,63.6 h16.4 v6.2 h-16.4 Z" fill="#0A0B0E"/>
+  <path d="M561.0,36.1 h6.2 v30.9 h-6.2 Z M566.8,36.1 h16.4 v6.2 h-16.4 Z M566.8,48.5 h12.8 v6.2 h-12.8 Z M566.8,60.9 h16.4 v6.2 h-16.4 Z" fill="#F28A2E" stroke="#D9B052" stroke-width="1.0"/>
+  <polyline points="369,121 415,121 431,91 447,144 466,85 484,141 506,98 583,121" fill="none" stroke="#FFF08A" stroke-width="2.5"/>
+  <text x="476" y="151" fill="#FFF08A" data-bg="#07120A" font-family="'Chakra Petch', 'Share Tech Mono', monospace" font-size="16" font-weight="700" letter-spacing="1" text-anchor="middle">100% WAKE · CUT THE LINE</text>
+</svg>
