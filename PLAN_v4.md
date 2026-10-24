@@ -334,6 +334,7 @@ Incluye títulos para los jugadores: **Despertador** (más ruido), **Guardián d
 | **Práctica** | 1.0 | Contra bots |
 | **Asedio** | Después de la 1.0 | Cavar bajo el banco enemigo y volarlo con una carga mayor (guerra de zapadores clásica) |
 | **La Mina Eterna** | Si hay tracción | Servidor persistente en un cerro grande con temporadas: el «camino de Minecraft» |
+| **Historia (supervivencia)** | Si hay tracción (hitos W1–W7) | Supervivencia y construcción en un mundo abierto y único por semilla, de 15 M × 15 M bloques, que se genera al explorar. Todo se pica y todo se construye. Ocurre en el Silencio, un lugar sin fechas que no es la Tierra, con historia opcional, pueblos con comercio, criaturas, jefes, tecnologías propias y cuatro dimensiones. Ver `docs/mundo/` y `docs/supervivencia/` |
 
 ---
 
@@ -402,6 +403,8 @@ Los plazos son aspiracionales. El motor propio añade unas 6–8 semanas respect
 
 Si no aparecen esas decisiones, **se rediseña antes de pasar al hito 5**.
 
+**Mundo grande (W0–W7):** el plan está en `docs/mundo/` y las decisiones, en `docs/adr/0002-mundo-grande.md`. Antes de la 1.0 solo entra **W0**, dentro del hito 1 (2–4 días): posiciones de entidad en `i64` Q47.16, chunks detrás de una interfaz, coordenadas negativas probadas y render relativo a la cámara. Los hitos W1–W7 llegan después del acceso anticipado y solo si el modo Turno tiene tracción.
+
 ---
 
 ## 6. Riesgos
@@ -420,4 +423,4 @@ Si no aparecen esas decisiones, **se rediseña antes de pasar al hito 5**.
 
 ## 7. Fuera de la 1.0
 
-Consolas, móviles, mundo infinito, supervivencia, fabricación, progresión que dé ventaja, mods en WebAssembly (llegan después), modo Asedio, La Mina Eterna y criaturas (los Silbadores).
+Consolas, móviles, mundo grande y supervivencia (planificados en `docs/mundo/`; solo W0 entra antes), fabricación, progresión que dé ventaja, mods en WebAssembly (llegan después), modo Asedio, La Mina Eterna y criaturas (los Silbadores).

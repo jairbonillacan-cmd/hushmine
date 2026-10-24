@@ -9,6 +9,7 @@
 Registro de decisiones técnicas clave del proyecto:
 
 - [ADR 0001: motor propio en Rust + wgpu](adr/0001-motor-propio-rust-wgpu.md) (`docs/adr/0001-motor-propio-rust-wgpu.md`) — Contexto, alternativas evaluadas y motivos para construir Grisú con Rust 2024, `wgpu`, `winit` y `glam`.
+- [ADR 0002: preparar el motor para un mundo de 15 M × 15 M bloques](adr/0002-mundo-grande.md) (`docs/adr/0002-mundo-grande.md`) — Posiciones en `i64`, chunks detrás de una interfaz, render relativo a la cámara y generación como función pura (propuesta).
 
 ---
 
@@ -29,6 +30,30 @@ Guías pensadas para comprender cada módulo del repositorio en `crates/` sin ne
 Desglose de tareas, validación y dependencias por hito de desarrollo:
 
 - [Hito 1: Vóxel (`hito-1-voxel.md`)](hitos/hito-1-voxel.md) (`docs/hitos/hito-1-voxel.md`) — Hoja de ruta en 16 tareas para chunks de 16³, mallas en CPU, iluminación y oclusión ambiental, cámara en primera persona, colisión en punto fijo, raycast DDA, excavar y colocar bloques, diferenciando tareas de compilación ligera y pesada.
+
+---
+
+### Mundo grande (`docs/mundo/`)
+
+Plan para un futuro modo Supervivencia / Historia en un mundo procedural de 15 millones × 15 millones de bloques:
+
+- [Índice y resumen (`README.md`)](mundo/README.md) — Qué cambia, cifras clave y nuevos crates.
+- [Escala y motor (`01-escala-y-motor.md`)](mundo/01-escala-y-motor.md) — Coordenadas, chunks con paleta, streaming, luz, render, guardado y red.
+- [Generación (`02-generacion.md`)](mundo/02-generacion.md) — Ruido entero, relieve, biomas, cuevas, acuíferos y menas.
+- [Estructuras (`03-estructuras.md`)](mundo/03-estructuras.md) — Colocación sin estado, minas de Anima Consolidated, pueblos y capa de historia.
+- [Verificación e hitos (`04-verificacion-e-hitos.md`)](mundo/04-verificacion-e-hitos.md) — Herramientas, invariantes, hitos W0–W7 y riesgos.
+
+### Modo Historia (supervivencia) (`docs/supervivencia/`)
+
+Diseño y lore del modo abierto que vive en el mundo grande, todo en estado de propuesta. Ocurre en el Silencio, un mundo sin fechas que no es la Tierra:
+
+- [Índice, pilares y glosario (`README.md`)](supervivencia/README.md) — Qué es el modo, mundos únicos por semilla y términos nuevos.
+- [Lore (`01-lore.md`)](supervivencia/01-lore.md) — El cielo-Párpado, los Durmientes, los Llegados y sus fichas, pueblos, facciones y el Insomne.
+- [Historia (`02-historia.md`)](supervivencia/02-historia.md) — Prólogo, cinco arcos, jefes, tres finales y qué cambia con la semilla.
+- [Pueblos y comercio (`03-pueblos-y-comercio.md`)](supervivencia/03-pueblos-y-comercio.md) — Lampisterías, oficios de los NPC, los Quedos, precios, encargos, reputación y pueblos propios.
+- [Criaturas y jefes (`04-criaturas-y-jefes.md`)](supervivencia/04-criaturas-y-jefes.md) — Fauna, criaturas de la montaña y de cada dimensión, guardianes y combate por ruido y luz.
+- [Tecnologías (`05-tecnologias.md`)](supervivencia/05-tecnologias.md) — Seis ramas, materiales, herramientas, armas de minero, máquinas y automatización.
+- [Dimensiones (`06-dimensiones.md`)](supervivencia/06-dimensiones.md) — El Sueño, el Hervor, el Eco y el Revés, con su lore, sus reglas y su implementación.
 
 ---
 

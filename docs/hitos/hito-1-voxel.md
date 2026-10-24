@@ -46,6 +46,16 @@ Compilar y enlazar `wgpu` y `winit` en cada cambio penaliza el ciclo de iteraci�
 | Punto fijo de simulación | Q16.16 (`i32` con 16 bits fraccionarios) a 30 Hz (`TICK_RATE`) |
 | Presupuesto de regeneración | Mapa de 64³ completo (luz BFS + mallas con `rayon`) en `< 50 ms` |
 
+### Preparación para el mundo grande (W0, propuesta)
+
+Ajustes baratos que dejan abierta la puerta a un mundo de 15 M × 15 M bloques (`docs/mundo/`, `docs/adr/0002-mundo-grande.md`). No cambian nada visible en el mapa de 64³:
+
+- **Tarea 2:** el chunk se usa a través de `get`/`set`/`fill`, no como array público, y las coordenadas de chunk son `i32` con negativos (desplazamiento `>> 4` y máscara `& 15`).
+- **Tarea 3:** además del Q16.16, se define la posición mundial de entidades en `i64` con 16 bits fraccionarios. Q16.16 solo alcanza ±32 767 bloques.
+- **Tareas 8 y 9:** raycast DDA y colisión usan esa posición mundial. Sus pruebas incluyen coordenadas negativas y los extremos ±7 499 999. La gravedad entra como parámetro, no como constante, para las dimensiones del modo Historia.
+- **Tarea 4:** el generador de la mina de prueba tiene forma de función pura por chunk: misma semilla y posición, mismo chunk.
+- **Tareas 12 y 13:** el shader recibe el origen de cada chunk relativo a la cámara, nunca coordenadas absolutas en `f32`.
+
 ---
 
 ## 2. Desglose de tareas (16 tareas)
