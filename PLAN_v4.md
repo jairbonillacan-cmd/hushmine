@@ -344,7 +344,7 @@ Incluye títulos para los jugadores: **Despertador** (más ruido), **Guardián d
 
 - Chunks de 16³ con 1 byte por bloque más metadatos dispersos. Un mapa de 64³ ocupa 256 KB; uno de 96×96×64, 576 KB.
 - **Primera versión:** eliminación de caras ocultas con rayon. **Después, si se mide la necesidad:** *greedy meshing* binario.
-- **Caras empaquetadas** en 8 bytes y expandidas en el shader («*vertex pulling*»), más un *texture array* de 16×16. Para WebGL2 hay una ruta clásica de vértices.
+- **Caras empaquetadas** en 8 bytes y expandidas en el shader («*vertex pulling*»), más un *texture array* cuyo tamaño sale del manifiesto (16×16 provisional, 32×32 desde el hito 6; ver `docs/graficos/`). Para WebGL2 hay una ruta clásica de vértices.
 - **Luz por bloques** (BFS) y oclusión ambiental por vértice. Más adelante, **recorte por conectividad de cuevas** y *multi-draw indirect* cuando la plataforma lo admita.
 - **Colisión en punto fijo** contra la cuadrícula, compartida entre cliente y servidor.
 
@@ -391,7 +391,7 @@ Los plazos son aspiracionales. El motor propio añade unas 6–8 semanas respect
 | **3. Turno Cero** | Equipos, oro, banco, meta, cuatro clases, bloques clásicos, muerte | **Primera partida tipo Infiniminer completa con amigos por LAN** | 3–4 sem |
 | **4. El Durmiente** | Sismógrafo, umbrales, lava, cangilones, geófono, niebla, ofrendas, chapas, crónica | **Prueba decisiva** con grupos externos (ver abajo) | 5–6 sem |
 | **5. Web y en línea** | Versión WebGPU + WebTransport, relé de Steam, servidor dedicado, Steam Deck | Alguien entra a una partida desde un enlace del navegador; 8 contra 8 por Internet | 4–5 sem |
-| **6. Alfa pública** | Arte de 16×16, audio, Vigía, interfaz, español e inglés, modo Taller | Demo web en itch.io y Steam Playtest; la gente vuelve a jugar | 6–8 sem |
+| **6. Alfa pública** | Arte de 32×32, audio, Vigía, interfaz, español e inglés, modo Taller | Demo web en itch.io y Steam Playtest; la gente vuelve a jugar | 6–8 sem |
 | **7. Acceso anticipado** | Equilibrado, temporada 1, servidor comunitario documentado | Lanzamiento en Steam; publicación de Grisú como código abierto | — |
 
 **La prueba decisiva del hito 4 consiste en observar si los jugadores, sin que nadie se lo pida:**
@@ -404,6 +404,8 @@ Los plazos son aspiracionales. El motor propio añade unas 6–8 semanas respect
 Si no aparecen esas decisiones, **se rediseña antes de pasar al hito 5**.
 
 **Mundo grande (W0–W7):** el plan está en `docs/mundo/` y las decisiones, en `docs/adr/0002-mundo-grande.md`. Antes de la 1.0 solo entra **W0**, dentro del hito 1 (2–4 días): posiciones de entidad en `i64` Q47.16, chunks detrás de una interfaz, coordenadas negativas probadas y render relativo a la cámara. Los hitos W1–W7 llegan después del acceso anticipado y solo si el modo Turno tiene tracción.
+
+**Gráficos:** el plan de cámaras (primera y tercera persona), animación por piezas, texturas de 32×32 y shaders propios está en `docs/graficos/` y las decisiones, en `docs/adr/0003-graficos.md`. En el hito 1 solo entra **G0** (2–3 días): tamaño de textura leído del manifiesto, luz de bloque en color, preprocesador de shaders y vistas de depuración. El resto se reparte entre los hitos 3 y 6 (unas 6–8 semanas en total).
 
 ---
 

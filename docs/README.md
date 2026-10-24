@@ -10,6 +10,7 @@ Registro de decisiones técnicas clave del proyecto:
 
 - [ADR 0001: motor propio en Rust + wgpu](adr/0001-motor-propio-rust-wgpu.md) (`docs/adr/0001-motor-propio-rust-wgpu.md`) — Contexto, alternativas evaluadas y motivos para construir Grisú con Rust 2024, `wgpu`, `winit` y `glam`.
 - [ADR 0002: preparar el motor para un mundo de 15 M × 15 M bloques](adr/0002-mundo-grande.md) (`docs/adr/0002-mundo-grande.md`) — Posiciones en `i64`, chunks detrás de una interfaz, render relativo a la cámara y generación como función pura (propuesta).
+- [ADR 0003: cámaras, animación por piezas, texturas de 32×32 y shaders propios](adr/0003-graficos.md) (`docs/adr/0003-graficos.md`) — Primera y tercera persona, modelos RON por piezas, paso a 32×32, luz de bloque en color y posproceso (propuesta).
 
 ---
 
@@ -32,6 +33,17 @@ Desglose de tareas, validación y dependencias por hito de desarrollo:
 - [Hito 1: Vóxel (`hito-1-voxel.md`)](hitos/hito-1-voxel.md) (`docs/hitos/hito-1-voxel.md`) — Hoja de ruta en 16 tareas para chunks de 16³, mallas en CPU, iluminación y oclusión ambiental, cámara en primera persona, colisión en punto fijo, raycast DDA, excavar y colocar bloques, diferenciando tareas de compilación ligera y pesada.
 
 ---
+
+### Gráficos (`docs/graficos/`)
+
+Plan del salto visual, en estado de propuesta:
+
+- [Índice, decisiones y presets (`README.md`)](graficos/README.md) — Qué cambia, presets de calidad y dónde vive cada pieza.
+- [Cámaras (`01-camaras.md`)](graficos/01-camaras.md) — Primera persona con vista de brazos, tercera persona, espectador y fotos.
+- [Animación (`02-animacion.md`)](graficos/02-animacion.md) — Modelos por piezas, clips, capas, IK y sincronía con los ticks.
+- [Texturas de 32×32 (`03-texturas-32.md`)](graficos/03-texturas-32.md) — Paleta ampliada, generador, regla del mip de 16×16 y mapas extra.
+- [Shaders (`04-shaders.md`)](graficos/04-shaders.md) — Luz en color, lámpara de casco, fluidos, partículas, posproceso y estilos por zona.
+- [Verificación e hitos (`05-verificacion-y-hitos.md`)](graficos/05-verificacion-y-hitos.md) — Capturas con tolerancia, presupuestos por pase y reparto por hitos.
 
 ### Mundo grande (`docs/mundo/`)
 

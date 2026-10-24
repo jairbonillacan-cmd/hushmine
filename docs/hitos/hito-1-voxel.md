@@ -56,6 +56,15 @@ Ajustes baratos que dejan abierta la puerta a un mundo de 15 M × 15 M bloques (
 - **Tarea 4:** el generador de la mina de prueba tiene forma de función pura por chunk: misma semilla y posición, mismo chunk.
 - **Tareas 12 y 13:** el shader recibe el origen de cada chunk relativo a la cámara, nunca coordenadas absolutas en `f32`.
 
+### Preparación gráfica (G0, propuesta)
+
+Ajustes baratos para el plan de `docs/graficos/` (`docs/adr/0003-graficos.md`). No cambian el aspecto del mapa de 64³:
+
+- **Tarea 5:** la luz de bloque se propaga en color (RGB, 4 bits por canal) además de la luz de cielo: 16 bits por bloque.
+- **Tarea 11:** el tamaño de las capas del array de texturas sale del manifiesto. Hoy son 16×16; desde el hito 6 serán 32×32.
+- **Tarea 13:** los shaders pasan por un preprocesador mínimo (inclusiones y variantes por preset) y una prueba compila todas las variantes con naga sin GPU.
+- **Tarea 14:** `hush-cli shot --debug` con las vistas `light`, `ao` y `chunks`.
+
 ---
 
 ## 2. Desglose de tareas (16 tareas)

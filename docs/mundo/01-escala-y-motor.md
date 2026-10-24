@@ -93,7 +93,7 @@ En la superficie, un radio de 128–256 bloques se queda corto para ver montaña
 
 - **Luz de bloque** (lava, balizas, lámparas): BFS como en el hito 1, más una cola de **bordes pendientes**: al cargar un vecino, la luz cruza la frontera y se propaga.
 - **Luz de cielo:** no hace falta cargar la columna entera. El generador conoce de forma analítica la altura de la superficie de cada columna. Se guarda un **mapa de alturas por columna** de 16 × 16 que se corrige al cavar o construir. Por debajo de la superficie, la luz de cielo solo entra por aberturas, con un BFS limitado.
-- **Cuatro bits de luz de bloque y cuatro de cielo** por bloque, solo en chunks no uniformes y cercanos.
+- **Luz de bloque en color (RGB, 4 bits por canal) y cuatro bits de cielo:** 16 bits por bloque, solo en chunks no uniformes y cercanos (`docs/graficos/04-shaders.md`).
 
 ## 6. Render relativo a la cámara
 
