@@ -52,6 +52,31 @@ pub enum MatchEventKind {
     OfferingMade { gold: u32, reduction: u32 },
     /// Un equipo devolvió una ficha de latón al altar.
     TallyReturned { reduction: u32 },
+    /// Un jugador extrajo mineral de valor (oro o diamante) de la roca.
+    GoldMined { player_id: u32, cash_value: u32 },
+    /// Un jugador depositó oro o diamante en el banco de su equipo.
+    Deposited {
+        player_id: u32,
+        base_cash: u32,
+        credited_cash: u32,
+        new_balance: u32,
+    },
+    /// El banco de un equipo alcanzó o superó el 60 % de la meta y activó la Fama.
+    FameGained { balance: u32, target_cash: u32 },
+    /// Un jugador murió y soltó una bolsa de botín.
+    LootDropped { bag_id: u32, cash_value: u32 },
+    /// Un jugador recogió una bolsa de botín del suelo.
+    LootPicked {
+        bag_id: u32,
+        picker_id: u32,
+        origin_team: Team,
+        base_cash: u32,
+        effective_cash: u32,
+    },
+    /// Una bolsa de botín caducó tras `LOOT_BAG_LIFETIME_TICKS` sin ser recogida.
+    LootExpired { bag_id: u32, cash_value: u32 },
+    /// Un equipo alcanzó o superó `target_cash` y ganó la partida al instante.
+    GoalReached { balance: u32, target_cash: u32 },
 }
 
 /// Evento individual registrado en un tick concreto del Turno.
@@ -246,5 +271,75 @@ mod tests {
         let mut explicit_awake = EventLog::new();
         explicit_awake.record(2_100, MatchEventKind::AwakeningStarted, None);
         assert_eq!(explicit_awake.awakening_tick(), Some(2_100));
+    }
+
+    #[test]
+    fn economy_and_loot_events_round_trip_through_json() {
+        let mut log = EventLog::new();
+        log.record(
+            10,
+            MatchEventKind::GoldMined {
+                player_id: 1,
+                cash_value: 200,
+            },
+            Some(Team::Copper),
+        );
+        log.record(
+            20,
+            MatchEventKind::Deposited {
+                player_id: 1,
+                base_cash: 200,
+                credited_cash: 250,
+                new_balance: 1_250,
+            },
+            Some(Team::Copper),
+        );
+        log.record(
+            20,
+            MatchEventKind::FameGained {
+                balance: 1_250,
+                target_cash: 2_000,
+            },
+            Some(Team::Copper),
+        );
+        log.record(
+            30,
+            MatchEventKind::LootDropped {
+                bag_id: 1,
+                cash_value: 400,
+            },
+            Some(Team::Cobalt),
+        );
+        log.record(
+            40,
+            MatchEventKind::LootPicked {
+                bag_id: 1,
+                picker_id: 2,
+                origin_team: Team::Cobalt,
+                base_cash: 400,
+                effective_cash: 500,
+            },
+            Some(Team::Copper),
+        );
+        log.record(
+            50,
+            MatchEventKind::LootExpired {
+                bag_id: 2,
+                cash_value: 100,
+            },
+            Some(Team::Cobalt),
+        );
+        log.record(
+            60,
+            MatchEventKind::GoalReached {
+                balance: 2_000,
+                target_cash: 2_000,
+            },
+            Some(Team::Copper),
+        );
+
+        let json = serde_json::to_string(&log).unwrap();
+        let decoded: EventLog = serde_json::from_str(&json).unwrap();
+        assert_eq!(decoded, log);
     }
 }
