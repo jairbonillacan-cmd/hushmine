@@ -21,8 +21,11 @@ impl Rng {
     }
 
     /// Entero uniforme en `0..bound` (sesgo despreciable para límites pequeños).
+    /// Si `bound == 0`, devuelve `0` sin hacer `panic!`.
     pub fn below(&mut self, bound: u32) -> u32 {
-        assert!(bound > 0, "el límite debe ser positivo");
+        if bound == 0 {
+            return 0;
+        }
         (((self.next_u64() >> 32) * u64::from(bound)) >> 32) as u32
     }
 }
