@@ -385,7 +385,7 @@ def main() -> None:
     """Punto de entrada CLI: ejecuta los 4 perfiles y escribe docs/design/ritmo-partida.md."""
     results = run_all_profiles()
     DEFAULT_REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    DEFAULT_REPORT_PATH.write_text(generate_markdown_report(results), encoding="utf-8")
+    DEFAULT_REPORT_PATH.write_text(generate_markdown_report(results), encoding="utf-8", newline="\n")
     print(f"Informe escrito en: {DEFAULT_REPORT_PATH}")
     for prof in PROFILES:
         r = results[prof]

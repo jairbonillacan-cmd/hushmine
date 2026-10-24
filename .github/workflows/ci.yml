@@ -63,6 +63,47 @@ jobs:
           name: shots-and-reports
           path: out/
 
+  python-tools:
+    name: Herramientas de Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Cada carpeta de tools/ con archivos test_*.py; las nuevas entran solas.
+      - name: Pruebas unitarias
+        run: |
+          for dir in tools/*/; do
+            if ls "$dir"test_*.py > /dev/null 2>&1; then
+              echo "::group::$dir"
+              python -B -m unittest discover -s "$dir" -v
+              echo "::endgroup::"
+            fi
+          done
+
+      - name: Verificadores de contenido
+        run: |
+          python -B tools/lore/check_lore.py
+          python -B tools/docs/check_docs.py
+          python -B tools/i18n/check_ftl.py
+
+      # Los recursos generados en el repositorio deben coincidir byte a byte
+      # con lo que producen sus scripts.
+      - name: Recursos generados al día
+        run: |
+          python -B tools/textures/build_all.py --check
+          python -B tools/audio/build_all.py --check
+          python -B tools/ui/build_all.py --check
+
+      - name: Informes reproducibles
+        run: |
+          python -B tools/balance/seismo_sim.py
+          python -B tools/mapgen/generate.py --seed 42 --report
+          git diff --exit-code
+
   deny:
     name: Licencias y dependencias
     runs-on: ubuntu-latest
