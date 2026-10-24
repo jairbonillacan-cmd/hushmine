@@ -6,6 +6,7 @@
 //! y el ciclo del Despertar, el registro de eventos de partida, el reloj de
 //! ticks, el generador aleatorio determinista y el informe de simulación.
 
+pub mod altar;
 pub mod block;
 pub mod events;
 pub mod fixed;
@@ -14,6 +15,7 @@ mod rng;
 pub mod seismograph;
 mod sim;
 
+pub use altar::{Altar, AltarError};
 pub use block::{BlockKind, InvalidBlockId};
 pub use events::{EventLog, MatchEvent, MatchEventKind, Team};
 pub use fixed::{Fixed, FixedError};

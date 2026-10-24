@@ -2,6 +2,7 @@ use std::time::Instant;
 
 use serde::{Deserialize, Serialize};
 
+use crate::altar::{Altar, AltarError, OFFERING_GOLD_COST};
 use crate::{
     EventLog, MatchEventKind, NoiseSource, Rng, SeismoEvent, Seismograph, SimReport, Team,
 };
@@ -32,6 +33,7 @@ pub struct Simulation {
     tick: u32,
     rng: Rng,
     seismograph: Seismograph,
+    altar: Altar,
     event_log: EventLog,
     awakening_tick: Option<u32>,
     /// Huella acumulada del estado; dos simulaciones con las mismas entradas
@@ -47,6 +49,7 @@ impl Simulation {
             config,
             tick: 0,
             seismograph: Seismograph::new(),
+            altar: Altar::new(),
             event_log: EventLog::new(),
             awakening_tick: None,
             state_hash: 0xCBF2_9CE4_8422_2325,
@@ -98,27 +101,40 @@ impl Simulation {
         amount
     }
 
-    /// Realiza una ofrenda de oro para reducir el Sismógrafo antes del Despertar.
-    pub fn offer_gold(&mut self, gold: u32, team: Option<Team>) -> u32 {
-        let reduction = self.seismograph.offer(gold);
-        if reduction > 0 {
-            self.event_log.record(
-                self.tick,
-                MatchEventKind::OfferingMade { gold, reduction },
-                team,
-            );
+    /// Ofrenda un lote de oro ([`OFFERING_GOLD_COST`]) en el altar del equipo.
+    /// `carried_gold` es el oro que lleva el equipo; devuelve cuánto bajó el
+    /// Sismógrafo, o el motivo del rechazo.
+    pub fn offer_gold(&mut self, team: Team, carried_gold: u32) -> Result<u32, AltarError> {
+        if self.seismograph.has_awakened() {
+            return Err(AltarError::AltarClosed);
         }
-        reduction
+        let requested = self.altar.offer(self.tick, team, carried_gold)?;
+        let reduction = self.seismograph.relieve(requested);
+        self.event_log.record(
+            self.tick,
+            MatchEventKind::OfferingMade {
+                gold: OFFERING_GOLD_COST,
+                reduction,
+            },
+            Some(team),
+        );
+        Ok(reduction)
     }
 
-    /// Devuelve una ficha de latón al altar para reducir el Sismógrafo antes del Despertar.
-    pub fn return_tally(&mut self, team: Option<Team>) -> u32 {
-        let reduction = self.seismograph.return_tally();
-        if reduction > 0 {
-            self.event_log
-                .record(self.tick, MatchEventKind::TallyReturned { reduction }, team);
+    /// Devuelve una ficha de latón al altar del equipo; devuelve cuánto bajó
+    /// el Sismógrafo, o el motivo del rechazo.
+    pub fn return_tally(&mut self, team: Team) -> Result<u32, AltarError> {
+        if self.seismograph.has_awakened() {
+            return Err(AltarError::AltarClosed);
         }
-        reduction
+        let requested = self.altar.return_tally()?;
+        let reduction = self.seismograph.relieve(requested);
+        self.event_log.record(
+            self.tick,
+            MatchEventKind::TallyReturned { reduction },
+            Some(team),
+        );
+        Ok(reduction)
     }
 
     /// Avanza la simulación un tick si la partida aún no ha terminado.
@@ -234,9 +250,16 @@ mod tests {
             max_ticks: 50_000,
         });
         sim.add_noise(NoiseSource::Custom(50_000), Some(Team::Copper));
-        sim.offer_gold(2, Some(Team::Cobalt));
-        sim.return_tally(Some(Team::Copper));
+        assert_eq!(sim.offer_gold(Team::Cobalt, 100), Ok(2_500));
+        assert_eq!(sim.return_tally(Team::Copper), Ok(8_000));
         sim.add_noise(NoiseSource::Custom(100_000), Some(Team::Cobalt));
+        sim.step();
+        // Tras el Despertar el altar queda cerrado.
+        assert_eq!(
+            sim.offer_gold(Team::Copper, 100),
+            Err(AltarError::AltarClosed)
+        );
+        assert_eq!(sim.return_tally(Team::Cobalt), Err(AltarError::AltarClosed));
 
         let report = sim.run_to_end();
         assert_eq!(report.awakening_tick, Some(1));

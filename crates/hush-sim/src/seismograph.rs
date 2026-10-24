@@ -31,10 +31,6 @@ pub const NOISE_ELECTRIC_DISCHARGE: u32 = 200; // Se moverá a data/*.ron
 pub const NOISE_FLOWING_LAVA: u32 = 200; // Se moverá a data/*.ron
 /// Incremento de ruido por tick de cada línea de cangilones activa (`+0,300 %` cada `10 s`).
 pub const NOISE_BUCKET_LINE_PER_TICK: u32 = 1; // Se moverá a data/*.ron
-/// Reducción del Sismógrafo por unidad de oro ofrendada (**decisión abierta / provisional**: `-0,500 %`).
-pub const OFFERING_REDUCTION_PER_GOLD: u32 = 500; // Se moverá a data/*.ron
-/// Reducción del Sismógrafo por devolver una ficha de latón al altar (**decisión abierta / provisional**: `-10,000 %`).
-pub const TALLY_RETURN_REDUCTION: u32 = 10_000; // Se moverá a data/*.ron
 
 /// Hitos sísmicos que el Sismógrafo alcanza a lo largo de la partida.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -197,24 +193,19 @@ impl Seismograph {
         self.level - previous
     }
 
-    /// Reduce el nivel mediante una ofrenda de oro antes del Despertar (**decisión abierta / provisional**).
-    pub fn offer(&mut self, gold: u32) -> u32 {
-        if self.awakening_ticks_elapsed.is_some() {
-            return 0;
-        }
-        let reduction = gold
-            .saturating_mul(OFFERING_REDUCTION_PER_GOLD)
-            .min(self.level);
-        self.level -= reduction;
-        reduction
+    /// Indica si el Despertar ya empezó (aunque haya terminado). Desde ese
+    /// momento el altar no acepta ofrendas ni fichas.
+    pub const fn has_awakened(&self) -> bool {
+        self.awakening_ticks_elapsed.is_some()
     }
 
-    /// Reduce el nivel al devolver una ficha de latón antes del Despertar (**decisión abierta / provisional**).
-    pub fn return_tally(&mut self) -> u32 {
-        if self.awakening_ticks_elapsed.is_some() {
+    /// Baja el nivel por una ofrenda o una ficha aceptadas por el altar, sin
+    /// pasar de `0`. Devuelve la reducción real; tras el Despertar no hace nada.
+    pub fn relieve(&mut self, amount: u32) -> u32 {
+        if self.has_awakened() {
             return 0;
         }
-        let reduction = TALLY_RETURN_REDUCTION.min(self.level);
+        let reduction = amount.min(self.level);
         self.level -= reduction;
         reduction
     }
@@ -317,8 +308,7 @@ mod tests {
             ]
         );
 
-        seismo.return_tally();
-        seismo.offer(80);
+        seismo.relieve(THRESHOLD_BREATHE);
         assert!(seismo.level() < THRESHOLD_STIR);
 
         seismo.add_noise(NoiseSource::Custom(THRESHOLD_RESTLESS));
@@ -332,13 +322,12 @@ mod tests {
     #[test]
     fn level_stays_clamped_between_zero_and_max() {
         let mut seismo = Seismograph::new();
-        assert_eq!(seismo.offer(1_000), 0);
-        assert_eq!(seismo.return_tally(), 0);
+        assert_eq!(seismo.relieve(1_000), 0);
         assert_eq!(seismo.level(), 0);
 
         seismo.add_noise(NoiseSource::Explosion);
         assert_eq!(seismo.level(), 3_000);
-        assert_eq!(seismo.return_tally(), 3_000);
+        assert_eq!(seismo.relieve(8_000), 3_000);
         assert_eq!(seismo.level(), 0);
 
         for _ in 0..50 {
@@ -378,6 +367,7 @@ mod tests {
 
         for tick in 1..=AWAKENING_DURATION_TICKS {
             let events = seismo.step();
+            assert_eq!(seismo.relieve(8_000), 0);
             if tick == 1_800 {
                 assert_eq!(events, vec![SeismoEvent::BucketLinesStopped]);
                 assert!(seismo.are_bucket_lines_stopped());

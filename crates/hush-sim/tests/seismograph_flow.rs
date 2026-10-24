@@ -1,9 +1,10 @@
 //! Pruebas de integración del flujo completo del Sismógrafo, el Despertar y la Crónica.
 
+use hush_sim::altar::{OFFERING_COOLDOWN_TICKS, OFFERING_REDUCTION, TALLY_RETURN_REDUCTION};
 use hush_sim::seismograph::{AWAKENING_DURATION_TICKS, PASSIVE_TICKS_TO_WAKE};
 use hush_sim::{
-    EventLog, MatchConfig, MatchEventKind, NoiseSource, SeismoThreshold, SimReport, Simulation,
-    Team,
+    AltarError, EventLog, MatchConfig, MatchEventKind, NoiseSource, SeismoThreshold, SimReport,
+    Simulation, Team,
 };
 
 /// Ejecuta una partida guionizada determinista con acciones de ambos equipos.
@@ -25,11 +26,13 @@ fn run_scripted_match(seed: u64) -> SimReport {
                 sim.add_noise(NoiseSource::FlowingLava, None);
             }
             360 => {
-                sim.offer_gold(4, Some(Team::Cobalt));
+                sim.offer_gold(Team::Cobalt, 100)
+                    .expect("la ofrenda debe aceptarse");
             }
             600 => {
                 sim.add_noise(NoiseSource::Explosion, Some(Team::Cobalt));
-                sim.return_tally(Some(Team::Copper));
+                sim.return_tally(Team::Copper)
+                    .expect("la ficha debe aceptarse");
             }
             _ => {}
         }
@@ -118,10 +121,15 @@ fn run_noisy_scenario(with_offerings: bool) -> (Vec<SeismoThreshold>, SimReport)
             }
             // Si hay ofrendas, reducimos el nivel por debajo de Stir para cruzarlo de nuevo después.
             100 if with_offerings => {
-                let tally_reduction = sim.return_tally(Some(Team::Copper));
-                let gold_reduction = sim.offer_gold(20, Some(Team::Cobalt));
-                assert_eq!(tally_reduction, 10_000);
-                assert_eq!(gold_reduction, 10_000);
+                assert_eq!(sim.return_tally(Team::Copper), Ok(TALLY_RETURN_REDUCTION));
+                assert_eq!(sim.offer_gold(Team::Cobalt, 100), Ok(OFFERING_REDUCTION));
+                // Segunda ofrenda del mismo equipo sin esperar: rechazada.
+                assert_eq!(
+                    sim.offer_gold(Team::Cobalt, 100),
+                    Err(AltarError::CoolingDown {
+                        ready_at_tick: 100 + OFFERING_COOLDOWN_TICKS
+                    })
+                );
             }
             // Más actividad minera ruidosa en ambos escenarios.
             300 => {
@@ -142,10 +150,13 @@ fn run_noisy_scenario(with_offerings: bool) -> (Vec<SeismoThreshold>, SimReport)
             }
             // Segunda ronda de ofrendas y fichas tras superar Breathe (50_000).
             650 if with_offerings => {
-                let tally_reduction = sim.return_tally(Some(Team::Cobalt));
-                let gold_reduction = sim.offer_gold(16, Some(Team::Copper));
-                assert_eq!(tally_reduction, 10_000);
-                assert_eq!(gold_reduction, 8_000);
+                assert_eq!(sim.return_tally(Team::Cobalt), Ok(TALLY_RETURN_REDUCTION));
+                assert_eq!(sim.offer_gold(Team::Copper, 100), Ok(OFFERING_REDUCTION));
+                // Ya se devolvieron las dos fichas del Turno.
+                assert_eq!(
+                    sim.return_tally(Team::Copper),
+                    Err(AltarError::TallyLimitReached)
+                );
             }
             _ => {}
         }
@@ -213,8 +224,10 @@ fn event_log_chronicle_sequence_is_consistent_and_serializable() {
                 }
             }
             160 => {
-                sim.offer_gold(12, Some(Team::Cobalt));
-                sim.return_tally(Some(Team::Copper));
+                sim.offer_gold(Team::Cobalt, 100)
+                    .expect("la ofrenda debe aceptarse");
+                sim.return_tally(Team::Copper)
+                    .expect("la ficha debe aceptarse");
             }
             320 => {
                 for _ in 0..12 {
@@ -225,8 +238,10 @@ fn event_log_chronicle_sequence_is_consistent_and_serializable() {
                 }
             }
             500 => {
-                sim.offer_gold(8, Some(Team::Copper));
-                sim.return_tally(Some(Team::Cobalt));
+                sim.offer_gold(Team::Copper, 100)
+                    .expect("la ofrenda debe aceptarse");
+                sim.return_tally(Team::Cobalt)
+                    .expect("la ficha debe aceptarse");
             }
             700 => {
                 for _ in 0..15 {
