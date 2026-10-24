@@ -49,6 +49,22 @@ pub enum Command {
     },
 }
 
+/// Bloque que cambió en un tick (para enviar a los clientes).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BlockChange {
+    pub cell: [i32; 3],
+    pub block: u8,
+}
+
+/// Acción de un jugador que la simulación rechazó (el cliente que la
+/// predijo debe corregirse).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Rejection {
+    pub player: usize,
+    pub cell: [i32; 3],
+    pub error: EditError,
+}
+
 /// Contadores para el informe.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EditStats {
@@ -64,11 +80,17 @@ pub struct Simulation {
     rng: Rng,
     world: VoxelWorld,
     players: Vec<PlayerBody>,
+    /// Los jugadores que se fueron conservan su índice pero dejan de existir
+    /// en el mundo.
+    active: Vec<bool>,
     /// Entrada de movimiento vigente de cada jugador.
     inputs: Vec<MoveInput>,
     bots: Vec<(usize, DiggerBot)>,
+    bots_active: bool,
     pending: Vec<Command>,
     stats: EditStats,
+    changes: Vec<BlockChange>,
+    rejections: Vec<Rejection>,
     broken_invariants: Vec<String>,
 }
 
@@ -82,10 +104,14 @@ impl Simulation {
             tick: 0,
             world,
             players: Vec::new(),
+            active: Vec::new(),
             inputs: Vec::new(),
             bots: Vec::new(),
+            bots_active: true,
             pending: Vec::new(),
             stats: EditStats::default(),
+            changes: Vec::new(),
+            rejections: Vec::new(),
             broken_invariants: Vec::new(),
         };
         for i in 0..sim.config.bots {
@@ -103,8 +129,38 @@ impl Simulation {
         let z = 2 + self.rng.below(sz - 4) as i32;
         self.players
             .push(PlayerBody::new(spawn_point(&self.world, x, z)));
+        self.active.push(true);
         self.inputs.push(MoveInput::default());
         self.players.len() - 1
+    }
+
+    /// Retira a un jugador (desconexión). Su índice no se reutiliza.
+    pub fn remove_player(&mut self, player: usize) {
+        if let Some(active) = self.active.get_mut(player) {
+            *active = false;
+        }
+    }
+
+    pub fn is_active(&self, player: usize) -> bool {
+        self.active.get(player).copied().unwrap_or(false)
+    }
+
+    /// Jugadores presentes, con su índice.
+    pub fn active_players(&self) -> impl Iterator<Item = (usize, &PlayerBody)> {
+        self.players
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| self.active[*i])
+    }
+
+    /// Bloques cambiados desde la última llamada, en orden.
+    pub fn take_changes(&mut self) -> Vec<BlockChange> {
+        std::mem::take(&mut self.changes)
+    }
+
+    /// Acciones rechazadas desde la última llamada.
+    pub fn take_rejections(&mut self) -> Vec<Rejection> {
+        std::mem::take(&mut self.rejections)
     }
 
     pub fn tick(&self) -> u32 {
@@ -132,6 +188,16 @@ impl Simulation {
         self.tick >= self.config.max_ticks
     }
 
+    /// Activa o detiene a los bots. Detenidos, siguen en el mapa sin moverse.
+    pub fn set_bots_active(&mut self, active: bool) {
+        self.bots_active = active;
+        if !active {
+            for (player, _) in &self.bots {
+                self.inputs[*player] = MoveInput::default();
+            }
+        }
+    }
+
     /// Encola una orden para el próximo tick.
     pub fn submit(&mut self, command: Command) {
         self.pending.push(command);
@@ -140,16 +206,28 @@ impl Simulation {
     /// Avanza un tick: órdenes en el orden de llegada, luego movimiento.
     pub fn step(&mut self) {
         let mut commands = std::mem::take(&mut self.pending);
-        for (player, bot) in &mut self.bots {
-            commands.extend(bot.think(*player, &self.players[*player], self.tick));
+        if self.bots_active {
+            for (player, bot) in &mut self.bots {
+                commands.extend(bot.think(*player, &self.players[*player], self.tick));
+            }
         }
         for command in commands {
             if let Err(err) = self.apply(command) {
                 *self.stats.rejected.entry(format!("{err:?}")).or_default() += 1;
+                if let Command::Dig { player, cell } | Command::Place { player, cell, .. } = command
+                {
+                    self.rejections.push(Rejection {
+                        player,
+                        cell,
+                        error: err,
+                    });
+                }
             }
         }
-        for (body, input) in self.players.iter_mut().zip(&self.inputs) {
-            body.step(&self.world, *input);
+        for (i, (body, input)) in self.players.iter_mut().zip(&self.inputs).enumerate() {
+            if self.active[i] {
+                body.step(&self.world, *input);
+            }
         }
         self.check_invariants();
         self.tick += 1;
@@ -161,16 +239,25 @@ impl Simulation {
             | Command::Dig { player, .. }
             | Command::Place { player, .. } => player,
         };
-        let body = *self.players.get(player).ok_or(EditError::UnknownPlayer)?;
+        if !self.is_active(player) {
+            return Err(EditError::UnknownPlayer);
+        }
+        let body = self.players[player];
         match command {
             Command::Move { input, .. } => self.inputs[player] = input,
             Command::Dig { cell, .. } => {
                 let block = crate::edit::dig(&mut self.world, &body, cell)?;
                 *self.stats.dug.entry(block.name().to_owned()).or_default() += 1;
+                self.changes.push(BlockChange { cell, block: 0 });
             }
             Command::Place { cell, block, .. } => {
-                crate::edit::place(&mut self.world, &body, &self.players, cell, block)?;
+                let others: Vec<PlayerBody> = self.active_players().map(|(_, b)| *b).collect();
+                crate::edit::place(&mut self.world, &body, &others, cell, block)?;
                 self.stats.placed += 1;
+                self.changes.push(BlockChange {
+                    cell,
+                    block: block.id(),
+                });
             }
         }
         Ok(())
@@ -178,6 +265,9 @@ impl Simulation {
 
     fn check_invariants(&mut self) {
         for (i, body) in self.players.iter().enumerate() {
+            if !self.active[i] {
+                continue;
+            }
             if body.aabb().intersects_world(&self.world) {
                 self.broken_invariants.push(format!(
                     "tick {}: jugador {i} dentro de un bloque",
@@ -222,61 +312,5 @@ impl Simulation {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn config(seed: u64, ticks: u32, bots: u32) -> MatchConfig {
-        MatchConfig {
-            seed,
-            max_ticks: ticks,
-            bots,
-            ..MatchConfig::default()
-        }
-    }
-
-    #[test]
-    fn same_seed_gives_same_final_state() {
-        let a = crate::run(config(42, 600, 4)).unwrap();
-        let b = crate::run(config(42, 600, 4)).unwrap();
-        assert_eq!(a.state_hash, b.state_hash);
-        assert_eq!(a.ticks, 600);
-        assert_eq!(a.edits, b.edits);
-    }
-
-    #[test]
-    fn different_seeds_diverge() {
-        let a = crate::run(config(1, 10, 0)).unwrap();
-        let b = crate::run(config(2, 10, 0)).unwrap();
-        assert_ne!(a.state_hash, b.state_hash);
-    }
-
-    #[test]
-    fn bots_dig_without_breaking_invariants() {
-        let report = crate::run(config(42, 1800, 6)).unwrap();
-        assert!(
-            report.broken_invariants.is_empty(),
-            "{:?}",
-            report.broken_invariants
-        );
-        let dug: u32 = report.edits.dug.values().sum();
-        assert!(dug > 50, "los bots apenas cavaron: {:?}", report.edits);
-    }
-
-    #[test]
-    fn commands_from_unknown_players_are_rejected() {
-        let mut sim = Simulation::new(config(5, 10, 0)).unwrap();
-        sim.submit(Command::Dig {
-            player: 99,
-            cell: [5, 5, 5],
-        });
-        sim.step();
-        assert_eq!(sim.stats().rejected.values().sum::<u32>(), 1);
-    }
-
-    #[test]
-    fn invalid_map_size_is_an_error() {
-        let mut c = config(1, 10, 0);
-        c.terrain.size = [17, 64, 64];
-        assert!(Simulation::new(c).is_err());
-    }
-}
+#[path = "sim_tests.rs"]
+mod tests;

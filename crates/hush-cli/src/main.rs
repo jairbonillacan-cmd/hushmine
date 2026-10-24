@@ -4,6 +4,7 @@
 //! consultar la GPU sin abrir el juego.
 
 mod bench;
+mod netsim;
 mod scenes;
 
 use std::fs;
@@ -12,7 +13,8 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use grisu_render::{
-    Gpu, OFFSCREEN_FORMAT, OrbitCamera, TextureData, VoxelRenderer, capture, render_to_image,
+    BoxRenderer, Gpu, OFFSCREEN_FORMAT, OrbitCamera, TextureData, VoxelRenderer, capture,
+    render_to_image,
 };
 use hush_sim::MatchConfig;
 use scenes::Scene;
@@ -62,6 +64,28 @@ enum Command {
         #[arg(long)]
         report: Option<PathBuf>,
     },
+    /// Partida en red simulada: servidor, clientes y bots con latencia y
+    /// pérdida. Falla si algún cliente termina distinto del servidor.
+    Netsim {
+        #[arg(long, default_value_t = 42)]
+        seed: u64,
+        #[arg(long, default_value_t = 2)]
+        clients: usize,
+        #[arg(long, default_value_t = 6)]
+        bots: u32,
+        /// Latencia de ida y vuelta, en milisegundos.
+        #[arg(long, default_value_t = 150)]
+        rtt: u32,
+        /// Pérdida de paquetes, en tanto por ciento.
+        #[arg(long, default_value_t = 2.0)]
+        loss: f32,
+        /// Segundos de juego.
+        #[arg(long, default_value_t = 60)]
+        seconds: u64,
+        /// Ruta del informe JSON. Si se omite, se imprime en pantalla.
+        #[arg(long)]
+        report: Option<PathBuf>,
+    },
     /// Mide la generación del terreno y de sus mallas.
     Bench {
         #[arg(long, default_value_t = 42)]
@@ -95,6 +119,25 @@ fn main() -> Result<()> {
             bots,
             report,
         } => sim(seed, ticks, bots, report.as_deref()),
+        Command::Netsim {
+            seed,
+            clients,
+            bots,
+            rtt,
+            loss,
+            seconds,
+            report,
+        } => netsim::run(
+            netsim::Options {
+                seed,
+                clients,
+                bots,
+                rtt,
+                loss,
+                seconds,
+            },
+            report.as_deref(),
+        ),
         Command::Bench { seed, runs, out } => bench::run(seed, runs, out.as_deref()),
         Command::Gpu => gpu_info(),
     }
@@ -123,8 +166,21 @@ fn shot(scene: Scene, seed: u64, out: &Path, size: [u32; 2], yaw: f32, pitch: f3
                 stats.chunks_meshed, stats.faces, stats.millis
             );
             let view = scene.view(width as f32 / height as f32);
+            let mut boxes = BoxRenderer::new(&gpu.device, OFFSCREEN_FORMAT);
             capture(&gpu, width, height, |encoder, color, depth| {
                 terrain.render(&gpu.queue, encoder, color, depth, &view, &scene.style);
+                let fog = scene.style.fog_distance;
+                let device = &gpu.device;
+                boxes.render(
+                    device,
+                    &gpu.queue,
+                    encoder,
+                    color,
+                    depth,
+                    &view,
+                    fog,
+                    &scene.boxes,
+                );
             })?
         }
     };

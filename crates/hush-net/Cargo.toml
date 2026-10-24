@@ -1,0 +1,17 @@
+[package]
+name = "hush-net"
+description = "HUSHMINE: protocolo, servidor autoritativo y cliente con predicción (sin E/S)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+grisu-net.workspace = true
+grisu-voxel.workspace = true
+hush-sim.workspace = true
+log.workspace = true
+
+[lints]
+workspace = true

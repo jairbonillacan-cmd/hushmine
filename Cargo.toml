@@ -13,8 +13,10 @@ publish = false
 grisu-render = { path = "crates/grisu-render" }
 grisu-platform = { path = "crates/grisu-platform" }
 grisu-voxel = { path = "crates/grisu-voxel" }
+grisu-net = { path = "crates/grisu-net" }
 hush-sim = { path = "crates/hush-sim" }
 hush-art = { path = "crates/hush-art" }
+hush-net = { path = "crates/hush-net" }
 
 anyhow = "1"
 bytemuck = { version = "1", features = ["derive"] }

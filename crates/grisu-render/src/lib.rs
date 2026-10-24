@@ -3,6 +3,7 @@
 //! El mismo código dibuja en una ventana (`grisu-platform`) o sin ventana
 //! (`offscreen`), para que la IA pueda generar capturas desde la terminal.
 
+mod boxes;
 mod camera;
 mod crosshair;
 mod cube;
@@ -13,6 +14,7 @@ mod texture;
 mod texture_array;
 mod voxel;
 
+pub use boxes::{BoxRenderer, ColorBox};
 pub use camera::{FlyCamera, OrbitCamera, View};
 pub use crosshair::CrosshairRenderer;
 pub use cube::CubeRenderer;

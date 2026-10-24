@@ -12,7 +12,7 @@ mod mesh;
 mod raycast;
 mod world;
 
-pub use chunk::{CHUNK_SIZE, CHUNK_VOLUME, Chunk};
+pub use chunk::{CHUNK_SIZE, CHUNK_VOLUME, Chunk, ChunkDecodeError};
 pub use collide::{Aabb, FIXED_ONE, MoveResult, move_aabb};
 pub use light::{LightMap, MAX_LIGHT, emission_of};
 pub use mesh::{Direction, PackedFace, mesh_chunk};

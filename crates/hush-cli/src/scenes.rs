@@ -4,7 +4,7 @@
 use anyhow::Result;
 use clap::ValueEnum;
 use glam::Vec3;
-use grisu_render::{FlyCamera, OrbitCamera, TerrainStyle, View};
+use grisu_render::{ColorBox, FlyCamera, OrbitCamera, TerrainStyle, View};
 use grisu_voxel::{AIR, FIXED_ONE, VoxelWorld, raycast};
 use hush_sim::{
     Block, Command, MatchConfig, MoveInput, Simulation, TerrainConfig, generate_terrain,
@@ -22,6 +22,8 @@ pub enum Scene {
     Shaft,
     /// Rampa excavada por un jugador simulado, vista desde sus ojos.
     Dig,
+    /// Otros jugadores (cajas de las dos cuadrillas) en la superficie.
+    Players,
 }
 
 /// Mundo, punto de vista y estilo de una escena de terreno.
@@ -29,6 +31,8 @@ pub struct TerrainScene {
     pub world: VoxelWorld,
     camera: Camera,
     pub style: TerrainStyle,
+    /// Entidades (otros jugadores) que se dibujan sobre el terreno.
+    pub boxes: Vec<ColorBox>,
 }
 
 enum Camera {
@@ -59,6 +63,7 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
                 pitch: 30f32.to_radians(),
                 fov_y: 50f32.to_radians(),
             }),
+            boxes: Vec::new(),
             style: TerrainStyle {
                 fog_distance: 400.0,
                 selected: None,
@@ -76,6 +81,7 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
                     pitch: -4f32.to_radians(),
                     ..FlyCamera::default()
                 }),
+                boxes: Vec::new(),
                 style: TerrainStyle {
                     fog_distance: 40.0,
                     selected: Some([14, 29, 33]),
@@ -84,6 +90,7 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
             }
         }
         Scene::Dig => dig_scene(seed)?,
+        Scene::Players => players_scene(world),
         Scene::Shaft => {
             carve_shaft(&mut world);
             TerrainScene {
@@ -94,6 +101,7 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
                     pitch: -89f32.to_radians(),
                     ..FlyCamera::default()
                 }),
+                boxes: Vec::new(),
                 style: TerrainStyle {
                     fog_distance: 70.0,
                     selected: None,
@@ -187,10 +195,51 @@ fn dig_scene(seed: u64) -> Result<TerrainScene> {
             pitch: -25f32.to_radians(),
             ..FlyCamera::default()
         }),
+        boxes: Vec::new(),
         style: TerrainStyle {
             fog_distance: 40.0,
             selected,
             lamp_radius: 14.0,
         },
     })
+}
+
+/// Tres mineros de pie en la superficie, delante de la cámara.
+fn players_scene(world: VoxelWorld) -> TerrainScene {
+    let ground = |x: i32, z: i32| {
+        let feet = hush_sim::spawn_point(&world, x, z);
+        Vec3::new(
+            x as f32 + 0.5,
+            feet[1] as f32 / FIXED_ONE as f32,
+            z as f32 + 0.5,
+        )
+    };
+    let colors = [[0.80, 0.38, 0.14], [0.16, 0.34, 0.80], [0.80, 0.38, 0.14]];
+    let boxes = [(30, 24), (33, 22), (36, 25)]
+        .iter()
+        .zip(colors)
+        .map(|(&(x, z), color)| {
+            let feet = ground(x, z);
+            ColorBox {
+                min: feet - Vec3::new(0.3, 0.0, 0.3),
+                size: Vec3::new(0.6, 1.7, 0.6),
+                color,
+            }
+        })
+        .collect();
+    let eye = ground(33, 32) + Vec3::new(0.0, 1.55, 0.0);
+    TerrainScene {
+        camera: Camera::Fly(FlyCamera {
+            position: eye,
+            pitch: -12f32.to_radians(),
+            ..FlyCamera::default()
+        }),
+        world,
+        boxes,
+        style: TerrainStyle {
+            fog_distance: 56.0,
+            selected: None,
+            lamp_radius: 14.0,
+        },
+    }
 }

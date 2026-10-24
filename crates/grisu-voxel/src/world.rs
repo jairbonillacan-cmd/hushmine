@@ -92,6 +92,26 @@ impl VoxelWorld {
         &self.chunks[index]
     }
 
+    /// Sustituye un chunk entero (al recibir el mapa por red). Marca como
+    /// sucios el chunk y sus vecinos. Devuelve `false` si el índice no existe.
+    pub fn replace_chunk(&mut self, index: usize, chunk: Chunk) -> bool {
+        if index >= self.chunks.len() {
+            return false;
+        }
+        self.chunks[index] = chunk;
+        // Un bloque de cada chunk vecino (caras, aristas y esquinas).
+        let s = CHUNK_SIZE as i32;
+        let [cx, cy, cz] = self.chunk_coords(index).map(|c| c as i32 * s);
+        for dy in -1..=1 {
+            for dz in -1..=1 {
+                for dx in -1..=1 {
+                    self.mark_dirty_at(cx + dx * s, cy + dy * s, cz + dz * s);
+                }
+            }
+        }
+        true
+    }
+
     /// Bloque en una posición del mundo; aire fuera de los límites.
     #[inline]
     pub fn get(&self, x: i32, y: i32, z: i32) -> BlockId {

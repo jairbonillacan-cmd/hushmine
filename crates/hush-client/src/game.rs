@@ -1,14 +1,20 @@
-//! Partida local de un jugador: la simulación corre a 30 Hz dentro del
-//! cliente y la cámara interpola entre ticks.
+//! Juego: lee la entrada, la manda al servidor a 30 Hz a través de la
+//! [`Session`] y dibuja la réplica del mundo con la posición predicha.
 //!
 //! Controles: WASD para andar, espacio para saltar, ratón para mirar, clic
 //! izquierdo para cavar, clic derecho para poner y 1-6 para elegir bloque.
 
 use glam::Vec3;
 use grisu_platform::{App, Input, KeyCode, MouseButton};
-use grisu_render::{CrosshairRenderer, DepthTarget, FlyCamera, Gpu, TerrainStyle, VoxelRenderer};
+use grisu_render::{
+    BoxRenderer, ColorBox, CrosshairRenderer, DepthTarget, FlyCamera, Gpu, TerrainStyle,
+    VoxelRenderer,
+};
 use grisu_voxel::{FIXED_ONE, RayHit, raycast};
-use hush_sim::{Block, Command, MatchConfig, MoveInput, Simulation, TICK_RATE};
+use hush_net::{Action, ClientState};
+use hush_sim::{Block, MoveInput, TICK_RATE};
+
+use crate::session::Session;
 
 /// Radianes por píxel de ratón.
 const MOUSE_SENSITIVITY: f32 = 0.0025;
@@ -18,6 +24,9 @@ const AIM_REACH: f32 = 4.0;
 /// Máximo de ticks por fotograma, para no entrar en espiral si va lento.
 const MAX_TICKS_PER_FRAME: u32 = 5;
 const TICK_SECONDS: f32 = 1.0 / TICK_RATE as f32;
+/// Los demás jugadores se dibujan 100 ms en el pasado para interpolar.
+const REMOTE_DELAY_TICKS: f32 = 3.0;
+const FOG_DISTANCE: f32 = 56.0;
 /// Bloques que se pueden poner con las teclas 1-6.
 const PLACEABLE: [Block; 6] = [
     Block::Dirt,
@@ -35,10 +44,11 @@ const SLOT_KEYS: [KeyCode; 6] = [
     KeyCode::Digit5,
     KeyCode::Digit6,
 ];
+/// Colores de las cuadrillas: cobre y cobalto.
+const CREW_COLORS: [[f32; 3]; 2] = [[0.80, 0.38, 0.14], [0.16, 0.34, 0.80]];
 
 pub struct Game {
-    sim: Simulation,
-    player: usize,
+    session: Session,
     camera: FlyCamera,
     accumulator: f32,
     /// Ojos del jugador en el tick anterior y en el actual, para interpolar.
@@ -46,39 +56,33 @@ pub struct Game {
     eye: Vec3,
     target: Option<RayHit>,
     place_block: Block,
-    queued: Vec<Command>,
+    queued: Option<Action>,
+    last_state: ClientState,
     terrain: Option<VoxelRenderer>,
+    boxes: Option<BoxRenderer>,
     crosshair: Option<CrosshairRenderer>,
     stats_timer: f32,
     frames: u32,
 }
 
 impl Game {
-    pub fn new(seed: u64) -> anyhow::Result<Self> {
-        let config = MatchConfig {
-            seed,
-            max_ticks: u32::MAX,
-            ..MatchConfig::default()
-        };
-        let mut sim = Simulation::new(config)?;
-        let player = sim.spawn_player();
-        let eye = eye_of(&sim, player);
-        log::info!("mapa con semilla {seed}; jugador en {eye:?}");
-        Ok(Self {
-            sim,
-            player,
+    pub fn new(session: Session) -> Self {
+        Self {
+            session,
             camera: FlyCamera::default(),
             accumulator: 0.0,
-            prev_eye: eye,
-            eye,
+            prev_eye: Vec3::ZERO,
+            eye: Vec3::ZERO,
             target: None,
             place_block: Block::Rock,
-            queued: Vec::new(),
+            queued: None,
+            last_state: ClientState::Connecting,
             terrain: None,
+            boxes: None,
             crosshair: None,
             stats_timer: 0.0,
             frames: 0,
-        })
+        }
     }
 
     fn move_input(&self, input: &Input) -> MoveInput {
@@ -99,37 +103,22 @@ impl Game {
             }
         }
         let Some(hit) = self.target else { return };
-        let player = self.player;
         if input.was_button_pressed(MouseButton::Left) {
-            self.queued.push(Command::Dig {
-                player,
-                cell: hit.block,
-            });
+            self.queued = Some(Action::Dig(hit.block));
         }
         if input.was_button_pressed(MouseButton::Right) {
             let cell = std::array::from_fn(|i| hit.block[i] + hit.normal[i]);
-            self.queued.push(Command::Place {
-                player,
-                cell,
-                block: self.place_block,
-            });
+            self.queued = Some(Action::Place(cell, self.place_block));
         }
     }
 
-    fn step_simulation(&mut self, dt: f32, input: MoveInput) {
+    fn step_ticks(&mut self, dt: f32, movement: MoveInput) {
         self.accumulator += dt;
         let mut ticks = 0;
         while self.accumulator >= TICK_SECONDS && ticks < MAX_TICKS_PER_FRAME {
-            self.sim.submit(Command::Move {
-                player: self.player,
-                input,
-            });
-            for command in self.queued.drain(..) {
-                self.sim.submit(command);
-            }
-            self.sim.step();
+            self.session.tick(movement, self.queued.take());
             self.prev_eye = self.eye;
-            self.eye = eye_of(&self.sim, self.player);
+            self.eye = self.predicted_eye();
             self.accumulator -= TICK_SECONDS;
             ticks += 1;
         }
@@ -138,23 +127,65 @@ impl Game {
         }
     }
 
+    fn predicted_eye(&self) -> Vec3 {
+        let eye = self.session.client().body().eye();
+        Vec3::from_array(eye.map(|c| c as f32 / FIXED_ONE as f32))
+    }
+
+    fn report_state(&mut self) {
+        let state = self.session.client().state();
+        if *state != self.last_state {
+            match state {
+                ClientState::Loading { chunks, total } if chunks == total => {}
+                ClientState::Loading { .. } => log::info!("recibiendo el mapa..."),
+                ClientState::Playing => log::info!(
+                    "en partida como jugador {:?}",
+                    self.session.client().player()
+                ),
+                ClientState::Disconnected(reason) => log::warn!("desconectado: {reason}"),
+                ClientState::Connecting => {}
+            }
+            self.last_state = state.clone();
+        }
+    }
+
+    fn remote_boxes(&self) -> Vec<ColorBox> {
+        let Some(tick) = self.session.client().last_server_tick() else {
+            return Vec::new();
+        };
+        let at = tick as f32 + self.accumulator / TICK_SECONDS - REMOTE_DELAY_TICKS;
+        let width = 2.0 * hush_sim::HALF_WIDTH as f32 / FIXED_ONE as f32;
+        let height = hush_sim::HEIGHT as f32 / FIXED_ONE as f32;
+        self.session
+            .client()
+            .remote_players(at)
+            .into_iter()
+            .map(|(id, [x, y, z])| ColorBox {
+                min: Vec3::new(x - width / 2.0, y, z - width / 2.0),
+                size: Vec3::new(width, height, width),
+                color: CREW_COLORS[usize::from(id) % CREW_COLORS.len()],
+            })
+            .collect()
+    }
+
     fn log_stats(&mut self, dt: f32) {
         self.frames += 1;
         self.stats_timer += dt;
         if self.stats_timer >= 5.0 {
             let fps = self.frames as f32 / self.stats_timer;
-            let faces = self.terrain.as_ref().map_or(0, VoxelRenderer::face_count);
-            log::info!("{fps:.0} FPS, {faces} caras, tick {}", self.sim.tick());
+            let client = self.session.client();
+            let net = client.connection().stats();
+            let p = client.stats();
+            log::info!(
+                "{fps:.0} FPS, rtt {:.0} ms, {} correcciones de {} instantáneas",
+                net.rtt_ms,
+                p.corrections,
+                p.snapshots
+            );
             self.frames = 0;
             self.stats_timer = 0.0;
         }
     }
-}
-
-/// Ojos del jugador en bloques (coma flotante, solo para presentación).
-fn eye_of(sim: &Simulation, player: usize) -> Vec3 {
-    let eye = sim.players()[player].eye();
-    Vec3::from_array(eye.map(|c| c as f32 / FIXED_ONE as f32))
 }
 
 impl App for Game {
@@ -171,6 +202,7 @@ impl App for Game {
             }
             Err(err) => log::error!("no se pudo crear el renderizador del terreno: {err:#}"),
         }
+        self.boxes = Some(BoxRenderer::new(&gpu.device, surface_format));
         self.crosshair = Some(CrosshairRenderer::new(&gpu.device, surface_format));
     }
 
@@ -178,18 +210,23 @@ impl App for Game {
         let (dx, dy) = input.mouse_delta();
         self.camera
             .rotate(-dx * MOUSE_SENSITIVITY, -dy * MOUSE_SENSITIVITY);
+        self.session.poll();
+        self.report_state();
         self.handle_actions(input);
         let movement = self.move_input(input);
-        self.step_simulation(dt, movement);
+        self.step_ticks(dt, movement);
+        self.session.flush();
 
         let alpha = self.accumulator / TICK_SECONDS;
         self.camera.position = self.prev_eye.lerp(self.eye, alpha.clamp(0.0, 1.0));
-        self.target = raycast(
-            self.sim.world(),
-            self.camera.position.to_array(),
-            self.camera.forward().to_array(),
-            AIM_REACH,
-        );
+        self.target = self.session.client().world().and_then(|world| {
+            raycast(
+                world,
+                self.camera.position.to_array(),
+                self.camera.forward().to_array(),
+                AIM_REACH,
+            )
+        });
         self.log_stats(dt);
     }
 
@@ -203,24 +240,31 @@ impl App for Game {
         let Some(terrain) = self.terrain.as_mut() else {
             return;
         };
-        let stats = terrain.update(&gpu.device, self.sim.world_mut());
-        if stats.chunks_meshed > 4 {
-            log::debug!("{} chunks en {:.1} ms", stats.chunks_meshed, stats.millis);
+        let playing = *self.session.client().state() == ClientState::Playing;
+        if playing && let Some(world) = self.session.client_mut().world_mut() {
+            terrain.update(&gpu.device, world);
         }
         let aspect = depth.width as f32 / depth.height as f32;
+        let view = self.camera.view(aspect);
         let style = TerrainStyle {
-            fog_distance: 56.0,
+            fog_distance: FOG_DISTANCE,
             selected: self.target.map(|hit| hit.block),
             lamp_radius: 14.0,
         };
-        terrain.render(
-            &gpu.queue,
-            encoder,
-            color,
-            depth,
-            &self.camera.view(aspect),
-            &style,
-        );
+        terrain.render(&gpu.queue, encoder, color, depth, &view, &style);
+        let remotes = self.remote_boxes();
+        if let Some(boxes) = self.boxes.as_mut() {
+            boxes.render(
+                &gpu.device,
+                &gpu.queue,
+                encoder,
+                color,
+                depth,
+                &view,
+                FOG_DISTANCE,
+                &remotes,
+            );
+        }
         if let Some(crosshair) = &self.crosshair {
             crosshair.render(&gpu.queue, encoder, color, depth.width, depth.height);
         }

@@ -15,11 +15,11 @@ mod terrain;
 
 pub use block::Block;
 pub use bot::DiggerBot;
-pub use edit::{EditError, REACH};
+pub use edit::{EditError, REACH, dig as try_dig, place as try_place};
 pub use player::{EYE_HEIGHT, HALF_WIDTH, HEIGHT, MoveInput, PlayerBody, spawn_point};
 pub use report::SimReport;
 pub use rng::Rng;
-pub use sim::{Command, EditStats, MatchConfig, Simulation, TICK_RATE};
+pub use sim::{BlockChange, Command, EditStats, MatchConfig, Rejection, Simulation, TICK_RATE};
 pub use terrain::{TerrainConfig, generate as generate_terrain};
 
 /// Ejecuta una partida completa sin gráficos y devuelve el informe.

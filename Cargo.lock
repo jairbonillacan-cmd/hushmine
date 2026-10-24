@@ -745,6 +745,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "grisu-net"
+version = "0.0.1"
+dependencies = [
+ "log",
+]
+
+[[package]]
 name = "grisu-platform"
 version = "0.0.1"
 dependencies = [
@@ -837,9 +844,11 @@ dependencies = [
  "clap",
  "env_logger",
  "glam",
+ "grisu-net",
  "grisu-render",
  "grisu-voxel",
  "hush-art",
+ "hush-net",
  "hush-sim",
  "pollster",
  "serde_json",
@@ -852,13 +861,38 @@ dependencies = [
  "anyhow",
  "env_logger",
  "glam",
+ "grisu-net",
  "grisu-platform",
  "grisu-render",
  "grisu-voxel",
  "hush-art",
+ "hush-net",
  "hush-sim",
  "log",
  "wgpu",
+]
+
+[[package]]
+name = "hush-net"
+version = "0.0.1"
+dependencies = [
+ "grisu-net",
+ "grisu-voxel",
+ "hush-sim",
+ "log",
+]
+
+[[package]]
+name = "hush-server"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "clap",
+ "env_logger",
+ "grisu-net",
+ "hush-net",
+ "hush-sim",
+ "log",
 ]
 
 [[package]]

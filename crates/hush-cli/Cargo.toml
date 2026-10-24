@@ -1,6 +1,6 @@
 [package]
 name = "hush-cli"
-description = "HUSHMINE: herramientas de terminal (sim, shot, bench, gpu)"
+description = "HUSHMINE: herramientas de terminal (sim, netsim, shot, bench, gpu)"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -19,6 +19,8 @@ env_logger.workspace = true
 grisu-render.workspace = true
 grisu-voxel.workspace = true
 hush-art.workspace = true
+hush-net.workspace = true
+grisu-net.workspace = true
 hush-sim.workspace = true
 pollster.workspace = true
 serde_json.workspace = true
