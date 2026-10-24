@@ -1,0 +1,110 @@
+// Escena de captura determinista para `hush-cli shot --scene`.
+// Galería subterránea con canal de lava, dique de contención Copper y vetas de mena.
+
+SceneDef(
+    name: "tunel_lava",
+    description: "Galería excavada en roca común y roca dura con un canal lateral de lava incandescente, dique de contención de mampostería Copper, vetas de mena ferrosa en el hastial izquierdo y una baliza táctica cálida proyectando luz sobre la piedra.",
+    dimensions: Dimensions(width: 16, height: 16, depth: 16),
+    camera: CameraPose(
+        position_blocks: (6, 6, 3),
+        position_subblocks: (393_216, 393_216, 196_608),
+        look_at_blocks: (7, 4, 12),
+        yaw_deg: 6,
+        pitch_deg: -12,
+        fov_deg: 70,
+    ),
+    regions: [
+        BlockRegion(
+            min: (0, 0, 0),
+            max: (15, 15, 15),
+            block_id: 2,
+            block_name: "rock",
+            team: None,
+        ),
+        BlockRegion(
+            min: (0, 0, 0),
+            max: (15, 3, 15),
+            block_id: 3,
+            block_name: "hard_rock",
+            team: None,
+        ),
+        BlockRegion(
+            min: (4, 4, 2),
+            max: (11, 10, 14),
+            block_id: 0,
+            block_name: "air",
+            team: None,
+        ),
+        BlockRegion(
+            min: (9, 2, 3),
+            max: (11, 3, 13),
+            block_id: 7,
+            block_name: "lava",
+            team: None,
+        ),
+        BlockRegion(
+            min: (8, 3, 3),
+            max: (8, 4, 13),
+            block_id: 8,
+            block_name: "team_block",
+            team: Some("copper"),
+        ),
+        BlockRegion(
+            min: (3, 5, 5),
+            max: (3, 8, 12),
+            block_id: 4,
+            block_name: "ore",
+            team: None,
+        ),
+    ],
+    blocks: [
+        BlockPlacement(
+            pos: (6, 4, 9),
+            block_id: 14,
+            block_name: "beacon",
+            team: Some("copper"),
+        ),
+        BlockPlacement(
+            pos: (3, 6, 4),
+            block_id: 4,
+            block_name: "ore",
+            team: None,
+        ),
+        BlockPlacement(
+            pos: (4, 9, 7),
+            block_id: 4,
+            block_name: "ore",
+            team: None,
+        ),
+        BlockPlacement(
+            pos: (4, 10, 10),
+            block_id: 3,
+            block_name: "hard_rock",
+            team: None,
+        ),
+        BlockPlacement(
+            pos: (11, 10, 10),
+            block_id: 3,
+            block_name: "hard_rock",
+            team: None,
+        ),
+        BlockPlacement(
+            pos: (8, 5, 8),
+            block_id: 8,
+            block_name: "team_block",
+            team: Some("copper"),
+        ),
+        BlockPlacement(
+            pos: (8, 5, 12),
+            block_id: 8,
+            block_name: "team_block",
+            team: Some("copper"),
+        ),
+        BlockPlacement(
+            pos: (10, 3, 14),
+            block_id: 7,
+            block_name: "lava",
+            team: None,
+        ),
+    ],
+)

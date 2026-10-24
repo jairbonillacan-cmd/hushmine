@@ -1,0 +1,118 @@
+// Escena de captura determinista para `hush-cli shot --scene`.
+// Interior de la base del equipo Copper con estación de cangilones, plataforma de salto y pozo.
+
+SceneDef(
+    name: "base_copper",
+    description: "Interior de la base subterránea del equipo Copper con losa y pilares biselados de mampostería cálida, estación terminal de cangilones al fondo flanqueada por balizas, plataforma de salto a la izquierda y pozo de bajada con escalera a la derecha.",
+    dimensions: Dimensions(width: 16, height: 16, depth: 16),
+    camera: CameraPose(
+        position_blocks: (8, 7, 3),
+        position_subblocks: (524_288, 458_752, 196_608),
+        look_at_blocks: (8, 4, 11),
+        yaw_deg: 0,
+        pitch_deg: -18,
+        fov_deg: 70,
+    ),
+    regions: [
+        BlockRegion(
+            min: (0, 0, 0),
+            max: (15, 15, 15),
+            block_id: 2,
+            block_name: "rock",
+            team: None,
+        ),
+        BlockRegion(
+            min: (0, 12, 0),
+            max: (15, 15, 15),
+            block_id: 1,
+            block_name: "dirt",
+            team: None,
+        ),
+        BlockRegion(
+            min: (2, 4, 2),
+            max: (13, 11, 13),
+            block_id: 0,
+            block_name: "air",
+            team: None,
+        ),
+        BlockRegion(
+            min: (2, 3, 2),
+            max: (13, 3, 13),
+            block_id: 8,
+            block_name: "team_block",
+            team: Some("copper"),
+        ),
+        BlockRegion(
+            min: (3, 4, 12),
+            max: (3, 11, 12),
+            block_id: 8,
+            block_name: "team_block",
+            team: Some("copper"),
+        ),
+        BlockRegion(
+            min: (12, 4, 12),
+            max: (12, 11, 12),
+            block_id: 8,
+            block_name: "team_block",
+            team: Some("copper"),
+        ),
+        BlockRegion(
+            min: (11, 1, 6),
+            max: (12, 3, 7),
+            block_id: 0,
+            block_name: "air",
+            team: None,
+        ),
+        BlockRegion(
+            min: (12, 1, 6),
+            max: (12, 9, 6),
+            block_id: 10,
+            block_name: "ladder",
+            team: Some("copper"),
+        ),
+    ],
+    blocks: [
+        BlockPlacement(
+            pos: (8, 4, 11),
+            block_id: 16,
+            block_name: "bucket_station",
+            team: Some("copper"),
+        ),
+        BlockPlacement(
+            pos: (7, 4, 11),
+            block_id: 17,
+            block_name: "bucket_post",
+            team: Some("copper"),
+        ),
+        BlockPlacement(
+            pos: (9, 4, 11),
+            block_id: 17,
+            block_name: "bucket_post",
+            team: Some("copper"),
+        ),
+        BlockPlacement(
+            pos: (6, 4, 9),
+            block_id: 14,
+            block_name: "beacon",
+            team: Some("copper"),
+        ),
+        BlockPlacement(
+            pos: (10, 4, 9),
+            block_id: 14,
+            block_name: "beacon",
+            team: Some("copper"),
+        ),
+        BlockPlacement(
+            pos: (5, 4, 7),
+            block_id: 11,
+            block_name: "jump_pad",
+            team: Some("copper"),
+        ),
+        BlockPlacement(
+            pos: (8, 5, 11),
+            block_id: 14,
+            block_name: "beacon",
+            team: Some("copper"),
+        ),
+    ],
+)
