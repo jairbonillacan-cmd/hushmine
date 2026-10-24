@@ -1,0 +1,41 @@
+// Configuración de economía, tiempos y metas de partida de HUSHMINE.
+// Todos los valores son enteros; los multiplicadores se expresan como numerador y denominador.
+
+EconomyConfig(
+    tick_rate: 30,
+    drop_in_phase_ticks: 600,
+    respawn_ticks: 180,
+    loot_bag_lifetime_ticks: 1_800,
+    loot_bag_drop_num: 1,
+    loot_bag_drop_den: 1,
+    fame_threshold_num: 60,
+    fame_threshold_den: 100,
+    stolen_loot_multiplier_num: 5,
+    stolen_loot_multiplier_den: 4,
+    // Valor por bloque extraído: 1 lingote de oro = 100 $; 2 gemas de diamante = 400 $ (200 $ por unidad).
+    resources: ResourceValues(
+        ore_units_per_block: 4,
+        gold_units_per_block: 1,
+        gold_cash_value: 100,
+        diamond_units_per_block: 2,
+        diamond_cash_value: 400,
+        mother_lode_total_cash: 2_000,
+        heart_total_cash: 1_500,
+    ),
+    bucket_line: BucketLineEconomy(
+        max_posts_per_line: 16,
+        max_post_spacing_blocks: 8,
+        transfer_interval_ticks: 60,
+        units_per_bucket: 1,
+    ),
+    team_goals: [
+        TeamGoal( team_size: 1, target_cash: 2_000, map_width: 64, map_depth: 64, map_height: 64 ),
+        TeamGoal( team_size: 2, target_cash: 3_500, map_width: 64, map_depth: 64, map_height: 64 ),
+        TeamGoal( team_size: 3, target_cash: 5_000, map_width: 64, map_depth: 64, map_height: 64 ),
+        TeamGoal( team_size: 4, target_cash: 6_500, map_width: 64, map_depth: 64, map_height: 64 ),
+        TeamGoal( team_size: 5, target_cash: 8_000, map_width: 64, map_depth: 64, map_height: 64 ),
+        TeamGoal( team_size: 6, target_cash: 9_500, map_width: 64, map_depth: 64, map_height: 64 ),
+        TeamGoal( team_size: 7, target_cash: 11_000, map_width: 96, map_depth: 96, map_height: 64 ),
+        TeamGoal( team_size: 8, target_cash: 12_500, map_width: 96, map_depth: 96, map_height: 64 ),
+    ],
+)

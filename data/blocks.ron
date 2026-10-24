@@ -1,0 +1,315 @@
+// Catálogo maestro de los 18 bloques de HUSHMINE (Convención A: ids 0 a 17).
+// Todas las durezas están expresadas en ticks de simulación a 30 Hz.
+// Un valor de 0 en dureza indica que el bloque no se puede picar.
+// El equipo propietario (Copper o Cobalt) no forma parte del id: se almacena
+// en la capa de metadatos cuando team_owned es true.
+
+BlockCatalog(
+    blocks: [
+        // 0: Aire (vacío transitable, no transmite vibraciones al geófono)
+        BlockDef(
+            id: 0,
+            name: "air",
+            hardness: HardnessByClass(
+                prospector: 0,
+                miner: 0,
+                engineer: 0,
+                sapper: 0,
+            ),
+            solid: false,
+            transmits_noise: false,
+            conducts_electricity: false,
+            team_owned: false,
+            ore_cost: 0,
+        ),
+
+        // 1: Tierra (estrato superficial blando)
+        BlockDef(
+            id: 1,
+            name: "dirt",
+            hardness: HardnessByClass(
+                prospector: 12,
+                miner: 8,
+                engineer: 12,
+                sapper: 10,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: false,
+            team_owned: false,
+            ore_cost: 0,
+        ),
+
+        // 2: Roca común (matriz principal del subsuelo)
+        BlockDef(
+            id: 2,
+            name: "rock",
+            hardness: HardnessByClass(
+                prospector: 24,
+                miner: 15,
+                engineer: 24,
+                sapper: 20,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: false,
+            team_owned: false,
+            ore_cost: 0,
+        ),
+
+        // 3: Roca dura (contención geológica y diques profundos)
+        BlockDef(
+            id: 3,
+            name: "hard_rock",
+            hardness: HardnessByClass(
+                prospector: 90,
+                miner: 45,
+                engineer: 90,
+                sapper: 60,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: false,
+            team_owned: false,
+            ore_cost: 0,
+        ),
+
+        // 4: Mena ferrosa (divisa de construcción en partida y conductor natural)
+        BlockDef(
+            id: 4,
+            name: "ore",
+            hardness: HardnessByClass(
+                prospector: 28,
+                miner: 18,
+                engineer: 28,
+                sapper: 24,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: true,
+            team_owned: false,
+            ore_cost: 0,
+        ),
+
+        // 5: Oro (mineral de valor medio para el banco del equipo y conductor natural)
+        BlockDef(
+            id: 5,
+            name: "gold",
+            hardness: HardnessByClass(
+                prospector: 36,
+                miner: 24,
+                engineer: 36,
+                sapper: 30,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: true,
+            team_owned: false,
+            ore_cost: 0,
+        ),
+
+        // 6: Diamante (mineral de alto valor para el banco en estratos profundos)
+        BlockDef(
+            id: 6,
+            name: "diamond",
+            hardness: HardnessByClass(
+                prospector: 54,
+                miner: 36,
+                engineer: 54,
+                sapper: 45,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: false,
+            team_owned: false,
+            ore_cost: 0,
+        ),
+
+        // 7: Lava (fluido celular letal, indestructible con pico)
+        BlockDef(
+            id: 7,
+            name: "lava",
+            hardness: HardnessByClass(
+                prospector: 0,
+                miner: 0,
+                engineer: 0,
+                sapper: 0,
+            ),
+            solid: false,
+            transmits_noise: true,
+            conducts_electricity: false,
+            team_owned: false,
+            ore_cost: 0,
+        ),
+
+        // 8: Bloque de equipo (mampostería básica de ingeniería)
+        BlockDef(
+            id: 8,
+            name: "team_block",
+            hardness: HardnessByClass(
+                prospector: 24,
+                miner: 15,
+                engineer: 18,
+                sapper: 12,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: false,
+            team_owned: true,
+            ore_cost: 1,
+        ),
+
+        // 9: Campo de fuerza (sólido en física general, permeable al equipo propietario)
+        BlockDef(
+            id: 9,
+            name: "force_field",
+            hardness: HardnessByClass(
+                prospector: 45,
+                miner: 30,
+                engineer: 24,
+                sapper: 15,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: false,
+            team_owned: true,
+            ore_cost: 4,
+        ),
+
+        // 10: Escalera (movilidad vertical sin colisión sólida)
+        BlockDef(
+            id: 10,
+            name: "ladder",
+            hardness: HardnessByClass(
+                prospector: 15,
+                miner: 10,
+                engineer: 10,
+                sapper: 8,
+            ),
+            solid: false,
+            transmits_noise: true,
+            conducts_electricity: false,
+            team_owned: true,
+            ore_cost: 1,
+        ),
+
+        // 11: Plataforma de salto (impulso vertical determinista al pisar su cara superior)
+        BlockDef(
+            id: 11,
+            name: "jump_pad",
+            hardness: HardnessByClass(
+                prospector: 30,
+                miner: 20,
+                engineer: 15,
+                sapper: 10,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: false,
+            team_owned: true,
+            ore_cost: 6,
+        ),
+
+        // 12: Bloque eléctrico (emisor de red eléctrica y descargas por contacto)
+        BlockDef(
+            id: 12,
+            name: "electric",
+            hardness: HardnessByClass(
+                prospector: 45,
+                miner: 30,
+                engineer: 20,
+                sapper: 12,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: true,
+            team_owned: true,
+            ore_cost: 8,
+        ),
+
+        // 13: Raíl (vía de deslizamiento rápido y conductor de electricidad)
+        BlockDef(
+            id: 13,
+            name: "rail",
+            hardness: HardnessByClass(
+                prospector: 18,
+                miner: 12,
+                engineer: 10,
+                sapper: 8,
+            ),
+            solid: false,
+            transmits_noise: true,
+            conducts_electricity: true,
+            team_owned: true,
+            ore_cost: 2,
+        ),
+
+        // 14: Baliza (señal luminosa y marcador táctico del equipo)
+        BlockDef(
+            id: 14,
+            name: "beacon",
+            hardness: HardnessByClass(
+                prospector: 20,
+                miner: 20,
+                engineer: 15,
+                sapper: 10,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: false,
+            team_owned: true,
+            ore_cost: 5,
+        ),
+
+        // 15: Explosivo (carga de demolición; el Zapador lo desactiva en 6 ticks)
+        BlockDef(
+            id: 15,
+            name: "explosive",
+            hardness: HardnessByClass(
+                prospector: 30,
+                miner: 30,
+                engineer: 24,
+                sapper: 6,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: false,
+            team_owned: true,
+            ore_cost: 10,
+        ),
+
+        // 16: Estación de cangilones (nodo terminal de recepción y envío de mineral)
+        BlockDef(
+            id: 16,
+            name: "bucket_station",
+            hardness: HardnessByClass(
+                prospector: 45,
+                miner: 35,
+                engineer: 20,
+                sapper: 15,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: true,
+            team_owned: true,
+            ore_cost: 12,
+        ),
+
+        // 17: Poste de cangilones (soporte intermedio de línea logística)
+        BlockDef(
+            id: 17,
+            name: "bucket_post",
+            hardness: HardnessByClass(
+                prospector: 30,
+                miner: 20,
+                engineer: 12,
+                sapper: 8,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: true,
+            team_owned: true,
+            ore_cost: 3,
+        ),
+    ],
+)
