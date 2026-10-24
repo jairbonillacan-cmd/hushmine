@@ -1,0 +1,117 @@
+// Escena de captura determinista para `hush-cli shot --scene`.
+// Caverna profunda en penumbra para evaluar oclusión ambiental, niebla y caída de luz BFS.
+
+SceneDef(
+    name: "cueva_oscura",
+    description: "Caverna profunda de roca dura y roca común en penumbra, diseñada para evaluar la oclusión ambiental en esquinas, la niebla de distancia y la caída de iluminación desde una única baliza central y una grieta de lava al fondo bajo cristales de diamante.",
+    dimensions: Dimensions(width: 24, height: 16, depth: 24),
+    camera: CameraPose(
+        position_blocks: (12, 6, 3),
+        position_subblocks: (786_432, 393_216, 196_608),
+        look_at_blocks: (11, 5, 16),
+        yaw_deg: -4,
+        pitch_deg: -5,
+        fov_deg: 70,
+    ),
+    regions: [
+        BlockRegion(
+            min: (0, 0, 0),
+            max: (23, 15, 23),
+            block_id: 3,
+            block_name: "hard_rock",
+            team: None,
+        ),
+        BlockRegion(
+            min: (2, 4, 2),
+            max: (21, 11, 21),
+            block_id: 2,
+            block_name: "rock",
+            team: None,
+        ),
+        BlockRegion(
+            min: (5, 3, 2),
+            max: (18, 12, 20),
+            block_id: 0,
+            block_name: "air",
+            team: None,
+        ),
+        BlockRegion(
+            min: (3, 4, 7),
+            max: (5, 9, 15),
+            block_id: 0,
+            block_name: "air",
+            team: None,
+        ),
+        BlockRegion(
+            min: (18, 4, 9),
+            max: (20, 9, 17),
+            block_id: 0,
+            block_name: "air",
+            team: None,
+        ),
+        BlockRegion(
+            min: (10, 1, 17),
+            max: (14, 2, 20),
+            block_id: 7,
+            block_name: "lava",
+            team: None,
+        ),
+        BlockRegion(
+            min: (8, 3, 11),
+            max: (9, 12, 12),
+            block_id: 3,
+            block_name: "hard_rock",
+            team: None,
+        ),
+    ],
+    blocks: [
+        BlockPlacement(
+            pos: (11, 3, 9),
+            block_id: 14,
+            block_name: "beacon",
+            team: Some("copper"),
+        ),
+        BlockPlacement(
+            pos: (11, 12, 13),
+            block_id: 6,
+            block_name: "diamond",
+            team: None,
+        ),
+        BlockPlacement(
+            pos: (13, 12, 15),
+            block_id: 6,
+            block_name: "diamond",
+            team: None,
+        ),
+        BlockPlacement(
+            pos: (9, 12, 16),
+            block_id: 6,
+            block_name: "diamond",
+            team: None,
+        ),
+        BlockPlacement(
+            pos: (15, 3, 14),
+            block_id: 3,
+            block_name: "hard_rock",
+            team: None,
+        ),
+        BlockPlacement(
+            pos: (15, 4, 14),
+            block_id: 3,
+            block_name: "hard_rock",
+            team: None,
+        ),
+        BlockPlacement(
+            pos: (6, 3, 8),
+            block_id: 2,
+            block_name: "rock",
+            team: None,
+        ),
+        BlockPlacement(
+            pos: (12, 2, 16),
+            block_id: 7,
+            block_name: "lava",
+            team: None,
+        ),
+    ],
+)

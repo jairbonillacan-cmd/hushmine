@@ -1,0 +1,124 @@
+// Escena de captura determinista para `hush-cli shot --scene`.
+// Galería logística escalonada con estación de cangilones, postes alineados y vía de raíl.
+
+SceneDef(
+    name: "cangilones",
+    description: "Galería logística escalonada del equipo Cobalt con una estación de cangilones en la terraza superior conectada a una fila de postes de soporte, vía paralela de raíl y filones expuestos de mena ferrosa y oro en el frente de extracción.",
+    dimensions: Dimensions(width: 16, height: 16, depth: 16),
+    camera: CameraPose(
+        position_blocks: (7, 6, 3),
+        position_subblocks: (458_752, 393_216, 196_608),
+        look_at_blocks: (8, 5, 11),
+        yaw_deg: 6,
+        pitch_deg: -7,
+        fov_deg: 70,
+    ),
+    regions: [
+        BlockRegion(
+            min: (0, 0, 0),
+            max: (15, 15, 15),
+            block_id: 2,
+            block_name: "rock",
+            team: None,
+        ),
+        BlockRegion(
+            min: (3, 3, 2),
+            max: (12, 9, 9),
+            block_id: 0,
+            block_name: "air",
+            team: None,
+        ),
+        BlockRegion(
+            min: (3, 5, 6),
+            max: (12, 11, 14),
+            block_id: 0,
+            block_name: "air",
+            team: None,
+        ),
+        BlockRegion(
+            min: (4, 4, 9),
+            max: (11, 4, 13),
+            block_id: 8,
+            block_name: "team_block",
+            team: Some("cobalt"),
+        ),
+        BlockRegion(
+            min: (5, 3, 3),
+            max: (5, 3, 8),
+            block_id: 13,
+            block_name: "rail",
+            team: Some("cobalt"),
+        ),
+        BlockRegion(
+            min: (5, 5, 9),
+            max: (5, 5, 13),
+            block_id: 13,
+            block_name: "rail",
+            team: Some("cobalt"),
+        ),
+        BlockRegion(
+            min: (13, 4, 4),
+            max: (13, 8, 10),
+            block_id: 4,
+            block_name: "ore",
+            team: None,
+        ),
+        BlockRegion(
+            min: (11, 5, 14),
+            max: (13, 9, 14),
+            block_id: 5,
+            block_name: "gold",
+            team: None,
+        ),
+    ],
+    blocks: [
+        BlockPlacement(
+            pos: (9, 5, 12),
+            block_id: 16,
+            block_name: "bucket_station",
+            team: Some("cobalt"),
+        ),
+        BlockPlacement(
+            pos: (9, 5, 10),
+            block_id: 17,
+            block_name: "bucket_post",
+            team: Some("cobalt"),
+        ),
+        BlockPlacement(
+            pos: (9, 3, 8),
+            block_id: 17,
+            block_name: "bucket_post",
+            team: Some("cobalt"),
+        ),
+        BlockPlacement(
+            pos: (9, 4, 8),
+            block_id: 17,
+            block_name: "bucket_post",
+            team: Some("cobalt"),
+        ),
+        BlockPlacement(
+            pos: (9, 3, 5),
+            block_id: 17,
+            block_name: "bucket_post",
+            team: Some("cobalt"),
+        ),
+        BlockPlacement(
+            pos: (7, 3, 6),
+            block_id: 14,
+            block_name: "beacon",
+            team: Some("cobalt"),
+        ),
+        BlockPlacement(
+            pos: (7, 5, 11),
+            block_id: 14,
+            block_name: "beacon",
+            team: Some("cobalt"),
+        ),
+        BlockPlacement(
+            pos: (12, 6, 12),
+            block_id: 5,
+            block_name: "gold",
+            team: None,
+        ),
+    ],
+)
