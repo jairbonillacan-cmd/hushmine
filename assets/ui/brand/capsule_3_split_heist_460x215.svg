@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 215" width="460" height="215">
+  <title>HUSHMINE — Steam Capsule 3: Seismograph and Heart Heist (460x215)</title>
+  <rect x="0" y="0" width="460" height="215" fill="#0A0B0E"/>
+  <polygon points="0,0 270,0 180,215 0,215" fill="#07120A"/>
+  <polygon points="270,0 460,0 460,215 180,215" fill="#16181F"/>
+  <line x1="0" y1="36" x2="240" y2="36" stroke="#12301B" stroke-width="1.5"/>
+  <line x1="0" y1="72" x2="240" y2="72" stroke="#12301B" stroke-width="1.5"/>
+  <line x1="0" y1="108" x2="240" y2="108" stroke="#12301B" stroke-width="1.5"/>
+  <line x1="0" y1="144" x2="240" y2="144" stroke="#12301B" stroke-width="1.5"/>
+  <polyline points="14,112 64,112 84,74 102,146 124,48 146,154 172,56 210,92" fill="none" stroke="#68F08E" stroke-width="3"/>
+  <polyline points="102,146 124,48 146,154 172,56 210,92" fill="none" stroke="#FFF08A" stroke-width="3"/>
+  <text x="20" y="26" fill="#FFF08A" data-bg="#07120A" font-family="'Chakra Petch', 'Share Tech Mono', monospace" font-size="11" font-weight="700" letter-spacing="1" text-anchor="start">SEISMOGRAPH · 100% WAKE</text>
+  <polygon points="266,0 278,0 188,215 176,215" fill="#D9B052" stroke="#0A0B0E" stroke-width="2"/>
+  <circle cx="348" cy="136" r="48" fill="#8F3B1B" stroke="#F28A2E" stroke-width="3"/>
+  <polygon points="348,98 384,136 348,174 312,136" fill="#D95B26" stroke="#FFF08A" stroke-width="2"/>
+  <polygon points="348,114 368,136 348,158 328,136" fill="#FFF08A"/>
+  <line x1="250" y1="72" x2="460" y2="98" stroke="#5CA3F2" stroke-width="3.5"/>
+  <rect x="304" y="56" width="28" height="32" fill="#C96832" stroke="#EDE6D3" stroke-width="2"/>
+  <circle cx="332" cy="82" r="8" fill="#FFF08A"/>
+  <rect x="0" y="162" width="460" height="53" fill="#0A0B0E" stroke="#9E7B2F" stroke-width="2"/>
+  <path d="M138.3,168.3 h5.3 v26.6 h-5.3 Z M152.0,168.3 h5.3 v26.6 h-5.3 Z M143.6,178.9 h8.4 v5.3 h-8.4 Z" fill="#14161B"/>
+  <path d="M136.0,166.0 h5.3 v26.6 h-5.3 Z M149.7,166.0 h5.3 v26.6 h-5.3 Z M141.3,176.6 h8.4 v5.3 h-8.4 Z" fill="#EDE6D3" stroke="#D9B052" stroke-width="1.0"/>
+  <path d="M161.5,168.3 h5.3 v21.7 h-5.3 Z M175.2,168.3 h5.3 v21.7 h-5.3 Z M161.5,189.6 h19.0 v5.3 h-19.0 Z" fill="#14161B"/>
+  <path d="M159.2,166.0 h5.3 v21.7 h-5.3 Z M172.9,166.0 h5.3 v21.7 h-5.3 Z M159.2,187.3 h19.0 v5.3 h-19.0 Z" fill="#EDE6D3" stroke="#D9B052" stroke-width="1.0"/>
+  <path d="M184.7,168.3 h19.0 v5.3 h-19.0 Z M184.7,173.2 h5.3 v8.4 h-5.3 Z M184.7,178.9 h19.0 v5.3 h-19.0 Z M198.3,181.6 h5.3 v8.4 h-5.3 Z M184.7,189.6 h19.0 v5.3 h-19.0 Z" fill="#14161B"/>
+  <path d="M182.4,166.0 h19.0 v5.3 h-19.0 Z M182.4,170.9 h5.3 v8.4 h-5.3 Z M182.4,176.6 h19.0 v5.3 h-19.0 Z M196.0,179.3 h5.3 v8.4 h-5.3 Z M182.4,187.3 h19.0 v5.3 h-19.0 Z" fill="#EDE6D3" stroke="#D9B052" stroke-width="1.0"/>
+  <path d="M207.8,168.3 h5.3 v26.6 h-5.3 Z M221.5,168.3 h5.3 v26.6 h-5.3 Z M213.2,178.9 h8.4 v5.3 h-8.4 Z" fill="#14161B"/>
+  <path d="M205.5,166.0 h5.3 v26.6 h-5.3 Z M219.2,166.0 h5.3 v26.6 h-5.3 Z M210.9,176.6 h8.4 v5.3 h-8.4 Z" fill="#EDE6D3" stroke="#D9B052" stroke-width="1.0"/>
+  <path d="M234.4,168.3 h4.9 v26.6 h-4.9 Z M248.5,168.3 h4.9 v26.6 h-4.9 Z M239.0,170.6 h4.9 v9.1 h-4.9 Z M243.9,170.6 h4.9 v9.1 h-4.9 Z M241.5,176.7 h4.9 v9.9 h-4.9 Z" fill="#14161B"/>
+  <path d="M232.1,166.0 h4.9 v26.6 h-4.9 Z M246.2,166.0 h4.9 v26.6 h-4.9 Z M236.7,168.3 h4.9 v9.1 h-4.9 Z M241.6,168.3 h4.9 v9.1 h-4.9 Z M239.2,174.4 h4.9 v9.9 h-4.9 Z" fill="#68F08E" stroke="#D9B052" stroke-width="1.0"/>
+  <path d="M257.6,168.3 h19.0 v5.3 h-19.0 Z M264.5,173.2 h5.3 v16.7 h-5.3 Z M257.6,189.6 h19.0 v5.3 h-19.0 Z" fill="#14161B"/>
+  <path d="M255.3,166.0 h19.0 v5.3 h-19.0 Z M262.2,170.9 h5.3 v16.7 h-5.3 Z M255.3,187.3 h19.0 v5.3 h-19.0 Z" fill="#68F08E" stroke="#D9B052" stroke-width="1.0"/>
+  <path d="M280.8,168.3 h5.3 v26.6 h-5.3 Z M294.5,168.3 h5.3 v26.6 h-5.3 Z M285.4,172.1 h5.3 v8.5 h-5.3 Z M289.9,179.7 h5.3 v8.5 h-5.3 Z" fill="#14161B"/>
+  <path d="M278.5,166.0 h5.3 v26.6 h-5.3 Z M292.2,166.0 h5.3 v26.6 h-5.3 Z M283.1,169.8 h5.3 v8.5 h-5.3 Z M287.6,177.4 h5.3 v8.5 h-5.3 Z" fill="#68F08E" stroke="#D9B052" stroke-width="1.0"/>
+  <path d="M304.0,168.3 h5.3 v26.6 h-5.3 Z M308.9,168.3 h14.1 v5.3 h-14.1 Z M308.9,178.9 h11.0 v5.3 h-11.0 Z M308.9,189.6 h14.1 v5.3 h-14.1 Z" fill="#14161B"/>
+  <path d="M301.7,166.0 h5.3 v26.6 h-5.3 Z M306.6,166.0 h14.1 v5.3 h-14.1 Z M306.6,176.6 h11.0 v5.3 h-11.0 Z M306.6,187.3 h14.1 v5.3 h-14.1 Z" fill="#68F08E" stroke="#D9B052" stroke-width="1.0"/>
+  <text x="230" y="209" fill="#EDE6D3" data-bg="#0A0B0E" font-family="'Chakra Petch', 'Share Tech Mono', monospace" font-size="9" font-weight="700" letter-spacing="1" text-anchor="middle">ROB A SLEEPING MOUNTAIN. PLAY DIRTY. KEEP IT HUSHED.</text>
+</svg>

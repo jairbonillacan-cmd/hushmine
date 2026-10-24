@@ -4,7 +4,7 @@
 
 use grisu_net::{LinkConditions, PeerAddr, SimNetwork};
 use grisu_voxel::{FIXED_ONE, raycast};
-use hush_sim::{Block, MatchConfig, MoveInput, Rng, TICK_RATE};
+use hush_sim::{BlockKind, MatchConfig, MoveInput, Rng, TICK_RATE};
 
 use crate::{Action, ClientState, NetClient, PredictionStats, Server, ServerConfig};
 
@@ -110,7 +110,7 @@ impl Script {
             if let Some(hit) = raycast(world, eye, aim, 4.0) {
                 action = Some(if self.rng.below(8) == 0 {
                     let cell = std::array::from_fn(|i| hit.block[i] + hit.normal[i]);
-                    Action::Place(cell, Block::Rock)
+                    Action::Place(cell, BlockKind::Rock)
                 } else {
                     Action::Dig(hit.block)
                 });

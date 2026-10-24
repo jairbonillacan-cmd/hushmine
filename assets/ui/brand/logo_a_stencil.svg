@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 240" width="800" height="240">
+  <title>HUSHMINE — Logo Proposal A: 1931 Brass Stencil</title>
+  <rect x="0" y="0" width="800" height="240" fill="#0A0B0E"/>
+  <polygon points="24,14 776,14 790,28 790,212 776,226 24,226 10,212 10,28" fill="#594318" stroke="#D9B052" stroke-width="3"/>
+  <polygon points="34,24 766,24 778,36 778,176 766,188 34,188 22,176 22,36" fill="#9E7B2F" stroke="#D9B052" stroke-width="2"/>
+  <rect x="38" y="34" width="724" height="142" fill="#14161B" stroke="#594318" stroke-width="3"/>
+  <line x1="38" y1="68" x2="762" y2="68" stroke="#292E38" stroke-width="1"/>
+  <line x1="38" y1="140" x2="762" y2="140" stroke="#292E38" stroke-width="1"/>
+  <circle cx="26" cy="28" r="5" fill="#0A0B0E" stroke="#D9B052" stroke-width="2"/>
+  <circle cx="774" cy="28" r="5" fill="#0A0B0E" stroke="#D9B052" stroke-width="2"/>
+  <circle cx="26" cy="180" r="5" fill="#0A0B0E" stroke="#D9B052" stroke-width="2"/>
+  <circle cx="774" cy="180" r="5" fill="#0A0B0E" stroke="#D9B052" stroke-width="2"/>
+  <circle cx="400" cy="20" r="5" fill="#0A0B0E" stroke="#D9B052" stroke-width="2"/>
+  <circle cx="400" cy="184" r="5" fill="#0A0B0E" stroke="#D9B052" stroke-width="2"/>
+  <path d="M74.2,56.2 h19.0 v95.2 h-19.0 Z M123.2,56.2 h19.0 v95.2 h-19.0 Z M93.2,94.3 h29.9 v19.0 h-29.9 Z" fill="#0A0B0E"/>
+  <path d="M66.0,48.0 h19.0 v95.2 h-19.0 Z M115.0,48.0 h19.0 v95.2 h-19.0 Z M85.0,86.1 h29.9 v19.0 h-29.9 Z" fill="#EDE6D3" stroke="#1C1917" stroke-width="2.4"/>
+  <rect x="62.6" y="93.6" width="74.8" height="4.4" fill="#14161B"/>
+  <path d="M157.2,56.2 h19.0 v77.5 h-19.0 Z M206.1,56.2 h19.0 v77.5 h-19.0 Z M157.2,132.4 h68.0 v19.0 h-68.0 Z" fill="#0A0B0E"/>
+  <path d="M149.0,48.0 h19.0 v77.5 h-19.0 Z M197.9,48.0 h19.0 v77.5 h-19.0 Z M149.0,124.2 h68.0 v19.0 h-68.0 Z" fill="#EDE6D3" stroke="#1C1917" stroke-width="2.4"/>
+  <rect x="145.6" y="93.6" width="74.8" height="4.4" fill="#14161B"/>
+  <path d="M240.1,56.2 h68.0 v19.0 h-68.0 Z M240.1,73.9 h19.0 v29.9 h-19.0 Z M240.1,94.3 h68.0 v19.0 h-68.0 Z M289.1,103.8 h19.0 v29.9 h-19.0 Z M240.1,132.4 h68.0 v19.0 h-68.0 Z" fill="#0A0B0E"/>
+  <path d="M231.9,48.0 h68.0 v19.0 h-68.0 Z M231.9,65.7 h19.0 v29.9 h-19.0 Z M231.9,86.1 h68.0 v19.0 h-68.0 Z M280.9,95.6 h19.0 v29.9 h-19.0 Z M231.9,124.2 h68.0 v19.0 h-68.0 Z" fill="#EDE6D3" stroke="#1C1917" stroke-width="2.4"/>
+  <rect x="228.5" y="93.6" width="74.8" height="4.4" fill="#14161B"/>
+  <path d="M323.1,56.2 h19.0 v95.2 h-19.0 Z M372.0,56.2 h19.0 v95.2 h-19.0 Z M342.1,94.3 h29.9 v19.0 h-29.9 Z" fill="#0A0B0E"/>
+  <path d="M314.9,48.0 h19.0 v95.2 h-19.0 Z M363.8,48.0 h19.0 v95.2 h-19.0 Z M333.9,86.1 h29.9 v19.0 h-29.9 Z" fill="#EDE6D3" stroke="#1C1917" stroke-width="2.4"/>
+  <rect x="311.5" y="93.6" width="74.8" height="4.4" fill="#14161B"/>
+  <path d="M418.3,56.2 h17.7 v95.2 h-17.7 Z M468.6,56.2 h17.7 v95.2 h-17.7 Z M434.6,64.4 h17.7 v32.6 h-17.7 Z M452.3,64.4 h17.7 v32.6 h-17.7 Z M443.4,86.1 h17.7 v35.4 h-17.7 Z" fill="#0A0B0E"/>
+  <path d="M410.1,48.0 h17.7 v95.2 h-17.7 Z M460.4,48.0 h17.7 v95.2 h-17.7 Z M426.4,56.2 h17.7 v32.6 h-17.7 Z M444.1,56.2 h17.7 v32.6 h-17.7 Z M435.2,77.9 h17.7 v35.4 h-17.7 Z" fill="#D9B052" stroke="#1C1917" stroke-width="2.4"/>
+  <rect x="406.7" y="93.6" width="74.8" height="4.4" fill="#14161B"/>
+  <path d="M501.2,56.2 h68.0 v19.0 h-68.0 Z M525.7,73.9 h19.0 v59.8 h-19.0 Z M501.2,132.4 h68.0 v19.0 h-68.0 Z" fill="#0A0B0E"/>
+  <path d="M493.0,48.0 h68.0 v19.0 h-68.0 Z M517.5,65.7 h19.0 v59.8 h-19.0 Z M493.0,124.2 h68.0 v19.0 h-68.0 Z" fill="#D9B052" stroke="#1C1917" stroke-width="2.4"/>
+  <rect x="489.6" y="93.6" width="74.8" height="4.4" fill="#14161B"/>
+  <path d="M584.2,56.2 h19.0 v95.2 h-19.0 Z M633.2,56.2 h19.0 v95.2 h-19.0 Z M600.5,69.8 h19.0 v30.6 h-19.0 Z M616.8,97.0 h19.0 v30.6 h-19.0 Z" fill="#0A0B0E"/>
+  <path d="M576.0,48.0 h19.0 v95.2 h-19.0 Z M625.0,48.0 h19.0 v95.2 h-19.0 Z M592.3,61.6 h19.0 v30.6 h-19.0 Z M608.6,88.8 h19.0 v30.6 h-19.0 Z" fill="#D9B052" stroke="#1C1917" stroke-width="2.4"/>
+  <rect x="572.6" y="93.6" width="74.8" height="4.4" fill="#14161B"/>
+  <path d="M667.2,56.2 h19.0 v95.2 h-19.0 Z M684.8,56.2 h50.3 v19.0 h-50.3 Z M684.8,94.3 h39.4 v19.0 h-39.4 Z M684.8,132.4 h50.3 v19.0 h-50.3 Z" fill="#0A0B0E"/>
+  <path d="M659.0,48.0 h19.0 v95.2 h-19.0 Z M676.6,48.0 h50.3 v19.0 h-50.3 Z M676.6,86.1 h39.4 v19.0 h-39.4 Z M676.6,124.2 h50.3 v19.0 h-50.3 Z" fill="#D9B052" stroke="#1C1917" stroke-width="2.4"/>
+  <rect x="655.6" y="93.6" width="74.8" height="4.4" fill="#14161B"/>
+  <polyline points="350,34 388,88 370,104 416,148 398,176" fill="none" stroke="#0A0B0E" stroke-width="6"/>
+  <polyline points="350,34 388,88 370,104 416,148 398,176" fill="none" stroke="#F28A2E" stroke-width="2.5"/>
+  <rect x="38" y="188" width="724" height="30" fill="#0A0B0E" stroke="#9E7B2F" stroke-width="1.5"/>
+  <polygon points="56,193 78,193 84,199 84,209 78,215 56,215 50,209 50,199" fill="#D9B052" stroke="#1C1917" stroke-width="1.5"/>
+  <text x="67" y="208" fill="#1C1917" data-bg="#D9B052" font-family="'Chakra Petch', 'Share Tech Mono', monospace" font-size="11" font-weight="700" letter-spacing="1" text-anchor="middle">41</text>
+  <text x="400" y="208" fill="#EDE6D3" data-bg="#0A0B0E" font-family="'Chakra Petch', 'Share Tech Mono', monospace" font-size="14" font-weight="700" letter-spacing="4" text-anchor="middle">MOUNT ANIMA · 1931 / 1979</text>
+  <text x="742" y="208" fill="#D9B052" data-bg="#0A0B0E" font-family="'Chakra Petch', 'Share Tech Mono', monospace" font-size="11" font-weight="700" letter-spacing="2" text-anchor="end">ANIMA CONS.</text>
+</svg>

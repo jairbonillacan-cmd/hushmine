@@ -1,0 +1,110 @@
+// Escena de captura determinista para `hush-cli shot --scene`.
+// Cámara de la Veta Madre con filón masivo de oro, incrustaciones de diamante y escalera.
+
+SceneDef(
+    name: "veta_oro",
+    description: "Cámara de la Veta Madre recién abierta entre estratos de tierra y roca común, con un filón denso de oro nativo y cristales de diamante en el frente, escalera de mano en el hastial izquierdo y una baliza iluminando los destellos metálicos.",
+    dimensions: Dimensions(width: 16, height: 16, depth: 16),
+    camera: CameraPose(
+        position_blocks: (7, 6, 3),
+        position_subblocks: (458_752, 393_216, 196_608),
+        look_at_blocks: (8, 5, 10),
+        yaw_deg: 8,
+        pitch_deg: -8,
+        fov_deg: 70,
+    ),
+    regions: [
+        BlockRegion(
+            min: (0, 0, 0),
+            max: (15, 15, 15),
+            block_id: 2,
+            block_name: "rock",
+            team: None,
+        ),
+        BlockRegion(
+            min: (0, 10, 0),
+            max: (15, 15, 15),
+            block_id: 1,
+            block_name: "dirt",
+            team: None,
+        ),
+        BlockRegion(
+            min: (3, 3, 2),
+            max: (12, 11, 13),
+            block_id: 0,
+            block_name: "air",
+            team: None,
+        ),
+        BlockRegion(
+            min: (6, 3, 10),
+            max: (10, 8, 12),
+            block_id: 5,
+            block_name: "gold",
+            team: None,
+        ),
+        BlockRegion(
+            min: (11, 4, 7),
+            max: (12, 7, 11),
+            block_id: 5,
+            block_name: "gold",
+            team: None,
+        ),
+        BlockRegion(
+            min: (3, 3, 6),
+            max: (3, 10, 6),
+            block_id: 10,
+            block_name: "ladder",
+            team: Some("copper"),
+        ),
+    ],
+    blocks: [
+        BlockPlacement(
+            pos: (8, 3, 8),
+            block_id: 14,
+            block_name: "beacon",
+            team: Some("copper"),
+        ),
+        BlockPlacement(
+            pos: (7, 6, 10),
+            block_id: 6,
+            block_name: "diamond",
+            team: None,
+        ),
+        BlockPlacement(
+            pos: (9, 5, 10),
+            block_id: 6,
+            block_name: "diamond",
+            team: None,
+        ),
+        BlockPlacement(
+            pos: (8, 8, 10),
+            block_id: 6,
+            block_name: "diamond",
+            team: None,
+        ),
+        BlockPlacement(
+            pos: (11, 6, 8),
+            block_id: 6,
+            block_name: "diamond",
+            team: None,
+        ),
+        BlockPlacement(
+            pos: (5, 3, 10),
+            block_id: 4,
+            block_name: "ore",
+            team: None,
+        ),
+        BlockPlacement(
+            pos: (5, 4, 11),
+            block_id: 4,
+            block_name: "ore",
+            team: None,
+        ),
+        BlockPlacement(
+            pos: (4, 3, 5),
+            block_id: 1,
+            block_name: "dirt",
+            team: None,
+        ),
+    ],
+)

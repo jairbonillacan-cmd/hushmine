@@ -2,39 +2,49 @@
 //!
 //! Se generan por código (deterministas, sin archivos) hasta que llegue el
 //! arte definitivo en el hito 6. La capa `i` corresponde al bloque `i + 1`.
+//! Las construcciones (8-17) llevan un marcador provisional con su color;
+//! las texturas reales están en `assets/textures/blocks` y aún no se cargan.
 
 use grisu_render::TextureData;
-use hush_sim::Block;
+use hush_sim::BlockKind;
 
 const SIZE: u32 = 16;
 
-/// Texturas de todos los bloques sólidos, en el orden de [`Block::SOLID`].
+/// Bloques con textura: todos menos el aire, en orden de identificador.
+pub fn textured_blocks() -> &'static [BlockKind] {
+    &BlockKind::ALL[1..]
+}
+
+/// Texturas de todos los bloques salvo el aire, en orden de identificador.
 pub fn block_textures() -> Vec<TextureData> {
-    Block::SOLID.iter().map(|&b| block_texture(b)).collect()
+    textured_blocks()
+        .iter()
+        .map(|&b| block_texture(b))
+        .collect()
 }
 
 /// Luz que emite cada bloque (0-15), indexada por su valor.
 pub fn emission_table() -> [u8; 256] {
     let mut table = [0; 256];
-    table[usize::from(Block::Lava.id())] = 13;
+    table[usize::from(BlockKind::Lava.id())] = 13;
     table
 }
 
 /// Textura de un bloque. El aire devuelve un patrón magenta de error.
-pub fn block_texture(block: Block) -> TextureData {
+pub fn block_texture(block: BlockKind) -> TextureData {
     let seed = u32::from(block.id()) * 0x51_7CC1;
     paint(|x, y| {
         let n = hash(x, y, seed);
         let fine = (n % 32) as i32;
         match block {
-            Block::Air => {
+            BlockKind::Air => {
                 if (x / 4 + y / 4) % 2 == 0 {
                     [255, 0, 255]
                 } else {
                     [0, 0, 0]
                 }
             }
-            Block::Dirt => {
+            BlockKind::Dirt => {
                 let base = shade([104, 74, 50], fine - 16);
                 if n.is_multiple_of(9) {
                     shade(base, -30)
@@ -44,8 +54,8 @@ pub fn block_texture(block: Block) -> TextureData {
                     base
                 }
             }
-            Block::Rock => rock(x, y, n, [96, 96, 102]),
-            Block::HardRock => {
+            BlockKind::Rock => rock(x, y, n, [96, 96, 102]),
+            BlockKind::HardRock => {
                 let base = rock(x, y, n, [58, 60, 72]);
                 if (x * 2 + y * 3 + n % 3).is_multiple_of(13) {
                     [92, 96, 114]
@@ -53,10 +63,10 @@ pub fn block_texture(block: Block) -> TextureData {
                     base
                 }
             }
-            Block::Ore => speckled(x, y, n, [88, 84, 82], [196, 112, 54], 7),
-            Block::Gold => speckled(x, y, n, [84, 80, 74], [250, 204, 60], 6),
-            Block::Diamond => speckled(x, y, n, [44, 46, 58], [150, 240, 250], 9),
-            Block::Lava => {
+            BlockKind::Ore => speckled(x, y, n, [88, 84, 82], [196, 112, 54], 7),
+            BlockKind::Gold => speckled(x, y, n, [84, 80, 74], [250, 204, 60], 6),
+            BlockKind::Diamond => speckled(x, y, n, [44, 46, 58], [150, 240, 250], 9),
+            BlockKind::Lava => {
                 let wave = ((x * 3 + y * 5 + (n % 5)) % 16) as i32;
                 let hot = (wave - 8).abs() < 2 || n.is_multiple_of(11);
                 if hot {
@@ -65,8 +75,35 @@ pub fn block_texture(block: Block) -> TextureData {
                     shade([226, 82, 26], fine / 2 - 8)
                 }
             }
+            BlockKind::TeamBlock => structure(x, y, n, [150, 110, 80]),
+            BlockKind::ForceField => structure(x, y, n, [120, 200, 230]),
+            BlockKind::Ladder => {
+                if x == 3 || x == 12 || y % 4 == 1 {
+                    shade([150, 112, 64], fine / 2 - 8)
+                } else {
+                    [40, 30, 24]
+                }
+            }
+            BlockKind::JumpPad => structure(x, y, n, [90, 190, 90]),
+            BlockKind::Electric => structure(x, y, n, [230, 220, 80]),
+            BlockKind::Rail => structure(x, y, n, [130, 130, 140]),
+            BlockKind::Beacon => structure(x, y, n, [240, 240, 220]),
+            BlockKind::Explosive => structure(x, y, n, [200, 50, 40]),
+            BlockKind::BucketStation => structure(x, y, n, [110, 90, 150]),
+            BlockKind::BucketPost => structure(x, y, n, [160, 140, 190]),
         }
     })
+}
+
+/// Marcador provisional de construcción: marco oscuro y relleno de color.
+fn structure(x: u32, y: u32, n: u32, color: [u8; 3]) -> [u8; 3] {
+    let edge = x == 0 || y == 0 || x == SIZE - 1 || y == SIZE - 1;
+    let cross = x == y || x + y == SIZE - 1;
+    if edge || cross {
+        shade(color, -70)
+    } else {
+        shade(color, (n % 16) as i32 - 8)
+    }
 }
 
 /// Roca con grietas oscuras en diagonal.
@@ -133,7 +170,7 @@ mod tests {
     #[test]
     fn one_texture_per_solid_block() {
         let textures = block_textures();
-        assert_eq!(textures.len(), Block::SOLID.len());
+        assert_eq!(textures.len(), textured_blocks().len());
         assert!(
             textures
                 .iter()
@@ -150,12 +187,12 @@ mod tests {
                 assert!(
                     d > 12,
                     "{:?} y {:?} se parecen demasiado",
-                    Block::SOLID[i],
-                    Block::SOLID[j]
+                    textured_blocks()[i],
+                    textured_blocks()[j]
                 );
             }
         }
-        let gold = mean(&block_texture(Block::Gold));
+        let gold = mean(&block_texture(BlockKind::Gold));
         assert!(
             gold[0] > gold[2] + 20,
             "el oro debería verse amarillo: {gold:?}"
@@ -165,8 +202,8 @@ mod tests {
     #[test]
     fn textures_are_deterministic() {
         assert_eq!(
-            block_texture(Block::Ore).rgba,
-            block_texture(Block::Ore).rgba
+            block_texture(BlockKind::Ore).rgba,
+            block_texture(BlockKind::Ore).rgba
         );
     }
 }

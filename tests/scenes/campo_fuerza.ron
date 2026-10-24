@@ -1,0 +1,117 @@
+// Escena de captura determinista para `hush-cli shot --scene`.
+// Cruce de galerías disputado con puente, campo de fuerza Copper, foso eléctrico y explosivo.
+
+SceneDef(
+    name: "campo_fuerza",
+    description: "Cruce de galerías subterráneas disputado donde una barrera de campo de fuerza del equipo Copper bloquea un puente estrecho sobre un foso con bloques eléctricos activos, mientras una carga explosiva del equipo Cobalt aguarda junto al marco.",
+    dimensions: Dimensions(width: 16, height: 16, depth: 16),
+    camera: CameraPose(
+        position_blocks: (7, 7, 3),
+        position_subblocks: (458_752, 458_752, 196_608),
+        look_at_blocks: (7, 5, 9),
+        yaw_deg: 0,
+        pitch_deg: -16,
+        fov_deg: 70,
+    ),
+    regions: [
+        BlockRegion(
+            min: (0, 0, 0),
+            max: (15, 15, 15),
+            block_id: 2,
+            block_name: "rock",
+            team: None,
+        ),
+        BlockRegion(
+            min: (0, 0, 0),
+            max: (15, 1, 15),
+            block_id: 3,
+            block_name: "hard_rock",
+            team: None,
+        ),
+        BlockRegion(
+            min: (5, 5, 2),
+            max: (10, 11, 14),
+            block_id: 0,
+            block_name: "air",
+            team: None,
+        ),
+        BlockRegion(
+            min: (2, 2, 6),
+            max: (13, 10, 10),
+            block_id: 0,
+            block_name: "air",
+            team: None,
+        ),
+        BlockRegion(
+            min: (7, 4, 5),
+            max: (8, 4, 11),
+            block_id: 8,
+            block_name: "team_block",
+            team: Some("copper"),
+        ),
+        BlockRegion(
+            min: (6, 5, 9),
+            max: (9, 8, 9),
+            block_id: 9,
+            block_name: "force_field",
+            team: Some("copper"),
+        ),
+        BlockRegion(
+            min: (5, 2, 7),
+            max: (10, 2, 9),
+            block_id: 12,
+            block_name: "electric",
+            team: Some("copper"),
+        ),
+    ],
+    blocks: [
+        BlockPlacement(
+            pos: (6, 5, 8),
+            block_id: 15,
+            block_name: "explosive",
+            team: Some("cobalt"),
+        ),
+        BlockPlacement(
+            pos: (6, 5, 9),
+            block_id: 8,
+            block_name: "team_block",
+            team: Some("copper"),
+        ),
+        BlockPlacement(
+            pos: (6, 8, 9),
+            block_id: 8,
+            block_name: "team_block",
+            team: Some("copper"),
+        ),
+        BlockPlacement(
+            pos: (9, 5, 9),
+            block_id: 8,
+            block_name: "team_block",
+            team: Some("copper"),
+        ),
+        BlockPlacement(
+            pos: (9, 8, 9),
+            block_id: 8,
+            block_name: "team_block",
+            team: Some("copper"),
+        ),
+        BlockPlacement(
+            pos: (5, 5, 5),
+            block_id: 14,
+            block_name: "beacon",
+            team: Some("copper"),
+        ),
+        BlockPlacement(
+            pos: (10, 5, 11),
+            block_id: 14,
+            block_name: "beacon",
+            team: Some("cobalt"),
+        ),
+        BlockPlacement(
+            pos: (4, 3, 8),
+            block_id: 4,
+            block_name: "ore",
+            team: None,
+        ),
+    ],
+)

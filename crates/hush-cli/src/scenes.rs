@@ -7,7 +7,7 @@ use glam::Vec3;
 use grisu_render::{ColorBox, FlyCamera, OrbitCamera, TerrainStyle, View};
 use grisu_voxel::{AIR, FIXED_ONE, VoxelWorld, raycast};
 use hush_sim::{
-    Block, Command, MatchConfig, MoveInput, Simulation, TerrainConfig, generate_terrain,
+    BlockKind, Command, MatchConfig, MoveInput, Simulation, TerrainConfig, generate_terrain,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
@@ -118,11 +118,11 @@ fn carve_tunnel(world: &mut VoxelWorld) {
     world.fill([8, 30, 31], [56, 32, 33], AIR);
     world.fill([31, 30, 16], [33, 32, 48], AIR);
     // Vetas en las paredes para comprobar las texturas.
-    world.set(20, 31, 34, Block::Gold.id());
-    world.set(24, 32, 30, Block::Ore.id());
-    world.set(27, 30, 34, Block::Diamond.id());
-    world.set(14, 29, 33, Block::Ore.id());
-    world.fill([24, 29, 31], [26, 29, 33], Block::Lava.id());
+    world.set(20, 31, 34, BlockKind::Gold.id());
+    world.set(24, 32, 30, BlockKind::Ore.id());
+    world.set(27, 30, 34, BlockKind::Diamond.id());
+    world.set(14, 29, 33, BlockKind::Ore.id());
+    world.fill([24, 29, 31], [26, 29, 33], BlockKind::Lava.id());
 }
 
 /// Pozo de 3×3 desde la superficie hasta y = 10, con escalones en espiral.

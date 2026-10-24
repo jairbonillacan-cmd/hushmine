@@ -22,7 +22,7 @@ fn client_messages_round_trip() {
         ClientMsg::Inputs(vec![
             frame(1, None),
             frame(2, Some(Action::Dig([1, -2, 3]))),
-            frame(3, Some(Action::Place([4, 5, 6], Block::Gold))),
+            frame(3, Some(Action::Place([4, 5, 6], BlockKind::Gold))),
         ]),
         ClientMsg::Bye,
     ];

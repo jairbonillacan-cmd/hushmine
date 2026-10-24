@@ -4,7 +4,7 @@
 //! el servidor registra y descarta.
 
 use grisu_net::bytes::{DecodeError, Reader, Writer};
-use hush_sim::{Block, BlockChange, MoveInput, PlayerBody};
+use hush_sim::{BlockChange, BlockKind, MoveInput, PlayerBody};
 
 /// Se incrementa con cada cambio incompatible del protocolo.
 pub const PROTOCOL_VERSION: u16 = 1;
@@ -17,7 +17,7 @@ pub const INPUT_REDUNDANCY: usize = 12;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Action {
     Dig([i32; 3]),
-    Place([i32; 3], Block),
+    Place([i32; 3], BlockKind),
 }
 
 /// Entrada numerada de un tick del cliente.
@@ -139,7 +139,7 @@ fn get_frame(r: &mut Reader) -> Result<InputFrame, DecodeError> {
         A_DIG => Some(Action::Dig(get_cell(r)?)),
         A_PLACE => {
             let cell = get_cell(r)?;
-            let block = Block::from_id(r.u8()?).ok_or(DecodeError::Invalid("bloque"))?;
+            let block = BlockKind::from_id(r.u8()?).map_err(|_| DecodeError::Invalid("bloque"))?;
             Some(Action::Place(cell, block))
         }
         _ => return Err(DecodeError::Invalid("acción")),

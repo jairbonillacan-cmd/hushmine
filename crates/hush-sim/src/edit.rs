@@ -6,7 +6,7 @@
 use grisu_voxel::{AIR, FIXED_ONE, VoxelWorld};
 use serde::{Deserialize, Serialize};
 
-use crate::{Block, PlayerBody};
+use crate::{BlockKind, PlayerBody};
 
 /// Alcance máximo desde los ojos hasta el centro de la celda: 5 bloques.
 pub const REACH: i64 = 5 * FIXED_ONE as i64;
@@ -43,7 +43,11 @@ fn is_boundary(world: &VoxelWorld, cell: [i32; 3]) -> bool {
 }
 
 /// Cava la celda y devuelve el bloque que había.
-pub fn dig(world: &mut VoxelWorld, body: &PlayerBody, cell: [i32; 3]) -> Result<Block, EditError> {
+pub fn dig(
+    world: &mut VoxelWorld,
+    body: &PlayerBody,
+    cell: [i32; 3],
+) -> Result<BlockKind, EditError> {
     if !world.in_bounds(cell[0], cell[1], cell[2]) {
         return Err(EditError::OutOfBounds);
     }
@@ -51,8 +55,8 @@ pub fn dig(world: &mut VoxelWorld, body: &PlayerBody, cell: [i32; 3]) -> Result<
         return Err(EditError::Boundary);
     }
     check_reach(body, cell)?;
-    let block =
-        Block::from_id(world.get(cell[0], cell[1], cell[2])).ok_or(EditError::InvalidBlock)?;
+    let block = BlockKind::from_id(world.get(cell[0], cell[1], cell[2]))
+        .map_err(|_| EditError::InvalidBlock)?;
     if !block.is_diggable() {
         return Err(EditError::NotDiggable);
     }
@@ -66,9 +70,9 @@ pub fn place(
     body: &PlayerBody,
     others: &[PlayerBody],
     cell: [i32; 3],
-    block: Block,
+    block: BlockKind,
 ) -> Result<(), EditError> {
-    if block == Block::Air || block == Block::Lava {
+    if block == BlockKind::Air || block == BlockKind::Lava {
         return Err(EditError::InvalidBlock);
     }
     if !world.in_bounds(cell[0], cell[1], cell[2]) {
@@ -96,8 +100,8 @@ mod tests {
 
     fn setup() -> (VoxelWorld, PlayerBody) {
         let mut w = VoxelWorld::new([32, 16, 32]).unwrap();
-        w.fill([0, 0, 0], [31, 3, 31], Block::Rock.id());
-        w.set(9, 3, 8, Block::Lava.id());
+        w.fill([0, 0, 0], [31, 3, 31], BlockKind::Rock.id());
+        w.set(9, 3, 8, BlockKind::Lava.id());
         let body = PlayerBody::new(spawn_point(&w, 8, 8));
         (w, body)
     }
@@ -105,7 +109,7 @@ mod tests {
     #[test]
     fn digs_nearby_rock() {
         let (mut w, body) = setup();
-        assert_eq!(dig(&mut w, &body, [8, 3, 8]), Ok(Block::Rock));
+        assert_eq!(dig(&mut w, &body, [8, 3, 8]), Ok(BlockKind::Rock));
         assert!(!w.is_solid(8, 3, 8));
         assert_eq!(dig(&mut w, &body, [8, 3, 8]), Err(EditError::NotDiggable));
     }
@@ -126,22 +130,25 @@ mod tests {
     #[test]
     fn places_but_not_inside_players() {
         let (mut w, body) = setup();
-        assert_eq!(place(&mut w, &body, &[], [10, 4, 8], Block::Dirt), Ok(()));
         assert_eq!(
-            place(&mut w, &body, &[], [10, 4, 8], Block::Dirt),
+            place(&mut w, &body, &[], [10, 4, 8], BlockKind::Dirt),
+            Ok(())
+        );
+        assert_eq!(
+            place(&mut w, &body, &[], [10, 4, 8], BlockKind::Dirt),
             Err(EditError::Occupied)
         );
         assert_eq!(
-            place(&mut w, &body, &[], [8, 4, 8], Block::Dirt),
+            place(&mut w, &body, &[], [8, 4, 8], BlockKind::Dirt),
             Err(EditError::BlockedByPlayer)
         );
         let other = PlayerBody::new(spawn_point(&w, 6, 8));
         assert_eq!(
-            place(&mut w, &body, &[other], [6, 5, 8], Block::Dirt),
+            place(&mut w, &body, &[other], [6, 5, 8], BlockKind::Dirt),
             Err(EditError::BlockedByPlayer)
         );
         assert_eq!(
-            place(&mut w, &body, &[], [7, 4, 8], Block::Lava),
+            place(&mut w, &body, &[], [7, 4, 8], BlockKind::Lava),
             Err(EditError::InvalidBlock)
         );
     }

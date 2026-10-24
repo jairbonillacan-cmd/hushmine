@@ -12,7 +12,7 @@ use grisu_render::{
 };
 use grisu_voxel::{FIXED_ONE, RayHit, raycast};
 use hush_net::{Action, ClientState};
-use hush_sim::{Block, MoveInput, TICK_RATE};
+use hush_sim::{BlockKind, MoveInput, TICK_RATE};
 
 use crate::session::Session;
 
@@ -28,13 +28,13 @@ const TICK_SECONDS: f32 = 1.0 / TICK_RATE as f32;
 const REMOTE_DELAY_TICKS: f32 = 3.0;
 const FOG_DISTANCE: f32 = 56.0;
 /// Bloques que se pueden poner con las teclas 1-6.
-const PLACEABLE: [Block; 6] = [
-    Block::Dirt,
-    Block::Rock,
-    Block::HardRock,
-    Block::Ore,
-    Block::Gold,
-    Block::Diamond,
+const PLACEABLE: [BlockKind; 6] = [
+    BlockKind::Dirt,
+    BlockKind::Rock,
+    BlockKind::HardRock,
+    BlockKind::Ore,
+    BlockKind::Gold,
+    BlockKind::Diamond,
 ];
 const SLOT_KEYS: [KeyCode; 6] = [
     KeyCode::Digit1,
@@ -55,7 +55,7 @@ pub struct Game {
     prev_eye: Vec3,
     eye: Vec3,
     target: Option<RayHit>,
-    place_block: Block,
+    place_block: BlockKind,
     queued: Option<Action>,
     last_state: ClientState,
     terrain: Option<VoxelRenderer>,
@@ -74,7 +74,7 @@ impl Game {
             prev_eye: Vec3::ZERO,
             eye: Vec3::ZERO,
             target: None,
-            place_block: Block::Rock,
+            place_block: BlockKind::Rock,
             queued: None,
             last_state: ClientState::Connecting,
             terrain: None,

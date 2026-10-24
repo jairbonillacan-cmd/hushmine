@@ -1,4 +1,4 @@
-# ADR 0003: capa de red propia sobre UDP (y no `renet2` por ahora)
+# ADR 0005: capa de red propia sobre UDP (y no `renet2` por ahora)
 
 - **Fecha:** 23 de octubre de 2026
 - **Estado:** aceptada; se revisa en el hito 5 (navegador y Steam)

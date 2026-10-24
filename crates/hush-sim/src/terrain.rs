@@ -5,7 +5,7 @@
 
 use grisu_voxel::{VoxelWorld, WorldError};
 
-use crate::{Block, Rng};
+use crate::{BlockKind, Rng};
 
 /// Parámetros del mapa.
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -41,11 +41,11 @@ pub fn generate(seed: u64, config: &TerrainConfig) -> Result<VoxelWorld, WorldEr
             let dirt_depth = 3 + (hash2(seed, x, z) % 3) as i32;
             for y in 0..=top.min(sy - 1) {
                 let block = if y > top - dirt_depth {
-                    Block::Dirt
+                    BlockKind::Dirt
                 } else if y < hard_rock_top + (hash2(seed ^ 1, x, z) % 3) as i32 {
-                    Block::HardRock
+                    BlockKind::HardRock
                 } else {
-                    Block::Rock
+                    BlockKind::Rock
                 };
                 world.set(x, y, z, block.id());
             }
@@ -58,7 +58,7 @@ pub fn generate(seed: u64, config: &TerrainConfig) -> Result<VoxelWorld, WorldEr
     scatter(
         &mut world,
         &mut veins,
-        Block::Ore,
+        BlockKind::Ore,
         volume / 3000,
         6..18,
         4..surface - 2,
@@ -66,7 +66,7 @@ pub fn generate(seed: u64, config: &TerrainConfig) -> Result<VoxelWorld, WorldEr
     scatter(
         &mut world,
         &mut veins,
-        Block::Gold,
+        BlockKind::Gold,
         volume / 9000,
         3..8,
         4..surface - 8,
@@ -74,7 +74,7 @@ pub fn generate(seed: u64, config: &TerrainConfig) -> Result<VoxelWorld, WorldEr
     scatter(
         &mut world,
         &mut veins,
-        Block::Diamond,
+        BlockKind::Diamond,
         volume / 40000,
         1..3,
         2..surface / 3,
@@ -129,7 +129,7 @@ impl Heightmap {
 fn scatter(
     world: &mut VoxelWorld,
     rng: &mut Rng,
-    block: Block,
+    block: BlockKind,
     count: u32,
     length: std::ops::Range<u32>,
     height: std::ops::Range<i32>,
@@ -147,7 +147,7 @@ fn scatter(
         let steps = length.start + rng.below(length.end - length.start);
         for _ in 0..steps {
             let current = world.get(p[0], p[1], p[2]);
-            if current == Block::Rock.id() || current == Block::Dirt.id() {
+            if current == BlockKind::Rock.id() || current == BlockKind::Dirt.id() {
                 world.set(p[0], p[1], p[2], block.id());
             }
             let axis = rng.below(3) as usize;
@@ -207,7 +207,7 @@ fn place_lava_pocket(world: &mut VoxelWorld, rng: &mut Rng, height: std::ops::Ra
     world.fill(
         [c[0] - r, c[1], c[2] - r],
         [c[0] + r, c[1], c[2] + r],
-        Block::Lava.id(),
+        BlockKind::Lava.id(),
     );
 }
 
@@ -221,7 +221,7 @@ fn hash2(seed: u64, x: i32, z: i32) -> u64 {
 mod tests {
     use super::*;
 
-    fn count(world: &VoxelWorld, block: Block) -> usize {
+    fn count(world: &VoxelWorld, block: BlockKind) -> usize {
         (0..world.chunk_count())
             .map(|i| {
                 world
@@ -247,11 +247,11 @@ mod tests {
     #[test]
     fn has_every_natural_block_and_sky() {
         let world = generate(7, &TerrainConfig::default()).unwrap();
-        for block in Block::SOLID {
+        for block in BlockKind::ALL.into_iter().filter(|b| b.is_natural()) {
             assert!(count(&world, block) > 0, "falta {block:?}");
         }
-        assert!(count(&world, Block::Rock) > count(&world, Block::Ore));
-        assert!(count(&world, Block::Ore) > count(&world, Block::Gold));
+        assert!(count(&world, BlockKind::Rock) > count(&world, BlockKind::Ore));
+        assert!(count(&world, BlockKind::Ore) > count(&world, BlockKind::Gold));
         // El cielo está vacío.
         for x in 0..64 {
             assert!(!world.is_solid(x, 63, x));

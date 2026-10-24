@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <!-- HUSHMINE UI Mockup: loading (1920x1080) | Safe margin: 48px -->
+  <rect x="0" y="0" width="1920" height="1080" fill="#0A0B0E"/>
+  <rect x="157" y="48" width="1605" height="669" fill="#EDE6D3" stroke="#594318" stroke-width="4" rx="8"/>
+  <!-- ftl: loading-sign-header -->
+  <text x="960" y="92" fill="#1C1917" data-bg="#EDE6D3" font-family="monospace" font-size="18" font-weight="bold" text-anchor="middle">ANIMA CONSOLIDATED MINING &amp; SMELTING CO. · SAFETY SIGN #04</text>
+  <text x="960" y="126" fill="#0A0B0E" data-bg="#EDE6D3" font-family="monospace" font-size="15" font-weight="bold" text-anchor="middle">ESTABLISHED 1931 · UNDERGROUND SEISMIC SAFETY REGULATION</text>
+  <rect x="349" y="158" width="1219" height="160" fill="#14161B" stroke="#1C1917" stroke-width="2" rx="4"/>
+  <polyline fill="none" stroke="#68F08E" stroke-width="3" points="373,238 438,234 503,242 568,229 633,249 698,220 763,262 828,208 893,257 958,224 1023,269 1088,202 1153,260 1218,223 1283,247 1348,231 1413,241 1478,236 1544,238"/>
+  <text x="960" y="192" fill="#FAAE3C" data-bg="#14161B" font-family="monospace" font-size="15" font-weight="bold" text-anchor="middle">SEISMOGRAPH NEEDLE + BLASTING CHARGE WARNING</text>
+  <!-- ftl: sign-04-text -->
+  <text x="960" y="374" fill="#0A0B0E" data-bg="#EDE6D3" font-family="monospace" font-size="22" font-weight="bold" text-anchor="middle">"WATCH THE SEISMOGRAPH NEEDLE. NEVER BLAST ABOVE BREATHE."</text>
+  <!-- ftl: loading-rule -->
+  <text x="960" y="420" fill="#1C1917" data-bg="#EDE6D3" font-family="monospace" font-size="18" font-weight="bold" text-anchor="middle">"THE OLD-TIMERS HAVE ONE RULE: DON'T WAKE THE SLEEPER."</text>
+  <rect x="157" y="737" width="1605" height="295" fill="#07120A" stroke="#34B85A" stroke-width="2" rx="4"/>
+  <!-- ftl: loading-progress -->
+  <text x="181" y="775" fill="#68F08E" data-bg="#07120A" font-family="monospace" font-size="18" font-weight="bold" text-anchor="start">CARVING 64x64x64 VOXEL MOUNTAIN · SEED 42 · 78%</text>
+  <text x="181" y="807" fill="#C8FFD6" data-bg="#07120A" font-family="monospace" font-size="15" font-weight="bold" text-anchor="start">TAPE DRIVE 1979 · GENERATING STRATA, ORE VEINS &amp; MOTHER LODE</text>
+  <rect x="181" y="998" width="1214" height="18" fill="#68F08E" rx="2"/>
+</svg>

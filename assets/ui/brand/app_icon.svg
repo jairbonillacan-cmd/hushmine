@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <title>HUSHMINE — Application Icon (256x256 to 16x16)</title>
+  <rect x="0" y="0" width="256" height="256" rx="28" fill="#0A0B0E"/>
+  <polygon points="68,14 188,14 242,68 242,188 188,242 68,242 14,188 14,68" fill="#9E7B2F" stroke="#D9B052" stroke-width="6"/>
+  <polygon points="76,28 180,28 228,76 228,180 180,228 76,228 28,180 28,76" fill="#14161B" stroke="#594318" stroke-width="4"/>
+  <circle cx="128" cy="44" r="10" fill="#0A0B0E" stroke="#D9B052" stroke-width="3"/>
+  <polygon points="124,62 48,188 124,188" fill="#C96832" stroke="#F09246" stroke-width="3"/>
+  <polygon points="132,62 208,188 132,188" fill="#3B73C4" stroke="#5CA3F2" stroke-width="3"/>
+  <path d="M52,106 Q128,66 204,106 L192,124 Q128,92 64,124 Z" fill="#EDE6D3" stroke="#0A0B0E" stroke-width="3"/>
+  <rect x="120" y="84" width="16" height="96" fill="#D9B052" stroke="#0A0B0E" stroke-width="3"/>
+  <polygon points="96,184 160,184 176,216 80,216" fill="#D95B26" stroke="#F28A2E" stroke-width="3"/>
+  <polygon points="110,192 146,192 156,212 100,212" fill="#FFF08A"/>
+  <polyline points="20,144 82,144 98,122 114,168 128,96 144,172 160,126 174,144 236,144" fill="none" stroke="#0A0B0E" stroke-width="10"/>
+  <polyline points="20,144 82,144 98,122 114,168 128,96 144,172 160,126 174,144 236,144" fill="none" stroke="#68F08E" stroke-width="5"/>
+  <circle cx="128" cy="96" r="5" fill="#C8FFD6"/>
+</svg>

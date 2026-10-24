@@ -4,16 +4,20 @@ use std::time::Instant;
 use grisu_voxel::VoxelWorld;
 use serde::{Deserialize, Serialize};
 
-use crate::player::spawn_point;
-use crate::{Block, DiggerBot, EditError, MoveInput, PlayerBody, Rng, SimReport, TerrainConfig};
+use crate::altar::Altar;
+use crate::{
+    BlockKind, DiggerBot, Economy, EditError, EventLog, LootStore, MatchEventKind, MoveInput,
+    PlayerBody, Rng, SeismoEvent, Seismograph, SimReport, Team, TerrainConfig,
+};
 
 /// Ticks de simulación por segundo (servidor autoritativo a 30 Hz).
-pub const TICK_RATE: u32 = 30;
+pub const TICK_RATE: u32 = 30; // Se moverá a data/*.ron
 
+/// Configuración inicial de una partida simulada.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MatchConfig {
     pub seed: u64,
-    /// Duración máxima en ticks. 16 minutos es el tope del Sismógrafo.
+    /// Duración máxima en ticks. 16 minutos es el tope pasivo del Sismógrafo.
     pub max_ticks: u32,
     pub terrain: TerrainConfig,
     /// Bots de prueba que cavan durante la simulación sin gráficos.
@@ -45,7 +49,7 @@ pub enum Command {
     Place {
         player: usize,
         cell: [i32; 3],
-        block: Block,
+        block: BlockKind,
     },
 }
 
@@ -65,7 +69,7 @@ pub struct Rejection {
     pub error: EditError,
 }
 
-/// Contadores para el informe.
+/// Contadores de edición del terreno para el informe.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EditStats {
     pub dug: BTreeMap<String, u32>,
@@ -73,25 +77,36 @@ pub struct EditStats {
     pub rejected: BTreeMap<String, u32>,
 }
 
-/// Estado de una partida.
+/// Estado determinista de una partida de HUSHMINE.
 pub struct Simulation {
-    config: MatchConfig,
-    tick: u32,
-    rng: Rng,
-    world: VoxelWorld,
-    players: Vec<PlayerBody>,
+    pub(crate) config: MatchConfig,
+    pub(crate) tick: u32,
+    pub(crate) rng: Rng,
+    // Sismógrafo, altar, economía y registro de eventos.
+    pub(crate) seismograph: Seismograph,
+    pub(crate) altar: Altar,
+    pub(crate) economy: Economy,
+    pub(crate) loot: LootStore,
+    pub(crate) event_log: EventLog,
+    pub(crate) awakening_tick: Option<u32>,
+    /// Huella acumulada del estado; dos simulaciones con las mismas entradas
+    /// deben terminar con la misma huella en cualquier plataforma.
+    pub(crate) state_hash: u64,
+    // Terreno, mineros y bots.
+    pub(crate) world: VoxelWorld,
+    pub(crate) players: Vec<PlayerBody>,
     /// Los jugadores que se fueron conservan su índice pero dejan de existir
     /// en el mundo.
-    active: Vec<bool>,
+    pub(crate) active: Vec<bool>,
     /// Entrada de movimiento vigente de cada jugador.
-    inputs: Vec<MoveInput>,
-    bots: Vec<(usize, DiggerBot)>,
-    bots_active: bool,
-    pending: Vec<Command>,
-    stats: EditStats,
-    changes: Vec<BlockChange>,
-    rejections: Vec<Rejection>,
-    broken_invariants: Vec<String>,
+    pub(crate) inputs: Vec<MoveInput>,
+    pub(crate) bots: Vec<(usize, DiggerBot)>,
+    pub(crate) bots_active: bool,
+    pub(crate) pending: Vec<Command>,
+    pub(crate) stats: EditStats,
+    pub(crate) changes: Vec<BlockChange>,
+    pub(crate) rejections: Vec<Rejection>,
+    pub(crate) world_violations: Vec<String>,
 }
 
 impl Simulation {
@@ -102,6 +117,13 @@ impl Simulation {
             rng: Rng::new(config.seed),
             config,
             tick: 0,
+            seismograph: Seismograph::new(),
+            altar: Altar::new(),
+            economy: Economy::with_default_team_size(),
+            loot: LootStore::new(),
+            event_log: EventLog::new(),
+            awakening_tick: None,
+            state_hash: 0xCBF2_9CE4_8422_2325,
             world,
             players: Vec::new(),
             active: Vec::new(),
@@ -112,7 +134,7 @@ impl Simulation {
             stats: EditStats::default(),
             changes: Vec::new(),
             rejections: Vec::new(),
-            broken_invariants: Vec::new(),
+            world_violations: Vec::new(),
         };
         for i in 0..sim.config.bots {
             let player = sim.spawn_player();
@@ -122,180 +144,84 @@ impl Simulation {
         Ok(sim)
     }
 
-    /// Añade un jugador en un punto de la superficie y devuelve su índice.
-    pub fn spawn_player(&mut self) -> usize {
-        let [sx, _, sz] = self.world.size();
-        let x = 2 + self.rng.below(sx - 4) as i32;
-        let z = 2 + self.rng.below(sz - 4) as i32;
-        self.players
-            .push(PlayerBody::new(spawn_point(&self.world, x, z)));
-        self.active.push(true);
-        self.inputs.push(MoveInput::default());
-        self.players.len() - 1
-    }
-
-    /// Retira a un jugador (desconexión). Su índice no se reutiliza.
-    pub fn remove_player(&mut self, player: usize) {
-        if let Some(active) = self.active.get_mut(player) {
-            *active = false;
-        }
-    }
-
-    pub fn is_active(&self, player: usize) -> bool {
-        self.active.get(player).copied().unwrap_or(false)
-    }
-
-    /// Jugadores presentes, con su índice.
-    pub fn active_players(&self) -> impl Iterator<Item = (usize, &PlayerBody)> {
-        self.players
-            .iter()
-            .enumerate()
-            .filter(|(i, _)| self.active[*i])
-    }
-
-    /// Bloques cambiados desde la última llamada, en orden.
-    pub fn take_changes(&mut self) -> Vec<BlockChange> {
-        std::mem::take(&mut self.changes)
-    }
-
-    /// Acciones rechazadas desde la última llamada.
-    pub fn take_rejections(&mut self) -> Vec<Rejection> {
-        std::mem::take(&mut self.rejections)
-    }
-
+    /// Devuelve el tick actual de la partida.
     pub fn tick(&self) -> u32 {
         self.tick
     }
 
-    pub fn world(&self) -> &VoxelWorld {
-        &self.world
-    }
-
-    /// Acceso mutable al terreno, para que el cliente recoja los chunks sucios.
-    pub fn world_mut(&mut self) -> &mut VoxelWorld {
-        &mut self.world
-    }
-
-    pub fn players(&self) -> &[PlayerBody] {
-        &self.players
-    }
-
-    pub fn stats(&self) -> &EditStats {
-        &self.stats
-    }
-
-    pub fn is_finished(&self) -> bool {
-        self.tick >= self.config.max_ticks
-    }
-
-    /// Activa o detiene a los bots. Detenidos, siguen en el mapa sin moverse.
-    pub fn set_bots_active(&mut self, active: bool) {
-        self.bots_active = active;
-        if !active {
-            for (player, _) in &self.bots {
-                self.inputs[*player] = MoveInput::default();
-            }
-        }
-    }
-
-    /// Encola una orden para el próximo tick.
-    pub fn submit(&mut self, command: Command) {
-        self.pending.push(command);
-    }
-
-    /// Avanza un tick: órdenes en el orden de llegada, luego movimiento.
-    pub fn step(&mut self) {
-        let mut commands = std::mem::take(&mut self.pending);
-        if self.bots_active {
-            for (player, bot) in &mut self.bots {
-                commands.extend(bot.think(*player, &self.players[*player], self.tick));
-            }
-        }
-        for command in commands {
-            if let Err(err) = self.apply(command) {
-                *self.stats.rejected.entry(format!("{err:?}")).or_default() += 1;
-                if let Command::Dig { player, cell } | Command::Place { player, cell, .. } = command
-                {
-                    self.rejections.push(Rejection {
-                        player,
-                        cell,
-                        error: err,
-                    });
-                }
-            }
-        }
-        for (i, (body, input)) in self.players.iter_mut().zip(&self.inputs).enumerate() {
-            if self.active[i] {
-                body.step(&self.world, *input);
-            }
-        }
-        self.check_invariants();
-        self.tick += 1;
-    }
-
-    fn apply(&mut self, command: Command) -> Result<(), EditError> {
-        let player = match command {
-            Command::Move { player, .. }
-            | Command::Dig { player, .. }
-            | Command::Place { player, .. } => player,
-        };
-        if !self.is_active(player) {
-            return Err(EditError::UnknownPlayer);
-        }
-        let body = self.players[player];
-        match command {
-            Command::Move { input, .. } => self.inputs[player] = input,
-            Command::Dig { cell, .. } => {
-                let block = crate::edit::dig(&mut self.world, &body, cell)?;
-                *self.stats.dug.entry(block.name().to_owned()).or_default() += 1;
-                self.changes.push(BlockChange { cell, block: 0 });
-            }
-            Command::Place { cell, block, .. } => {
-                let others: Vec<PlayerBody> = self.active_players().map(|(_, b)| *b).collect();
-                crate::edit::place(&mut self.world, &body, &others, cell, block)?;
-                self.stats.placed += 1;
-                self.changes.push(BlockChange {
-                    cell,
-                    block: block.id(),
-                });
-            }
-        }
-        Ok(())
-    }
-
-    fn check_invariants(&mut self) {
-        for (i, body) in self.players.iter().enumerate() {
-            if !self.active[i] {
-                continue;
-            }
-            if body.aabb().intersects_world(&self.world) {
-                self.broken_invariants.push(format!(
-                    "tick {}: jugador {i} dentro de un bloque",
-                    self.tick
-                ));
-            }
-            let [x, _, z] = body.feet.map(|c| c.div_euclid(grisu_voxel::FIXED_ONE));
-            if !self.world.in_bounds(x, 0, z) || body.feet[1] < 0 {
-                self.broken_invariants
-                    .push(format!("tick {}: jugador {i} fuera del mapa", self.tick));
-            }
-        }
-    }
-
-    /// Huella del estado: terreno y jugadores. Dos simulaciones con las
-    /// mismas entradas deben dar la misma huella en cualquier plataforma.
+    /// Huella del estado: la acumulada por tick más el terreno y los
+    /// mineros actuales.
     pub fn state_hash(&self) -> u64 {
-        let mut hash = self.world.content_hash();
+        let mut hash = self.state_hash ^ self.world.content_hash();
         let mut mix = |v: i32| {
             hash = (hash ^ u64::from(v as u32)).wrapping_mul(0x0000_0100_0000_01B3);
         };
-        mix(self.tick as i32);
         for body in &self.players {
             body.feet.iter().chain(&body.velocity).for_each(|&c| mix(c));
         }
         hash
     }
 
+    /// Indica si la partida ha concluido (por alcanzar `max_ticks`, por finalizar el
+    /// Despertar o por alcanzar la meta económica).
+    pub fn is_finished(&self) -> bool {
+        self.tick >= self.config.max_ticks
+            || self.seismograph.is_awakening_ended()
+            || self.economy.is_goal_reached()
+    }
+
+    /// Avanza la simulación un tick si la partida aún no ha terminado:
+    /// órdenes en el orden de llegada, movimiento, botín y Sismógrafo.
+    pub fn step(&mut self) {
+        if self.is_finished() {
+            return;
+        }
+        self.tick += 1;
+        self.step_world();
+        self.step_loot();
+
+        let rng_event = self.rng.next_u64();
+        for event in self.seismograph.step() {
+            let kind = match event {
+                SeismoEvent::ThresholdCrossed(t) => MatchEventKind::ThresholdCrossed(t),
+                SeismoEvent::AwakeningStarted => {
+                    self.awakening_tick.get_or_insert(self.tick);
+                    MatchEventKind::AwakeningStarted
+                }
+                SeismoEvent::BucketLinesStopped => MatchEventKind::BucketLinesStopped,
+                SeismoEvent::AwakeningEnded => MatchEventKind::AwakeningEnded,
+            };
+            self.event_log.record(self.tick, kind, None);
+        }
+        self.mix_hash(rng_event);
+        self.mix_hash(u64::from(self.seismograph.level()));
+        if self.economy.is_active() || !self.loot.is_empty() {
+            self.mix_hash(u64::from(self.economy.bank(Team::Copper)));
+            self.mix_hash(u64::from(self.economy.bank(Team::Cobalt)));
+            self.mix_hash(self.loot.len() as u64);
+        }
+    }
+
+    fn mix_hash(&mut self, value: u64) {
+        self.state_hash = (self.state_hash ^ value).wrapping_mul(0x0000_0100_0000_01B3);
+    }
+
+    fn step_loot(&mut self) {
+        for bag in self.loot.expire_due_bags(self.tick) {
+            let cash_value = bag.base_cash_value().unwrap_or(0);
+            let _ = self.economy.record_expired_bag_cash(cash_value);
+            self.event_log.record(
+                self.tick,
+                MatchEventKind::LootExpired {
+                    bag_id: bag.id,
+                    cash_value,
+                },
+                Some(bag.origin_team),
+            );
+        }
+    }
+
+    /// Ejecuta la simulación hasta su conclusión y devuelve el informe final.
     pub fn run_to_end(mut self) -> SimReport {
         let mut tick_micros = Vec::with_capacity(self.config.max_ticks as usize);
         while !self.is_finished() {
@@ -303,10 +229,20 @@ impl Simulation {
             self.step();
             tick_micros.push(start.elapsed().as_secs_f64() * 1e6);
         }
-        let mut report = SimReport::new(&self.config, self.tick, self.state_hash(), tick_micros);
-        report.edits = self.stats;
+        let mut broken_invariants = self.check_invariants();
         // Se limita la lista para que el informe siga siendo legible.
-        report.broken_invariants = self.broken_invariants.into_iter().take(20).collect();
+        let violations = std::mem::take(&mut self.world_violations);
+        broken_invariants.extend(violations.into_iter().take(20));
+        let mut report = SimReport::new(
+            &self.config,
+            self.tick,
+            self.state_hash(),
+            self.event_log.thresholds_reached(),
+            self.awakening_tick,
+            tick_micros,
+            broken_invariants,
+        );
+        report.edits = std::mem::take(&mut self.stats);
         report
     }
 }

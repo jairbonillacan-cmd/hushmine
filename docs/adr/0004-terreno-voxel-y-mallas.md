@@ -1,4 +1,4 @@
-# ADR 0002: terreno de vóxeles, mallas y luz
+# ADR 0004: terreno de vóxeles, mallas y luz
 
 - **Fecha:** 23 de octubre de 2026
 - **Estado:** aceptada

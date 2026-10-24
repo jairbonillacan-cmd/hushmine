@@ -18,7 +18,7 @@
 | Otros jugadores visibles (cajas de cuadrilla) | `grisu-render/src/boxes.rs` | Hecho |
 | Prueba de consistencia y `hush-cli netsim` | `hush-net/tests/consistency.rs`, `src/harness.rs` | Hecho |
 
-ADR: `docs/adr/0003-red-propia.md` (capa de red propia en lugar de `renet2`, por ahora).
+ADR: `docs/adr/0005-red-propia.md` (capa de red propia en lugar de `renet2`, por ahora).
 
 ## Medidas (`netsim`, 60 s, 2 clientes, 6 bots, 150 ms de ida y vuelta, 2 % de pérdida)
 

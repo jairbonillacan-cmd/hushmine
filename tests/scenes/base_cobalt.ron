@@ -1,0 +1,118 @@
+// Escena de captura determinista para `hush-cli shot --scene`.
+// Interior simétrico de la base del equipo Cobalt con campo de fuerza, vía de raíl y estación.
+
+SceneDef(
+    name: "base_cobalt",
+    description: "Interior simétrico de la base del equipo Cobalt con paneles ortogonales de mampostería azulada, estación de cangilones central, balizas frías de señalización, línea de raíl en el flanco izquierdo y compuerta protegida por campo de fuerza.",
+    dimensions: Dimensions(width: 16, height: 16, depth: 16),
+    camera: CameraPose(
+        position_blocks: (8, 7, 3),
+        position_subblocks: (524_288, 458_752, 196_608),
+        look_at_blocks: (8, 4, 11),
+        yaw_deg: 0,
+        pitch_deg: -18,
+        fov_deg: 70,
+    ),
+    regions: [
+        BlockRegion(
+            min: (0, 0, 0),
+            max: (15, 15, 15),
+            block_id: 2,
+            block_name: "rock",
+            team: None,
+        ),
+        BlockRegion(
+            min: (0, 12, 0),
+            max: (15, 15, 15),
+            block_id: 1,
+            block_name: "dirt",
+            team: None,
+        ),
+        BlockRegion(
+            min: (2, 4, 2),
+            max: (13, 11, 13),
+            block_id: 0,
+            block_name: "air",
+            team: None,
+        ),
+        BlockRegion(
+            min: (2, 3, 2),
+            max: (13, 3, 13),
+            block_id: 8,
+            block_name: "team_block",
+            team: Some("cobalt"),
+        ),
+        BlockRegion(
+            min: (3, 4, 12),
+            max: (3, 11, 12),
+            block_id: 8,
+            block_name: "team_block",
+            team: Some("cobalt"),
+        ),
+        BlockRegion(
+            min: (12, 4, 12),
+            max: (12, 11, 12),
+            block_id: 8,
+            block_name: "team_block",
+            team: Some("cobalt"),
+        ),
+        BlockRegion(
+            min: (6, 4, 13),
+            max: (9, 7, 13),
+            block_id: 9,
+            block_name: "force_field",
+            team: Some("cobalt"),
+        ),
+        BlockRegion(
+            min: (4, 4, 4),
+            max: (4, 4, 11),
+            block_id: 13,
+            block_name: "rail",
+            team: Some("cobalt"),
+        ),
+    ],
+    blocks: [
+        BlockPlacement(
+            pos: (8, 4, 10),
+            block_id: 16,
+            block_name: "bucket_station",
+            team: Some("cobalt"),
+        ),
+        BlockPlacement(
+            pos: (7, 4, 10),
+            block_id: 17,
+            block_name: "bucket_post",
+            team: Some("cobalt"),
+        ),
+        BlockPlacement(
+            pos: (9, 4, 10),
+            block_id: 17,
+            block_name: "bucket_post",
+            team: Some("cobalt"),
+        ),
+        BlockPlacement(
+            pos: (6, 4, 8),
+            block_id: 14,
+            block_name: "beacon",
+            team: Some("cobalt"),
+        ),
+        BlockPlacement(
+            pos: (10, 4, 8),
+            block_id: 14,
+            block_name: "beacon",
+            team: Some("cobalt"),
+        ),
+        BlockPlacement(
+            pos: (11, 4, 7),
+            block_id: 11,
+            block_name: "jump_pad",
+            team: Some("cobalt"),
+        ),
+        BlockPlacement(
+            pos: (8, 5, 10),
+            block_id: 14,
+            block_name: "beacon",
+            team: Some("cobalt"),
+        ),
+    ],
+)
