@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <!-- HUSHMINE UI Mockup: drop_in (1920x1080) | Safe margin: 48px -->
+  <rect x="0" y="0" width="1920" height="1080" fill="#0A0B0E"/>
+  <rect x="48" y="48" width="1824" height="84" fill="#14161B" stroke="#FAAE3C" stroke-width="2" rx="4"/>
+  <!-- ftl: drop-in-header -->
+  <text x="68" y="82" fill="#FAAE3C" data-bg="#14161B" font-family="monospace" font-size="20" font-weight="bold" text-anchor="start">DESCENT CAGE · SHIFT #04 · DROP IN 00:14</text>
+  <text x="68" y="112" fill="#F09246" data-bg="#14161B" font-family="monospace" font-size="16" font-weight="bold" text-anchor="start">COPPER CREW — WEST SHAFT [CHEVRON]</text>
+  <rect x="48" y="148" width="1039" height="212" fill="#14161B" stroke="#C96832" stroke-width="2" rx="4"/>
+  <!-- ftl: class-prospector -->
+  <text x="66" y="180" fill="#FAAE3C" data-bg="#14161B" font-family="monospace" font-size="20" font-weight="bold" text-anchor="start">PROSPECTOR</text>
+  <text x="66" y="216" fill="#EDE6D3" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">ORE 20 · BULLION 10 · MINERAL DETECTOR + GEOPHONE</text>
+  <text x="66" y="250" fill="#68F08E" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">BUILDS: TEAM BLOCK, LADDER, BEACON</text>
+  <rect x="48" y="372" width="1039" height="212" fill="#14161B" stroke="#C96832" stroke-width="2" rx="4"/>
+  <!-- ftl: class-miner -->
+  <text x="66" y="404" fill="#FAAE3C" data-bg="#14161B" font-family="monospace" font-size="20" font-weight="bold" text-anchor="start">MINER</text>
+  <text x="66" y="440" fill="#EDE6D3" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">ORE 40 · BULLION 20 · HEAVY PICKAXE + CARGO HARNESS</text>
+  <text x="66" y="474" fill="#68F08E" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">BUILDS: TEAM BLOCK, LADDER, RAIL</text>
+  <rect x="48" y="596" width="1039" height="212" fill="#14161B" stroke="#C96832" stroke-width="2" rx="4"/>
+  <!-- ftl: class-engineer -->
+  <text x="66" y="628" fill="#FAAE3C" data-bg="#14161B" font-family="monospace" font-size="20" font-weight="bold" text-anchor="start">ENGINEER</text>
+  <text x="66" y="664" fill="#EDE6D3" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">ORE 30 · BULLION 10 · BUILDER HAMMER + BUCKET WRENCH</text>
+  <text x="66" y="698" fill="#68F08E" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">BUILDS: FORCE FIELD, JUMP PAD, ELECTRIC, BUCKET LINE</text>
+  <rect x="48" y="820" width="1039" height="212" fill="#14161B" stroke="#FCD153" stroke-width="2" rx="4"/>
+  <!-- ftl: class-sapper -->
+  <text x="66" y="852" fill="#FAAE3C" data-bg="#14161B" font-family="monospace" font-size="20" font-weight="bold" text-anchor="start">SAPPER</text>
+  <text x="66" y="888" fill="#EDE6D3" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">ORE 20 · BULLION 10 · BLASTING CAP + WIRE CUTTERS</text>
+  <text x="66" y="922" fill="#68F08E" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">BUILDS: TEAM BLOCK, LADDER, EXPLOSIVE</text>
+  <rect x="1124" y="148" width="748" height="884" fill="#07120A" stroke="#34B85A" stroke-width="2" rx="4"/>
+  <!-- ftl: drop-in-geology -->
+  <text x="1142" y="184" fill="#68F08E" data-bg="#07120A" font-family="monospace" font-size="16" font-weight="bold" text-anchor="start">GEOLOGICAL SURVEY · 64×64×64 (64x64x64) CROSS-SECTION</text>
+  <text x="1142" y="234" fill="#EDE6D3" data-bg="#07120A" font-family="monospace" font-size="16" font-weight="bold" text-anchor="start">UPPER STRATA: DIRT (Y: 48..64)</text>
+  <text x="1142" y="284" fill="#F09246" data-bg="#07120A" font-family="monospace" font-size="16" font-weight="bold" text-anchor="start">MID STRATA: ROCK &amp; ORE VEINS (Y: 20..48)</text>
+  <text x="1142" y="334" fill="#E8BE54" data-bg="#07120A" font-family="monospace" font-size="16" font-weight="bold" text-anchor="start">50% BREATHE: MOTHER LODE ($2,000)</text>
+  <text x="1142" y="384" fill="#C4F4FC" data-bg="#07120A" font-family="monospace" font-size="16" font-weight="bold" text-anchor="start">DEEP STRATA: HARD ROCK (Y: 00..20)</text>
+  <text x="1142" y="434" fill="#FCD153" data-bg="#07120A" font-family="monospace" font-size="16" font-weight="bold" text-anchor="start">100% WAKE ABYSS: THE HEART ($1,500)</text>
+  <polyline fill="none" stroke="#68F08E" stroke-width="2" points="1142,984 1181,981 1221,987 1260,978 1300,991 1339,972 1379,1000 1418,964 1458,997 1498,975 1537,1004 1577,960 1616,999 1656,974 1695,990 1735,979 1774,986 1814,982 1854,984"/>
+</svg>

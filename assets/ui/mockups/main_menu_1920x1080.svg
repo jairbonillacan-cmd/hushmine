@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <!-- HUSHMINE UI Mockup: main_menu (1920x1080) | Safe margin: 48px -->
+  <rect x="0" y="0" width="1920" height="1080" fill="#0A0B0E"/>
+  <rect x="48" y="48" width="1824" height="124" fill="#14161B" stroke="#D9B052" stroke-width="2" rx="4"/>
+  <!-- ftl: menu-title -->
+  <text x="72" y="92" fill="#FAAE3C" data-bg="#14161B" font-family="monospace" font-size="30" font-weight="bold" text-anchor="start">HUSHMINE</text>
+  <!-- ftl: menu-tagline -->
+  <text x="72" y="128" fill="#EDE6D3" data-bg="#14161B" font-family="monospace" font-size="16" font-weight="bold" text-anchor="start">"Rob a sleeping mountain. Play dirty. Keep it hushed."</text>
+  <text x="72" y="156" fill="#D9B052" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">WATCHER SHACK CONSOLE · 1979 SODIUM LAMP &amp; 1931 TALLY BOARD</text>
+  <rect x="48" y="188" width="948" height="132" fill="#14161B" stroke="#FAAE3C" stroke-width="2" rx="4"/>
+  <!-- ftl: menu-play-shift -->
+  <text x="66" y="259" fill="#FAAE3C" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">[PLAY SHIFT] COMPETITIVE 1v1 TO 8v8</text>
+  <rect x="48" y="330" width="948" height="132" fill="#14161B" stroke="#EDE6D3" stroke-width="2" rx="4"/>
+  <!-- ftl: menu-play-practice -->
+  <text x="66" y="401" fill="#EDE6D3" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">[PRACTICE] OFFLINE SHIFT VS BOTS</text>
+  <rect x="48" y="472" width="948" height="132" fill="#14161B" stroke="#EDE6D3" stroke-width="2" rx="4"/>
+  <!-- ftl: menu-play-workshop -->
+  <text x="66" y="543" fill="#EDE6D3" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">[WORKSHOP] CREATIVE BUILD &amp; MAP EDITOR</text>
+  <rect x="48" y="614" width="948" height="132" fill="#14161B" stroke="#D9B052" stroke-width="2" rx="4"/>
+  <!-- ftl: menu-tally-board -->
+  <text x="66" y="685" fill="#D9B052" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">[BRASS TALLY BOARD] 12 / 41 RECOVERED (SEASON 1: THE LONG NIGHT)</text>
+  <rect x="48" y="756" width="948" height="132" fill="#14161B" stroke="#C4F4FC" stroke-width="2" rx="4"/>
+  <!-- ftl: menu-settings -->
+  <text x="66" y="827" fill="#C4F4FC" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">[SETTINGS] AUDIO · VIDEO · ACCESSIBILITY · EN / ES</text>
+  <rect x="48" y="898" width="948" height="132" fill="#14161B" stroke="#F09246" stroke-width="2" rx="4"/>
+  <!-- ftl: menu-quit -->
+  <text x="66" y="969" fill="#F09246" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">[QUIT TO DESKTOP]</text>
+  <rect x="1032" y="188" width="840" height="455" fill="#14161B" stroke="#9E7B2F" stroke-width="2" rx="4"/>
+  <text x="1050" y="224" fill="#D9B052" data-bg="#14161B" font-family="monospace" font-size="16" font-weight="bold" text-anchor="start">1931 BRASS TALLY BOARD · 41 HOOKS (12 RECOVERED)</text>
+  <text x="1050" y="256" fill="#EDE6D3" data-bg="#14161B" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">OCTOBER 14, 1931 SHIFT · #01 TO #41 STAMPED BRASS TAGS</text>
+  <circle cx="1068" cy="300" r="12" fill="#D9B052"/>
+  <circle cx="1104" cy="300" r="12" fill="#D9B052"/>
+  <circle cx="1140" cy="300" r="12" fill="#2B2118" stroke="#D9B052" stroke-width="1"/>
+  <rect x="1032" y="653" width="840" height="379" fill="#07120A" stroke="#34B85A" stroke-width="2" rx="4"/>
+  <text x="1050" y="689" fill="#68F08E" data-bg="#07120A" font-family="monospace" font-size="16" font-weight="bold" text-anchor="start">CRT P1 MONITOR · SEISMIC STANDBY 04.1% [CALM]</text>
+  <text x="1050" y="721" fill="#FAAE3C" data-bg="#07120A" font-family="monospace" font-size="14" font-weight="bold" text-anchor="start">EXTERIOR SODIUM VAPOR LAMP · WEST SHAFT HEADFRAME</text>
+  <polyline fill="none" stroke="#68F08E" stroke-width="2" points="1050,994 1094,992 1139,996 1184,989 1228,999 1273,985 1318,1006 1362,979 1407,1003 1452,987 1496,1009 1541,976 1586,1005 1630,986 1675,998 1720,990 1764,995 1809,993 1854,994"/>
+</svg>
