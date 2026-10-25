@@ -2,8 +2,10 @@
 //!
 //! Según `docs/graficos/04-shaders.md` §3, cada vóxel guarda luz de bloque
 //! RGB (4 bits por canal) + luz de cielo (4 bits): 16 bits por bloque. Esta
-//! tabla de emisión en color alimenta el BFS de luz del hito G0; la tabla
-//! escalar [`crate::emission_table`] sigue siendo la referencia de brillo.
+//! tabla de emisión en color es la que usará el BFS de luz en color del hito
+//! G0; **todavía no está conectada**: `grisu_voxel::LightMap` solo propaga un
+//! nivel escalar y el cliente sigue usando [`crate::emission_table`], así que
+//! en el juego la luz aún no tiene color.
 
 use hush_sim::BlockKind;
 
@@ -28,7 +30,7 @@ impl RgbLight {
             | (self.b & 0xF) as u16
     }
 
-    /// Inversa exacta de [`pack_u16`]: devuelve la luz y la luz de cielo.
+    /// Inversa exacta de [`Self::pack_u16`]: devuelve la luz y la luz de cielo.
     pub const fn unpack_u16(packed: u16) -> (Self, u8) {
         (
             Self {

@@ -3,7 +3,8 @@
 //! Las texturas reales son los PNG de `assets/textures/blocks`, incrustados
 //! en el binario; el manifiesto de capas (`manifest.ron`) gobierna el tamaño
 //! y el orden del texture array. La emisión de luz tiene versión escalar en
-//! [`emission_table`] y versión en color en [`emission_rgb_table`]. El
+//! [`emission_table`] (la que usa el juego) y versión en color en
+//! [`emission_rgb_table`] (preparada, aún sin conectar a la luz). El
 //! generador provisional por código se conserva en
 //! [`procedural_block_textures`] por si hace falta para pruebas.
 
