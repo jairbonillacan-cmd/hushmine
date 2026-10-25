@@ -5,6 +5,7 @@
 
 mod boxes;
 mod camera;
+mod chunk_origins;
 mod crosshair;
 mod cube;
 mod depth;
