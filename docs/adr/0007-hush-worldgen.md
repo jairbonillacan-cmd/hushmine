@@ -1,4 +1,4 @@
-# ADR 0006: crate `hush-worldgen` con el generador de prueba del hito W0
+# ADR 0007: crate `hush-worldgen` con el generador de prueba del hito W0
 
 - **Fecha:** 24 de octubre de 2026
 - **Estado:** aceptada

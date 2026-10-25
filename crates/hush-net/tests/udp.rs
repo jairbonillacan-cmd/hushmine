@@ -5,7 +5,6 @@ use std::net::SocketAddr;
 use std::time::{Duration, Instant};
 
 use grisu_net::{PeerAddr, UdpTransport};
-use grisu_voxel::FIXED_ONE;
 use hush_net::{Action, ClientState, NetClient, Server, ServerConfig};
 use hush_sim::MoveInput;
 
@@ -33,7 +32,7 @@ fn client_joins_and_digs_over_udp_loopback() {
             let mut action = None;
             // Tras un segundo de juego, cava el bloque bajo los pies.
             if *client.state() == ClientState::Playing && ticks > 60 && dug.is_none() {
-                let feet = client.body().feet.map(|c| c.div_euclid(FIXED_ONE));
+                let feet = client.body().feet.map(grisu_voxel::cell_of);
                 let cell = [feet[0], feet[1] - 1, feet[2]];
                 action = Some(Action::Dig(cell));
                 dug = Some(cell);

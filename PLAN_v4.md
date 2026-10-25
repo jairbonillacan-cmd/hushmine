@@ -389,8 +389,8 @@ Los plazos son aspiracionales. El motor propio añade unas 6–8 semanas respect
 **Orden de trabajo actual (24 de octubre de 2026):**
 
 1. Hitos 0, 1 y 2: **hechos** (`docs/hito-1.md`, `docs/hito-2.md`).
-2. **W0. Puertas abiertas** del mundo grande: **en curso** (rama `w0/base`). Lo que falta está en la nota de pendiente de más abajo.
-3. **W1–W7** del mundo grande y el modo Historia (`docs/mundo/04-verificacion-e-hitos.md`, `docs/supervivencia/`), en ese orden.
+2. **W0. Puertas abiertas** del mundo grande: **hecho** (24 de octubre de 2026; ver la nota de más abajo).
+3. **W1–W7** del mundo grande y el modo Historia (W1 ya tiene el ruido entero, `grisu-noise`) (`docs/mundo/04-verificacion-e-hitos.md`, `docs/supervivencia/`), en ese orden.
 4. Después se retoma el modo Turno en el hito 3. Lo que el modo Historia construya y sirva al Turno (economía, clases, bloques de construcción, criaturas, interfaz, audio) se reutiliza.
 
 Los hitos 3–7 de la tabla siguen siendo el plan del modo Turno; solo cambia cuándo se hacen.
@@ -417,17 +417,17 @@ Si no aparecen esas decisiones, **se rediseña antes de pasar al hito 5**.
 
 **Mundo grande y modo Historia (W0–W7): es la prioridad actual.** El plan está en `docs/mundo/`, el diseño del juego en `docs/supervivencia/` y las decisiones, en `docs/adr/0002-mundo-grande.md`. **W0** (2–4 días) prepara el motor: posiciones de entidad en `i64` Q47.16, chunks detrás de una interfaz, coordenadas negativas probadas y render relativo a la cámara. Después vienen **W1–W7**, uno detrás de otro, antes de volver al modo Turno.
 
-> **Pendiente (24 de octubre de 2026): W0 no se hizo dentro del hito 1. Es lo siguiente y está en curso en la rama `w0/base`**, que ya tiene `grisu-voxel` (interfaces, `ChunkPos`, `SparseWorld`, mallas locales, raycast en `f64`, colisión en Q47.16, con pruebas en coordenadas negativas y extremas) y la cámara relativa. Faltan el render, la simulación, la red y los binarios. Los hitos 1 y 2 se programaron en paralelo a este plan y usan un mundo finito: coordenadas de bloque `i32` positivas, un máximo de 128 bloques por eje (`grisu_voxel::MAX_WORLD_SIZE`), posiciones en punto fijo `i32` con 1024 unidades por bloque (`FIXED_ONE`), chunks guardados directamente en `VoxelWorld` y cámara en coordenadas absolutas `f32`. Basta para el modo Turno (64³–96×96×64), pero no para el mundo grande.
+> **Hecho (24 de octubre de 2026): W0 entró después de los hitos 1 y 2, como primer paso del modo Historia.** Lo que cambió:
 >
-> **Qué cambia con W0** (2–4 días; es lo primero del modo Historia):
+> - Las posiciones (`PlayerBody.feet`, `Aabb`, `move_aabb`) pasaron de `i32` con 1024 unidades por bloque a `i64` Q47.16 (`FIXED_ONE` = 65536). Las velocidades siguen en `i32` con 16 bits de fracción (Q16.16), como pide el ADR 0002, y el movimiento funciona sobre cualquier mundo (`impl Voxels`). El protocolo de `hush-net` (versión 2) envía posiciones de 64 bits; interpolación y cliente en `f64`.
+> - `VoxelWorld` quedó detrás de la interfaz `Voxels`/`VoxelsMut`/`ChunkedVoxels` con `ChunkPos` que admite negativos; el mapa del Turno es una implementación finita y `SparseWorld` (chunks bajo demanda, borde en ±7 500 000) es la abierta.
+> - `raycast` (`f64`), colisión y mallas (locales al chunk, genéricas) se prueban en coordenadas negativas y en ±7 499 999: la misma forma da la misma malla, el mismo raycast y el mismo recorrido de colisión que en el origen.
+> - El render es relativo a la cámara: la vista trae el bloque anchor y el shader desplaza cada cara local con el origen de su chunk (uniform con offset dinámico). Escena `frontier` en `hush-cli shot` para revisarlo a ojo a 7,5 M bloques del origen.
+> - La luz se calcula en el juego (`LightMap::new`/`update` con chunks sucios) y el render solo la consume.
 >
-> - `PlayerBody`, `Aabb` y `move_aabb` pasan de `i32` con `FIXED_ONE` a `i64` Q47.16, y el protocolo de `hush-net` envía posiciones de 64 bits.
-> - `VoxelWorld` queda detrás de una interfaz (`get`/`set`/`fill`) con `ChunkPos` que admite negativos; el mapa del Turno es una implementación finita de esa interfaz.
-> - `raycast`, colisión, luz y mallas se prueban en coordenadas negativas y en ±7 499 999.
-> - El render pasa a ser relativo a la cámara (las caras empaquetadas ya guardan coordenadas locales de 7 bits; falta el origen por chunk).
-> - La generación de terreno de `hush-sim` toma la forma de función pura `(semilla, ChunkPos) → Chunk`.
+> - La generación como función pura `(semilla, ChunkPos) → Chunk` está en `hush-worldgen` (ADR 0007), con un mundo de prueba y las invariantes `INV-W01`–`W03`; `hush-sim` sigue generando el mapa finito del Turno. El ruido entero para W1 está en `grisu-noise` (ADR 0006).
 >
-> Criterio de salida, el de `docs/mundo/04-verificacion-e-hitos.md`: pruebas de chunk, DDA y colisión en coordenadas negativas y extremas en verde, y el mapa de 64³ sin cambios visibles (mismas capturas, `netsim` consistente).
+> Criterio de salida cumplido: pruebas de chunk, DDA y colisión en coordenadas negativas y extremas en verde; capturas de `cube`, `terrain`, `tunnel`, `shaft` y `players` iguales que antes (la de `dig` cambia por la precisión de la física) y `netsim` consistente con 150 ms y 2 % de pérdida.
 
 **Gráficos:** el plan de cámaras (primera y tercera persona), animación por piezas, texturas de 32×32 y shaders propios está en `docs/graficos/` y las decisiones, en `docs/adr/0003-graficos.md`. En el hito 1 solo entra **G0** (2–3 días): tamaño de textura leído del manifiesto, luz de bloque en color, preprocesador de shaders y vistas de depuración. El resto se reparte entre los hitos 3 y 6 (unas 6–8 semanas en total).
 

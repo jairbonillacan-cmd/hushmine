@@ -12,7 +12,7 @@ const MAX_SAMPLES: usize = 60;
 #[derive(Debug, Default)]
 pub struct RemoteTracks {
     latest_tick: u32,
-    tracks: BTreeMap<u16, VecDeque<(u32, [i32; 3])>>,
+    tracks: BTreeMap<u16, VecDeque<(u32, [i64; 3])>>,
 }
 
 impl RemoteTracks {
@@ -32,20 +32,21 @@ impl RemoteTracks {
     }
 
     /// Posición (pies, en bloques) de cada jugador en el tick `tick`,
-    /// interpolada entre las dos instantáneas que lo rodean.
-    pub fn sample(&self, tick: f32) -> Vec<(u16, [f32; 3])> {
-        let to_blocks = |c: i32| c as f32 / FIXED_ONE as f32;
+    /// interpolada entre las dos instantáneas que lo rodean. En `f64` para no
+    /// perder precisión lejos del origen.
+    pub fn sample(&self, tick: f64) -> Vec<(u16, [f64; 3])> {
+        let to_blocks = |c: i64| c as f64 / FIXED_ONE as f64;
         self.tracks
             .iter()
             .filter_map(|(&id, track)| {
-                let after = track.iter().position(|(t, _)| *t as f32 >= tick);
+                let after = track.iter().position(|(t, _)| *t as f64 >= tick);
                 let pos = match after {
                     None => track.back()?.1.map(to_blocks),
                     Some(0) => track.front()?.1.map(to_blocks),
                     Some(i) => {
                         let (t0, a) = track[i - 1];
                         let (t1, b) = track[i];
-                        let f = ((tick - t0 as f32) / (t1 - t0).max(1) as f32).clamp(0.0, 1.0);
+                        let f = ((tick - t0 as f64) / (t1 - t0).max(1) as f64).clamp(0.0, 1.0);
                         std::array::from_fn(|k| {
                             to_blocks(a[k]) + (to_blocks(b[k]) - to_blocks(a[k])) * f
                         })
@@ -64,7 +65,7 @@ mod tests {
     #[test]
     fn interpolates_between_snapshots_and_clamps_outside() {
         let mut tracks = RemoteTracks::default();
-        let at = |x: i32| RemotePlayer {
+        let at = |x: i64| RemotePlayer {
             id: 4,
             feet: [x * FIXED_ONE, 0, 0],
         };
@@ -73,6 +74,20 @@ mod tests {
         assert_eq!(tracks.sample(11.0), vec![(4, [1.0, 0.0, 0.0])]);
         assert_eq!(tracks.sample(5.0)[0].1[0], 0.0);
         assert_eq!(tracks.sample(20.0)[0].1[0], 2.0);
+    }
+
+    #[test]
+    fn interpolates_far_from_the_origin_without_jumps() {
+        let mut tracks = RemoteTracks::default();
+        let base = 7_499_800;
+        let at = |x: i64| RemotePlayer {
+            id: 9,
+            feet: [(base + x) * FIXED_ONE, 0, 0],
+        };
+        tracks.push(10, &[at(0)]);
+        tracks.push(12, &[at(2)]);
+        let mid = tracks.sample(11.0)[0].1[0];
+        assert!((mid - (base as f64) - 1.0).abs() < 1e-9, "mid {mid}");
     }
 
     #[test]

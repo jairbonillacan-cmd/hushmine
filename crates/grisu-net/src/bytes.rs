@@ -77,6 +77,12 @@ impl Writer {
         self
     }
 
+    /// Posiciones del mundo grande: `i64` en Q47.16 (ADR 0002).
+    pub fn i64(&mut self, v: i64) -> &mut Self {
+        self.buf.extend_from_slice(&v.to_le_bytes());
+        self
+    }
+
     /// Bytes sin prefijo de longitud.
     pub fn raw(&mut self, bytes: &[u8]) -> &mut Self {
         self.buf.extend_from_slice(bytes);
@@ -156,6 +162,10 @@ impl<'a> Reader<'a> {
         Ok(i32::from_le_bytes(self.array()?))
     }
 
+    pub fn i64(&mut self) -> Result<i64, DecodeError> {
+        Ok(i64::from_le_bytes(self.array()?))
+    }
+
     /// Bytes con su longitud delante (u32). La longitud se comprueba antes
     /// de reservar memoria.
     pub fn bytes(&mut self) -> Result<&'a [u8], DecodeError> {
@@ -187,6 +197,8 @@ mod tests {
             .u32(4_000_000_000)
             .u64(u64::MAX - 1)
             .i32(-123_456)
+            .i64(i64::MIN + 7)
+            .i64(7_499_999 * 65_536)
             .bytes(b"hola");
         let bytes = w.into_bytes();
         let mut r = Reader::new(&bytes);
@@ -197,6 +209,8 @@ mod tests {
         assert_eq!(r.u32(), Ok(4_000_000_000));
         assert_eq!(r.u64(), Ok(u64::MAX - 1));
         assert_eq!(r.i32(), Ok(-123_456));
+        assert_eq!(r.i64(), Ok(i64::MIN + 7));
+        assert_eq!(r.i64(), Ok(7_499_999 * 65_536));
         assert_eq!(r.bytes(), Ok(&b"hola"[..]));
         assert_eq!(r.finish(), Ok(()));
     }
@@ -204,6 +218,15 @@ mod tests {
     #[test]
     fn truncated_and_absurd_input_are_errors() {
         assert_eq!(Reader::new(&[1]).u16(), Err(DecodeError::UnexpectedEnd));
+        // Un i64 necesita 8 bytes, ni uno menos.
+        assert_eq!(
+            Reader::new(&[1, 2, 3, 4, 5, 6, 7]).i64(),
+            Err(DecodeError::UnexpectedEnd)
+        );
+        assert_eq!(
+            Reader::new(&[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]).i64(),
+            Err(DecodeError::UnexpectedEnd)
+        );
         assert_eq!(
             Reader::new(&[2]).bool(),
             Err(DecodeError::Invalid("booleano"))
