@@ -51,7 +51,7 @@ Plan del salto visual, en estado de propuesta:
 
 ### Mundo grande (`docs/mundo/`)
 
-Plan para un futuro modo Supervivencia / Historia en un mundo procedural de 15 millones × 15 millones de bloques:
+Plan del modo Historia (supervivencia), **la prioridad actual del proyecto**, en un mundo procedural de 15 millones × 15 millones de bloques:
 
 - [Índice y resumen (`README.md`)](mundo/README.md) — Qué cambia, cifras clave y nuevos crates.
 - [Escala y motor (`01-escala-y-motor.md`)](mundo/01-escala-y-motor.md) — Coordenadas, chunks con paleta, streaming, luz, render, guardado y red.

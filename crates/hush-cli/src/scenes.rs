@@ -68,6 +68,7 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
                 fog_distance: 400.0,
                 selected: None,
                 lamp_radius: 0.0,
+                time_seconds: 0.0,
             },
         },
         Scene::Tunnel => {
@@ -86,6 +87,7 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
                     fog_distance: 40.0,
                     selected: Some([14, 29, 33]),
                     lamp_radius: 14.0,
+                    time_seconds: 0.0,
                 },
             }
         }
@@ -106,6 +108,7 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
                     fog_distance: 70.0,
                     selected: None,
                     lamp_radius: 14.0,
+                    time_seconds: 0.0,
                 },
             }
         }
@@ -200,6 +203,7 @@ fn dig_scene(seed: u64) -> Result<TerrainScene> {
             fog_distance: 40.0,
             selected,
             lamp_radius: 14.0,
+            time_seconds: 0.0,
         },
     })
 }
@@ -240,6 +244,7 @@ fn players_scene(world: VoxelWorld) -> TerrainScene {
             fog_distance: 56.0,
             selected: None,
             lamp_radius: 14.0,
+            time_seconds: 0.0,
         },
     }
 }

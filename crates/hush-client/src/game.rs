@@ -51,6 +51,8 @@ pub struct Game {
     session: Session,
     camera: FlyCamera,
     accumulator: f32,
+    /// Segundos desde el arranque, para animar el terreno (lava).
+    elapsed: f32,
     /// Ojos del jugador en el tick anterior y en el actual, para interpolar.
     prev_eye: Vec3,
     eye: Vec3,
@@ -71,6 +73,7 @@ impl Game {
             session,
             camera: FlyCamera::default(),
             accumulator: 0.0,
+            elapsed: 0.0,
             prev_eye: Vec3::ZERO,
             eye: Vec3::ZERO,
             target: None,
@@ -190,23 +193,26 @@ impl Game {
 
 impl App for Game {
     fn init(&mut self, gpu: &Gpu, surface_format: wgpu::TextureFormat) {
-        match VoxelRenderer::new(
-            &gpu.device,
-            &gpu.queue,
-            surface_format,
-            &hush_art::block_textures(),
-        ) {
+        let terrain = hush_art::block_textures()
+            .map_err(anyhow::Error::from)
+            .and_then(|textures| {
+                VoxelRenderer::new(&gpu.device, &gpu.queue, surface_format, &textures)
+            });
+        match terrain {
             Ok(mut terrain) => {
                 terrain.enable_lighting(hush_art::emission_table());
                 self.terrain = Some(terrain);
             }
-            Err(err) => log::error!("no se pudo crear el renderizador del terreno: {err:#}"),
+            Err(err) => {
+                log::error!("no se pudieron cargar las texturas o crear el renderizador: {err:#}")
+            }
         }
         self.boxes = Some(BoxRenderer::new(&gpu.device, surface_format));
         self.crosshair = Some(CrosshairRenderer::new(&gpu.device, surface_format));
     }
 
     fn update(&mut self, dt: f32, input: &Input) {
+        self.elapsed += dt;
         let (dx, dy) = input.mouse_delta();
         self.camera
             .rotate(-dx * MOUSE_SENSITIVITY, -dy * MOUSE_SENSITIVITY);
@@ -250,6 +256,7 @@ impl App for Game {
             fog_distance: FOG_DISTANCE,
             selected: self.target.map(|hit| hit.block),
             lamp_radius: 14.0,
+            time_seconds: self.elapsed,
         };
         terrain.render(&gpu.queue, encoder, color, depth, &view, &style);
         let remotes = self.remote_boxes();

@@ -1,15 +1,15 @@
 # El mundo grande del modo Historia
 
-Ampliación de `PLAN_v4.md` para el **futuro modo Historia (supervivencia)** en un mundo procedural de **15 millones × 15 millones de bloques** en horizontal, generado por chunks a medida que se explora.
+Ampliación de `PLAN_v4.md` para el **modo Historia (supervivencia), que es la prioridad actual del proyecto**, en un mundo procedural de **15 millones × 15 millones de bloques** en horizontal, generado por chunks a medida que se explora.
 
-Revisión del 24 de octubre de 2026. Las cifras son objetivos por validar con medidas en el T490s. Las decisiones técnicas están en [ADR 0002](../adr/0002-mundo-grande.md) (estado: propuesta).
+Revisión del 24 de octubre de 2026. Las cifras son objetivos por validar con medidas en el T490s. Las decisiones técnicas están en [ADR 0002](../adr/0002-mundo-grande.md) (estado: aceptada).
 
 ---
 
 ## 1. Qué cambia y qué no
 
 - **El modo Turno no cambia.** Sus mapas de 64³ y 96×96×64, su simetría cuasi-espejo y sus invariantes (`docs/mapgen/geologia.md`) siguen igual. El mundo grande es otro generador.
-- **El orden del proyecto tampoco cambia.** La supervivencia sigue fuera de la 1.0. Antes de la 1.0 solo entra **W0**: unas pocas decisiones baratas en el hito 1 que dejan la puerta abierta. Rehacerlas después costaría semanas.
+- **El orden del proyecto sí cambia (24 de octubre de 2026): el modo Historia va primero.** Tras los hitos 0–2 se hacen **W0** (en curso, rama `w0/base`) y después **W1–W7**. El modo Turno queda en pausa tras el hito 2 y se retoma cuando el modo Historia sea jugable.
 - **Se comparte todo lo que se pueda:** chunks, luz, mallas, colisión, red, el catálogo de bloques y el hash espacial `hash3d` de `geologia.md`.
 
 ## 2. La idea en cinco líneas

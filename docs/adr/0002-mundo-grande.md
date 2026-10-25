@@ -1,7 +1,7 @@
 # ADR 0002: preparar el motor para un mundo de 15 M × 15 M bloques
 
 - **Fecha:** 24 de octubre de 2026
-- **Estado:** propuesta
+- **Estado:** aceptada (24 de octubre de 2026: el modo Historia pasa a ser la prioridad del proyecto)
 - **Plan detallado:** `docs/mundo/`
 
 ## Contexto
@@ -18,7 +18,7 @@ El futuro modo Historia (supervivencia) necesita un mundo procedural de 15 millo
 6. **Se guardan solo los chunks modificados**, con `worldgen_version` en cada mundo y región.
 7. **Nuevos crates cuando toque:** `grisu-noise`, `grisu-world` y `hush-worldgen`. Se mantiene la regla de dependencias.
 
-Los puntos 1 a 4 forman el hito **W0** y entran en el hito 1. Los puntos 5 a 7 se aplican a partir de W1, después del acceso anticipado del modo Turno.
+Los puntos 1 a 4 forman el hito **W0**. Iban a entrar en el hito 1, pero se hacen ahora, como primer paso del modo Historia (rama `w0/base`). Los puntos 5 a 7 se aplican a partir de W1, que va justo después: desde el 24 de octubre de 2026 el modo Historia se desarrolla **antes** que el resto del modo Turno (ver `PLAN_v4.md`).
 
 ## Alternativas descartadas
 

@@ -3,6 +3,8 @@
 Guía para agentes de IA (Claude Code, Opus) y para personas que trabajen en el repositorio.
 El plan completo está en `PLAN_v4.md`; las decisiones de arquitectura, en `docs/adr/`.
 
+> **Prioridad actual (24 de octubre de 2026): el modo Historia (supervivencia).** Primero W0 (rama `w0/base`) y después los hitos W1–W7 del mundo grande: plan técnico en `docs/mundo/`, diseño del juego en `docs/supervivencia/`. El modo Turno está en pausa tras el hito 2: **no lo rompas** (sus pruebas, `netsim` y capturas siguen siendo obligatorias), pero no añadas funciones nuevas del Turno salvo que se pidan.
+
 ## Qué es
 
 **HUSHMINE** es un juego competitivo de minería en vóxeles, sucesor espiritual de Infiniminer. **Grisú** es el motor propio en Rust + wgpu que vive dentro del mismo workspace.

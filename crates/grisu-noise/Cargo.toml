@@ -1,0 +1,13 @@
+[package]
+name = "grisu-noise"
+description = "Grisú: ruido entero determinista en punto fijo Q16.16"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# Sin dependencias: el ruido debe dar lo mismo en nativo y en wasm.
+
+[lints]
+workspace = true
