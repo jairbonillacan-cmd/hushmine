@@ -6,10 +6,7 @@
 //!
 //! Uso: `hushmine [--seed N] [--bots N] [--connect HOST:PUERTO] [--name NOMBRE] [--launcher]`.
 
-mod controls;
 mod game;
-mod hud;
-mod menu;
 mod session;
 
 use std::net::{SocketAddr, ToSocketAddrs};

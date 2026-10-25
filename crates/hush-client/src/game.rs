@@ -13,10 +13,10 @@ use grisu_voxel::{FIXED_ONE, LightMap, RayHit, raycast};
 use hush_net::{Action, ClientState};
 use hush_sim::{BlockKind, EYE_HEIGHT, HALF_WIDTH, HEIGHT, MoveInput, TICK_RATE};
 
-use crate::controls::{Controls, SprintMode};
-use crate::hud::draw_ui;
-use crate::menu::{MenuCommand, MenuState};
 use crate::session::Session;
+use hush_client::controls::{Controls, SprintMode};
+use hush_client::hud::draw_ui;
+use hush_client::menu::{MenuCommand, MenuState};
 
 /// Alcance del raycast del cliente, algo menor que el del servidor para no
 /// proponer acciones que se van a rechazar.

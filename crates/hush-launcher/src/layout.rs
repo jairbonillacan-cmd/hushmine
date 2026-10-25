@@ -1,18 +1,21 @@
-//! Geometría del panel: una sola función coloca todos los rectángulos para
+//! Geometría del lanzador: una sola función coloca todos los rectángulos para
 //! que el dibujo y el ratón nunca discrepen.
+//!
+//! A la izquierda, la pared de la caseta (rótulo, menú, estado y salir). A
+//! la derecha, el contenido de la página en una columna centrada.
 
 use crate::state::{LauncherState, PAGES, Page};
-use crate::theme::{LATO_ANCHO, MARGEN};
-use grisu_render::UiRect;
+use crate::theme::{GUTTER, NAV_ROW, TEXT_HEADING, TEXT_TITLE, WALL_FRACTION};
+use grisu_render::{UiBatch, UiRect};
 
-/// Rectángulo lateral pulsable.
+/// Rectángulo pulsable de la pared.
 #[derive(Clone, Copy, Debug)]
 pub struct Hit {
     pub rect: UiRect,
     pub slot: HitSlot,
 }
 
-/// Objetivo de un rectángulo pulsable.
+/// Objetivo de un rectángulo pulsable de la pared.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HitSlot {
     SidebarPage(Page),
@@ -28,17 +31,23 @@ pub struct ItemSlot {
 
 /// Todos los rectángulos de un fotograma, ya resueltos al tamaño de ventana.
 pub struct Layout {
-    pub sidebar_bg: UiRect,
+    /// Pared de la caseta.
+    pub wall: UiRect,
+    /// Posición del rótulo HUSHMINE (esquina superior izquierda).
+    pub title: (f32, f32),
+    /// Entradas del menú y Salir, de arriba abajo.
     pub sidebar: Vec<Hit>,
+    /// Línea de estado, encima de Salir.
+    pub status: (f32, f32),
+    /// Columna del contenido de la página.
     pub content: UiRect,
-    pub header: UiRect,
+    /// Monitor de fósforo de la página Jugar (vacío en las demás).
+    pub monitor: UiRect,
     pub items: Vec<ItemSlot>,
-    pub summary: UiRect,
-    pub status: UiRect,
 }
 
 impl Layout {
-    /// Objetivo lateral bajo el punto, si lo hay.
+    /// Objetivo de la pared bajo el punto, si lo hay.
     pub fn sidebar_at(&self, x: f32, y: f32) -> Option<HitSlot> {
         self.sidebar
             .iter()
@@ -59,163 +68,132 @@ impl Layout {
     }
 }
 
-/// Altura de la cabecera de página dentro del área de contenido.
-const HEADER_H: f32 = 56.0;
-/// Altura de la franja de estado inferior.
-const STATUS_H: f32 = 42.0;
+/// Ancho máximo de la columna de contenido.
+const COLUMN_MAX: f32 = 520.0;
+/// Alto del encabezado de las páginas con título (todas menos Jugar).
+pub const HEADING_BLOCK: f32 = TEXT_HEADING * 7.0 + 52.0;
+/// Alto de una fila de versión.
+const VERSION_ROW: f32 = 72.0;
+/// Alto de una fila de opciones.
+const OPTION_ROW: f32 = 52.0;
+/// Alto de la fila del selector de versión en Jugar.
+const SELECTOR_H: f32 = 40.0;
+/// Alto del botón principal.
+const PLAY_H: f32 = 60.0;
+/// Alto de los enlaces secundarios.
+const LINK_H: f32 = 30.0;
 
 /// Coloca todos los rectángulos para una ventana de `width`×`height`.
 pub fn layout(state: &LauncherState, width: f32, height: f32) -> Layout {
-    let w = width.max(320.0);
-    let h = height.max(240.0);
-    let sidebar_bg = UiRect::new(MARGEN, MARGEN, LATO_ANCHO, h - 2.0 * MARGEN, [0.0; 4]);
-    let sidebar = sidebar_hits(&sidebar_bg, h);
+    let w = width.max(640.0);
+    let h = height.max(400.0);
+    let wall_w = (w * WALL_FRACTION).clamp(330.0, 520.0);
+    let wall = UiRect::new(0.0, 0.0, wall_w, h, [0.0; 4]);
+    let title = (GUTTER, GUTTER);
+    let nav_top = GUTTER + TEXT_TITLE * 7.0 + 96.0;
+    let sidebar = wall_hits(wall_w, nav_top, h);
+    let status = (GUTTER, h - GUTTER - NAV_ROW - 30.0);
 
-    let content_x = MARGEN + LATO_ANCHO + MARGEN;
-    let content = UiRect::new(
-        content_x,
-        MARGEN,
-        (w - content_x - MARGEN).max(0.0),
-        h - 2.0 * MARGEN,
-        [0.0; 4],
-    );
-    let header = UiRect::new(
-        content.rect[0],
-        content.rect[1],
-        content.rect[2],
-        HEADER_H,
-        [0.0; 4],
-    );
-    let status = UiRect::new(
-        content.rect[0],
-        content.rect[1] + content.rect[3] - STATUS_H,
-        content.rect[2],
-        STATUS_H,
-        [0.0; 4],
-    );
+    let cx = wall_w + GUTTER;
+    let cy = GUTTER;
+    let cw = (w - wall_w - 2.0 * GUTTER).max(0.0);
+    let ch = h - 2.0 * GUTTER;
+    let col_w = cw.min(COLUMN_MAX);
+    let col_x = cx + (cw - col_w) * 0.5;
 
-    let items_top = header.rect[1] + HEADER_H + 14.0;
-    let items_h = (status.rect[1] - items_top - 10.0).max(0.0);
-    let cw = content.rect[2];
+    let mut monitor = UiRect::new(col_x, cy, 0.0, 0.0, [0.0; 4]);
     let items = match state.page() {
         Page::Play => {
-            let big_x = content.rect[0] + cw * 0.15;
-            let big_w = cw * 0.70;
-            // Botones anclados al pie, como manda el panel: JUGAR bien grande
-            // y debajo de nada más que la franja de estado.
-            // Pila anclada al pie, de abajo a arriba: JUGAR (el grande),
-            // COMPILAR y SERVIDOR.
-            let play_y = status.rect[1] - 12.0 - 88.0;
-            let compile_y = play_y - 10.0 - 46.0;
-            let server_y = compile_y - 10.0 - 46.0;
+            // Monitor, selector, botón principal y enlaces, centrados en
+            // vertical como un solo bloque.
+            let below = 18.0 + SELECTOR_H + 14.0 + PLAY_H + 14.0 + LINK_H;
+            let mon_h = (col_w * 0.56).min(ch - below - 24.0).max(120.0);
+            let top = cy + ((ch - mon_h - below) * 0.5).max(0.0);
+            monitor = UiRect::new(col_x, top, col_w, mon_h, [0.0; 4]);
+            let selector_y = top + mon_h + 18.0;
+            let play_y = selector_y + SELECTOR_H + 14.0;
+            let links_y = play_y + PLAY_H + 14.0;
+            let half = col_w * 0.5;
             vec![
-                ItemSlot {
-                    rect: UiRect::new(content.rect[0], items_top, cw, 76.0, [0.0; 4]),
-                    item: 0,
-                },
-                ItemSlot {
-                    rect: UiRect::new(big_x, play_y, big_w, 88.0, [0.0; 4]),
-                    item: 1,
-                },
-                ItemSlot {
-                    rect: UiRect::new(big_x, compile_y, big_w, 46.0, [0.0; 4]),
-                    item: 2,
-                },
-                ItemSlot {
-                    rect: UiRect::new(big_x, server_y, big_w, 46.0, [0.0; 4]),
-                    item: 3,
-                },
+                slot(col_x, selector_y, col_w, SELECTOR_H, 0),
+                slot(col_x, play_y, col_w, PLAY_H, 1),
+                slot(col_x + half, links_y, half, LINK_H, 2),
+                slot(col_x, links_y, half, LINK_H, 3),
             ]
         }
         Page::Instalaciones => {
-            let count = state.item_count(Page::Instalaciones).max(1) as f32;
-            let card_h = (items_h / count - 10.0).clamp(34.0, 58.0);
-            let visible = ((items_h + 10.0) / (card_h + 10.0)) as usize;
+            let top = cy + HEADING_BLOCK;
             let total = state.item_count(Page::Instalaciones);
+            let visible = (((cy + ch - top) / VERSION_ROW) as usize).max(1);
             let selected = state.selected();
             let first = selected
                 .saturating_sub(visible.saturating_sub(1))
                 .min(total.saturating_sub(1));
             (first..total)
                 .take(visible)
-                .map(|item| ItemSlot {
-                    rect: UiRect::new(
-                        content.rect[0],
-                        items_top + (item - first) as f32 * (card_h + 10.0),
-                        cw,
-                        card_h,
-                        [0.0; 4],
-                    ),
-                    item,
+                .map(|item| {
+                    let y = top + (item - first) as f32 * VERSION_ROW;
+                    slot(col_x, y, col_w, VERSION_ROW, item)
                 })
                 .collect()
         }
         Page::Opciones => {
-            let row_h = 48.0;
+            let top = cy + HEADING_BLOCK;
             (0..state.item_count(Page::Opciones))
-                .map(|item| ItemSlot {
-                    rect: UiRect::new(
-                        content.rect[0] + 6.0,
-                        items_top + item as f32 * (row_h + 12.0),
-                        cw - 12.0,
-                        row_h,
-                        [0.0; 4],
-                    ),
-                    item,
+                .map(|item| {
+                    slot(
+                        col_x,
+                        top + item as f32 * OPTION_ROW,
+                        col_w,
+                        OPTION_ROW,
+                        item,
+                    )
                 })
                 .collect()
         }
         Page::Acerca => Vec::new(),
     };
 
-    let summary_h = if state.page() == Page::Play {
-        56.0
-    } else {
-        0.0
-    };
-    let summary = UiRect::new(content.rect[0], items_top + 90.0, cw, summary_h, [0.0; 4]);
-
     Layout {
-        sidebar_bg,
+        wall,
+        title,
         sidebar,
-        content,
-        header,
-        items,
-        summary,
         status,
+        content: UiRect::new(col_x, cy, col_w, ch, [0.0; 4]),
+        monitor,
+        items,
     }
 }
 
-/// Botones de la barra lateral: una entrada por página más Salir abajo.
-fn sidebar_hits(sidebar_bg: &UiRect, height: f32) -> Vec<Hit> {
-    let btn_h = 46.0;
-    let gap = 8.0;
-    let mut hits = Vec::with_capacity(PAGES.len() + 1);
-    for (idx, page) in PAGES.iter().enumerate() {
-        let y = sidebar_bg.rect[1] + 10.0 + idx as f32 * (btn_h + gap);
-        hits.push(Hit {
-            rect: UiRect::new(
-                sidebar_bg.rect[0] + 10.0,
-                y,
-                sidebar_bg.rect[2] - 20.0,
-                btn_h,
-                [0.0; 4],
-            ),
-            slot: HitSlot::SidebarPage(*page),
-        });
+fn slot(x: f32, y: f32, w: f32, h: f32, item: usize) -> ItemSlot {
+    ItemSlot {
+        rect: UiRect::new(x, y, w, h, [0.0; 4]),
+        item,
     }
-    let exit_y = height - MARGEN - 10.0 - btn_h;
+}
+
+/// Entradas del menú de la pared y Salir al pie.
+fn wall_hits(wall_w: f32, nav_top: f32, height: f32) -> Vec<Hit> {
+    let x = GUTTER - 16.0;
+    let w = wall_w - 2.0 * GUTTER + 32.0;
+    let mut hits: Vec<Hit> = PAGES
+        .iter()
+        .enumerate()
+        .map(|(idx, page)| Hit {
+            rect: UiRect::new(x, nav_top + idx as f32 * NAV_ROW, w, NAV_ROW, [0.0; 4]),
+            slot: HitSlot::SidebarPage(*page),
+        })
+        .collect();
     hits.push(Hit {
-        rect: UiRect::new(
-            sidebar_bg.rect[0] + 10.0,
-            exit_y,
-            sidebar_bg.rect[2] - 20.0,
-            btn_h,
-            [0.0; 4],
-        ),
+        rect: UiRect::new(x, height - GUTTER - NAV_ROW, w, NAV_ROW, [0.0; 4]),
         slot: HitSlot::Exit,
     });
     hits
+}
+
+/// Parte superior de una línea de texto centrada en vertical en `rect`.
+pub fn line_top(rect: &UiRect, scale: f32) -> f32 {
+    rect.rect[1] + ((rect.rect[3] - UiBatch::text_height(scale)) * 0.5).round()
 }
 
 #[cfg(test)]
@@ -229,69 +207,80 @@ mod tests {
         s
     }
 
+    fn inside(inner: &UiRect, outer: &UiRect) -> bool {
+        let [x, y, w, h] = inner.rect;
+        let [ox, oy, ow, oh] = outer.rect;
+        x >= ox - 0.5 && y >= oy - 0.5 && x + w <= ox + ow + 0.5 && y + h <= oy + oh + 0.5
+    }
+
     #[test]
-    fn sidebar_has_page_buttons_and_exit() {
+    fn wall_has_page_entries_and_exit_at_the_bottom() {
         let lay = layout(&state(Page::Play), 1024.0, 640.0);
         assert_eq!(lay.sidebar.len(), PAGES.len() + 1);
         assert_eq!(lay.sidebar[0].slot, HitSlot::SidebarPage(Page::Play));
         assert_eq!(lay.sidebar[3].slot, HitSlot::SidebarPage(Page::Acerca));
         assert_eq!(lay.sidebar[4].slot, HitSlot::Exit);
-        assert!(lay.sidebar[4].rect.rect[1] > lay.sidebar[3].rect.rect[1]);
+        let exit = lay.sidebar[4].rect;
+        let last_page = lay.sidebar[3].rect;
+        assert!(exit.rect[1] > last_page.rect[1] + last_page.rect[3]);
+        // Todo dentro de la pared.
+        for hit in &lay.sidebar {
+            assert!(hit.rect.rect[0] + hit.rect.rect[2] <= lay.wall.rect[2]);
+        }
     }
 
     #[test]
-    fn play_page_stacks_four_items_above_the_status_bar() {
-        let lay = layout(&state(Page::Play), 1024.0, 640.0);
-        assert_eq!(lay.items.len(), 4);
-        let card = lay.item_rect(0).expect("tarjeta");
-        let play = lay.item_rect(1).expect("boton jugar");
-        assert!(play.rect[1] > card.rect[1] + card.rect[3]);
-        // Orden vertical: servidor, compilar, jugar (de abajo a arriba).
-        let server = lay.item_rect(3).expect("boton servidor");
-        let compile = lay.item_rect(2).expect("boton compilar");
-        assert!(server.rect[1] < compile.rect[1]);
-        assert!(compile.rect[1] + compile.rect[3] < play.rect[1] + play.rect[3]);
-        assert!(play.rect[1] + play.rect[3] <= lay.status.rect[1]);
-        let center = (
-            card.rect[0] + card.rect[2] * 0.5,
-            card.rect[1] + card.rect[3] * 0.5,
-        );
-        assert_eq!(lay.item_at(center.0, center.1), Some(0));
-        assert_eq!(lay.item_at(2.0, 2.0), None);
+    fn play_page_stacks_monitor_selector_button_and_links() {
+        for (w, h) in [(1024.0, 640.0), (1920.0, 1080.0), (800.0, 500.0)] {
+            let lay = layout(&state(Page::Play), w, h);
+            assert_eq!(lay.items.len(), 4);
+            let selector = lay.item_rect(0).expect("selector");
+            let play = lay.item_rect(1).expect("jugar");
+            let compile = lay.item_rect(2).expect("compilar");
+            let server = lay.item_rect(3).expect("servidor");
+            let mon = lay.monitor;
+            assert!(selector.rect[1] >= mon.rect[1] + mon.rect[3], "{w}x{h}");
+            assert!(play.rect[1] >= selector.rect[1] + selector.rect[3]);
+            assert!(compile.rect[1] >= play.rect[1] + play.rect[3]);
+            assert_eq!(compile.rect[1], server.rect[1]);
+            for r in [mon, selector, play, compile, server] {
+                assert!(inside(&r, &lay.content), "{w}x{h}: {r:?} fuera");
+            }
+            assert!(lay.content.rect[0] >= lay.wall.rect[2]);
+            let c = (play.rect[0] + 4.0, play.rect[1] + 4.0);
+            assert_eq!(lay.item_at(c.0, c.1), Some(1));
+            assert_eq!(lay.item_at(2.0, 2.0), None);
+        }
     }
 
     #[test]
-    fn instalaciones_cards_scroll_to_keep_selection_visible() {
+    fn version_rows_scroll_to_keep_selection_visible() {
         let mut s = state(Page::Instalaciones);
-        assert_eq!(lay_items(&s), 3);
+        assert_eq!(layout(&s, 1024.0, 640.0).items.len(), 3);
         for _ in 0..10 {
             s.versions.push(s.versions[0].clone());
         }
         for _ in 0..12 {
             s.move_selection(1);
         }
-        let scrolled = layout(&s, 1024.0, 640.0);
-        assert!(!scrolled.items.is_empty());
-        assert!(scrolled.items.iter().any(|slot| slot.item == 12));
-        let last = scrolled.items.last().expect("tarjetas");
-        assert!(last.rect.rect[1] + last.rect.rect[3] <= scrolled.status.rect[1]);
-    }
-
-    fn lay_items(s: &LauncherState) -> usize {
-        layout(s, 1024.0, 640.0).items.len()
+        let lay = layout(&s, 1024.0, 640.0);
+        assert!(lay.items.iter().any(|slot| slot.item == 12));
+        for slot in &lay.items {
+            assert!(inside(&slot.rect, &lay.content));
+        }
     }
 
     #[test]
-    fn opciones_rows_fit_inside_content() {
+    fn option_rows_fit_inside_content() {
         let lay = layout(&state(Page::Opciones), 1024.0, 640.0);
         assert_eq!(lay.items.len(), 5);
-        let last = lay.items[4].rect;
-        assert!(last.rect[1] + last.rect[3] < lay.status.rect[1]);
+        for slot in &lay.items {
+            assert!(inside(&slot.rect, &lay.content));
+        }
     }
 
     #[test]
-    fn acerca_has_no_items() {
-        let lay = layout(&state(Page::Acerca), 1024.0, 640.0);
-        assert!(lay.items.is_empty());
+    fn about_page_has_no_items() {
+        assert!(layout(&state(Page::Acerca), 1024.0, 640.0).items.is_empty());
     }
 }

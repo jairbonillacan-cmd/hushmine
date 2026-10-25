@@ -1,45 +1,34 @@
-//! Dibujo del panel: barra lateral, cabecera, página activa y franja de
-//! estado. Toda la geometría sale de `layout` para coincidir con el ratón.
+//! Dibujo del lanzador: la pared de la caseta (rótulo, menú, estado y
+//! salir) y la página activa. Toda la geometría sale de `layout` para que el
+//! dibujo coincida con el ratón; los colores y tamaños, de `theme`.
 
-use crate::layout::{HitSlot, Layout, layout};
+use crate::layout::{HEADING_BLOCK, HitSlot, Layout, layout, line_top};
 use crate::page_play;
 use crate::state::{LauncherState, PAGES, Page};
 use crate::theme::*;
 use grisu_render::{UiBatch, UiRect};
+use grisu_render::{fit_text, wrap_text};
 
-/// Dibuja el fotograma completo del launcher.
+/// Lema de la tienda, en la traducción del glosario.
+const TAGLINE: &str = "Roba a una montaña dormida.";
+
+/// Dibuja el fotograma completo del lanzador.
 pub fn draw(batch: &mut UiBatch, state: &LauncherState, width: f32, height: f32) {
     let lay = layout(state, width, height);
-    batch.rect(0.0, 0.0, width, height, FONDO);
-    draw_sidebar(batch, state, &lay);
-    batch.panel(
-        lay.content.rect[0],
-        lay.content.rect[1],
-        lay.content.rect[2],
-        lay.content.rect[3],
-        PANEL,
-        LATERAL_BORDE,
-        2.0,
-    );
-    draw_header(batch, state, &lay);
+    batch.rect(0.0, 0.0, width, height, NIGHT_VEIL);
+    draw_wall(batch, state, &lay);
     match state.page() {
         Page::Play => page_play::draw_play(batch, state, &lay),
-        Page::Instalaciones => draw_instalaciones(batch, state, &lay),
-        Page::Opciones => draw_opciones(batch, state, &lay),
-        Page::Acerca => draw_acerca(batch, state, &lay),
+        Page::Instalaciones => draw_versions(batch, state, &lay),
+        Page::Opciones => draw_options(batch, state, &lay),
+        Page::Acerca => draw_about(batch, &lay),
     }
-    // Velo de fundido mientras la pagina recien cambiada entra.
+    // Fundido corto mientras entra la página recién elegida.
     let cover = fade_cover(state.page_fade);
     if cover[3] > 0.0 {
-        batch.rect(
-            lay.content.rect[0],
-            lay.content.rect[1],
-            lay.content.rect[2],
-            lay.content.rect[3],
-            cover,
-        );
+        let x = lay.wall.rect[2];
+        batch.rect(x, 0.0, width - x, height, cover);
     }
-    draw_status(batch, state, &lay);
 }
 
 pub(crate) fn hovered(state: &LauncherState, r: &UiRect) -> bool {
@@ -47,80 +36,79 @@ pub(crate) fn hovered(state: &LauncherState, r: &UiRect) -> bool {
     r.contains(mx, my)
 }
 
-fn draw_sidebar(batch: &mut UiBatch, state: &LauncherState, lay: &Layout) {
-    batch.panel(
-        lay.sidebar_bg.rect[0],
-        lay.sidebar_bg.rect[1],
-        lay.sidebar_bg.rect[2],
-        lay.sidebar_bg.rect[3],
-        LATERAL,
-        LATERAL_BORDE,
-        2.0,
-    );
+pub(crate) use hush_art::ui_palette::draw_tally as tally;
+
+fn draw_wall(batch: &mut UiBatch, state: &LauncherState, lay: &Layout) {
+    let [_, _, wall_w, wall_h] = lay.wall.rect;
+    batch.rect(0.0, 0.0, wall_w, wall_h, WALL);
+    batch.rect(wall_w - 1.0, 0.0, 1.0, wall_h, STEEL_DARK);
+
+    let (tx, ty) = lay.title;
+    batch.text(tx, ty, TEXT_TITLE, ENAMEL_CREAM, "HUSHMINE");
+    let tag_y = ty + UiBatch::text_height(TEXT_TITLE) + 18.0;
+    batch.text(tx, tag_y, TEXT_BODY, PAPER_AGED, TAGLINE);
+
     for (idx, hit) in lay.sidebar.iter().enumerate() {
-        let is_exit = hit.slot == HitSlot::Exit;
-        let active = !is_exit && PAGES.get(idx) == Some(&state.page());
-        let hot = hovered(state, &hit.rect) || active;
-        let (bg, border, text) = if is_exit {
-            (
-                if hot { [0.16, 0.08, 0.08, 0.98] } else { BOTON },
-                if hot { ROJO } else { [0.30, 0.22, 0.22, 1.0] },
-                if hot { [1.0, 0.80, 0.78, 1.0] } else { TEXTO },
-            )
-        } else if active {
-            (BOTON_ACTIVO, LATON, TEXTO_CALIDO)
+        let rect = hit.rect;
+        let hot = hovered(state, &rect);
+        let (label, scale) = match hit.slot {
+            HitSlot::SidebarPage(page) => (page.label(), TEXT_LARGE),
+            HitSlot::Exit => ("Salir", TEXT_BODY),
+        };
+        let active = hit.slot != HitSlot::Exit && PAGES.get(idx) == Some(&state.page());
+        let colour = if active {
+            ENAMEL_CREAM
         } else if hot {
-            (PANEL_CLARO, [0.38, 0.42, 0.48, 1.0], TEXTO)
+            PAPER_AGED
         } else {
-            (BOTON, [0.26, 0.30, 0.36, 1.0], TEXTO_SUAVE)
+            STEEL_LIGHT
         };
-        batch.panel(
-            hit.rect.rect[0],
-            hit.rect.rect[1],
-            hit.rect.rect[2],
-            hit.rect.rect[3],
-            bg,
-            border,
-            2.0,
-        );
-        let label = if is_exit {
-            "SALIR".to_owned()
-        } else {
-            PAGES[idx].label().to_owned()
-        };
-        // Las etiquetas largas bajan de escala para respetar el margen.
-        let max_w = hit.rect.rect[2] - 46.0;
-        let scale = if UiBatch::text_width(1.9, &label) > max_w {
-            1.5
-        } else {
-            1.9
-        };
-        let ty = hit.rect.rect[1] + (hit.rect.rect[3] - UiBatch::text_height(scale)) * 0.5;
+        // Salir no lleva ficha, pero se alinea con el texto de las entradas.
+        let x = rect.rect[0] + 16.0 + 24.0;
+        let y = line_top(&rect, scale);
         if active {
-            batch.text(hit.rect.rect[0] + 12.0, ty, scale, VERDE, ">");
+            tally(
+                batch,
+                rect.rect[0] + 16.0,
+                y + UiBatch::text_height(scale) * 0.5,
+            );
         }
-        batch.text_centered(
-            hit.rect.rect[0] + hit.rect.rect[2] * 0.5 + if active { 7.0 } else { 0.0 },
-            ty,
-            scale,
-            text,
-            &label,
-        );
+        // El gris acero no llega a 4,5:1 en texto pequeño: Salir usa papel.
+        let colour = if hit.slot == HitSlot::Exit && !hot {
+            PAPER_AGED
+        } else {
+            colour
+        };
+        batch.text(x, y, scale, colour, label);
     }
+
+    let (sx, sy) = lay.status;
+    let colour = if state.status_ok {
+        PHOSPHOR_MID
+    } else {
+        LAVA_ORANGE
+    };
+    // Alineado con el texto de las entradas y de Salir.
+    batch.text(sx + 24.0, sy, TEXT_BODY, colour, &state.status);
 }
 
-fn draw_header(batch: &mut UiBatch, state: &LauncherState, lay: &Layout) {
-    let [x, y, w, _] = lay.header.rect;
-    batch.text(x + 4.0, y + 8.0, 3.0, TEXTO_CALIDO, state.page().label());
-    batch.text(x + 4.0, y + 38.0, 1.4, TEXTO_SUAVE, state.page().subtitle());
-    let brand_w = UiBatch::text_width(2.0, "HUSHMINE");
-    batch.text(x + w - brand_w - 8.0, y + 8.0, 2.0, TEXTO, "HUSHMINE");
-    let sub = "LAUNCHER // MOTOR GRISU";
-    let sub_w = UiBatch::text_width(1.3, sub);
-    batch.text(x + w - sub_w - 8.0, y + 30.0, 1.3, TEXTO_SUAVE, sub);
+/// Encabezado de las páginas con título: nombre y una línea de contexto.
+fn draw_heading(batch: &mut UiBatch, lay: &Layout, title: &str, line: &str) {
+    let [x, y, w, _] = lay.content.rect;
+    batch.text(x, y, TEXT_HEADING, ENAMEL_CREAM, title);
+    let line_y = y + UiBatch::text_height(TEXT_HEADING) + 14.0;
+    batch.text(x, line_y, TEXT_BODY, PAPER_AGED, line);
+    batch.rect(x, y + HEADING_BLOCK - 12.0, w, 1.0, STEEL_DARK);
 }
 
-fn draw_instalaciones(batch: &mut UiBatch, state: &LauncherState, lay: &Layout) {
+/// Separador fino al pie de una fila.
+fn row_rule(batch: &mut UiBatch, rect: &UiRect) {
+    let [x, y, w, h] = rect.rect;
+    batch.rect(x, y + h - 1.0, w, 1.0, STEEL_DARK);
+}
+
+fn draw_versions(batch: &mut UiBatch, state: &LauncherState, lay: &Layout) {
+    draw_heading(batch, lay, "Versiones", Page::Instalaciones.subtitle());
     for slot in &lay.items {
         let rect = slot.rect;
         let Some(ver) = state.versions.get(slot.item) else {
@@ -128,150 +116,109 @@ fn draw_instalaciones(batch: &mut UiBatch, state: &LauncherState, lay: &Layout) 
         };
         let selected = state.selected() == slot.item;
         let hot = hovered(state, &rect);
-        let border = if selected {
-            LATON
-        } else if hot {
-            [0.42, 0.46, 0.52, 1.0]
-        } else {
-            [0.26, 0.30, 0.36, 1.0]
-        };
-        batch.panel(
-            rect.rect[0],
-            rect.rect[1],
-            rect.rect[2],
-            rect.rect[3],
-            if selected { PANEL_CLARO } else { BOTON },
-            border,
-            2.0,
-        );
+        let [x, y, w, _] = rect.rect;
+        let name_y = y + 12.0;
         if selected {
-            batch.text(rect.rect[0] + 10.0, rect.rect[1] + 9.0, 1.8, VERDE, ">");
+            tally(batch, x, name_y + UiBatch::text_height(TEXT_LARGE) * 0.5);
         }
-        batch.text(
-            rect.rect[0] + 26.0,
-            rect.rect[1] + 9.0,
-            1.8,
-            if selected { TEXTO_CALIDO } else { TEXTO },
-            &ver.label,
-        );
+        let name_colour = if selected || hot {
+            ENAMEL_CREAM
+        } else {
+            PAPER_AGED
+        };
+        batch.text(x + 24.0, name_y, TEXT_LARGE, name_colour, &ver.label);
         let tag = ver.status_tag();
-        let tag_w = UiBatch::text_width(1.4, tag);
-        batch.text(
-            rect.rect[0] + rect.rect[2] - tag_w - 10.0,
-            rect.rect[1] + 10.0,
-            1.4,
-            if ver.is_installed() { VERDE_OK } else { ROJO },
-            tag,
-        );
-        batch.text(
-            rect.rect[0] + 26.0,
-            rect.rect[1] + 34.0,
-            1.4,
-            TEXTO_SUAVE,
-            &ver.subtitle,
-        );
+        let tag_colour = if ver.is_installed() {
+            PHOSPHOR_MID
+        } else {
+            LAVA_ORANGE
+        };
+        let tag_w = UiBatch::text_width(TEXT_BODY, tag);
+        batch.text(x + w - tag_w, name_y + 4.0, TEXT_BODY, tag_colour, tag);
+        let sub_y = name_y + UiBatch::text_height(TEXT_LARGE) + 12.0;
         let age = state.last_played_text(slot.item);
-        let age_w = UiBatch::text_width(1.4, &age);
-        batch.text(
-            rect.rect[0] + rect.rect[2] - age_w - 10.0,
-            rect.rect[1] + 34.0,
-            1.4,
-            TEXTO_SUAVE,
-            &age,
-        );
+        let age_w = UiBatch::text_width(TEXT_BODY, &age);
+        batch.text(x + w - age_w, sub_y, TEXT_BODY, PAPER_AGED, &age);
+        let sub = fit_text(&ver.subtitle, TEXT_BODY, w - 24.0 - age_w - 24.0);
+        batch.text(x + 24.0, sub_y, TEXT_BODY, PAPER_AGED, &sub);
+        row_rule(batch, &rect);
     }
 }
 
-fn draw_opciones(batch: &mut UiBatch, state: &LauncherState, lay: &Layout) {
+fn draw_options(batch: &mut UiBatch, state: &LauncherState, lay: &Layout) {
+    draw_heading(batch, lay, "Opciones", Page::Opciones.subtitle());
     let rows = state.option_rows();
     for (idx, slot) in lay.items.iter().enumerate() {
         let rect = slot.rect;
         let (label, value) = &rows[idx];
-        let active = state.selected() == idx;
+        let selected = state.selected() == idx;
         let hot = hovered(state, &rect);
-        let est = estilo_control(active, false);
-        batch.panel(
-            rect.rect[0],
-            rect.rect[1],
-            rect.rect[2],
-            rect.rect[3],
-            if hot && !active {
-                PANEL_CLARO
-            } else {
-                est.fondo
-            },
-            est.borde,
-            2.0,
-        );
-        let scale = 1.8;
-        let ty = rect.rect[1] + (rect.rect[3] - UiBatch::text_height(scale)) * 0.5;
-        batch.text(
-            rect.rect[0] + 14.0,
-            ty,
-            scale,
-            if active { est.texto } else { TEXTO },
-            label,
-        );
-        let vw = UiBatch::text_width(scale, value);
-        batch.text(
-            rect.rect[0] + rect.rect[2] - vw - 14.0,
-            ty,
-            scale,
-            if active { TEXTO_CALIDO } else { TEXTO },
-            value,
-        );
-    }
-}
-
-fn draw_acerca(batch: &mut UiBatch, _state: &LauncherState, lay: &Layout) {
-    let cx = lay.content.rect[0] + lay.content.rect[2] * 0.5;
-    let mut y = lay.content.rect[1] + 84.0;
-    let lines: [(&str, f32, Color); 10] = [
-        ("HUSHMINE", 2.6, TEXTO_CALIDO),
-        ("JUEGO COMPETITIVO DE MINERIA EN VOXELES", 1.5, TEXTO),
-        (
-            "MOTOR GRISU: RUST + WGPU, SIMULACION DETERMINISTA",
-            1.4,
-            TEXTO_SUAVE,
-        ),
-        ("", 1.0, TEXTO),
-        ("WASD ANDAR - ESPACIO SALTAR - CLIC IZQ CAVAR", 1.5, TEXTO),
-        (
-            "CLIC DER PONER - 1-6 ELEGIR BLOQUE - ESCAPE MENU",
-            1.5,
-            TEXTO,
-        ),
-        ("", 1.0, TEXTO),
-        (
-            "MULTIJUGADOR POR LAN EN EL PUERTO UDP 47400",
-            1.4,
-            TEXTO_SUAVE,
-        ),
-        ("SERVIDOR DEDICADO: HUSH-SERVER --BOTS N", 1.4, TEXTO_SUAVE),
-        (
-            "TUS VERSIONES INSTALADAS ESTAN EN INSTALACIONES",
-            1.4,
-            TEXTO_SUAVE,
-        ),
-    ];
-    for (text, scale, col) in lines {
-        if !text.is_empty() {
-            batch.text_centered(cx, y, scale, col, text);
+        let [x, _, w, _] = rect.rect;
+        let y = line_top(&rect, TEXT_BODY);
+        if selected {
+            tally(batch, x, y + UiBatch::text_height(TEXT_BODY) * 0.5);
         }
-        y += 7.0 * scale + 15.0;
+        let label_colour = if selected { ENAMEL_CREAM } else { PAPER_AGED };
+        batch.text(x + 24.0, y, TEXT_BODY, label_colour, label);
+        // El valor lleva flechas cuando se puede cambiar: en la fila elegida
+        // o bajo el ratón (los tercios de la fila bajan y suben).
+        let shown = if selected || hot {
+            format!("‹ {value} ›")
+        } else {
+            value.clone()
+        };
+        let vw = UiBatch::text_width(TEXT_BODY, &shown);
+        batch.text(x + w - vw, y, TEXT_BODY, ENAMEL_CREAM, &shown);
+        row_rule(batch, &rect);
     }
 }
 
-fn draw_status(batch: &mut UiBatch, state: &LauncherState, lay: &Layout) {
-    let [x, y, w, h] = lay.status.rect;
-    batch.rect(x, y + h - 34.0, w, 34.0, FRANJA);
-    let hint = match state.page() {
-        Page::Play => "[WS] MOVER   [AD] AJUSTAR   [ENTER] JUGAR   [C] COMPILAR   [TAB] PAGINA",
-        Page::Instalaciones => "[WS] ELEGIR   [ENTER] JUGAR   [C] COMPILAR   [TAB] PAGINA",
-        Page::Opciones => "[WS] ELEGIR   [AD] AJUSTAR   [ENTER] AVANZAR   [TAB] PAGINA",
-        Page::Acerca => "[TAB] PAGINA   [ESC] SALIR",
-    };
-    batch.text(x + 8.0, y + h - 26.0, 1.4, TEXTO_SUAVE, hint);
-    let col = if state.status_ok { VERDE_OK } else { ROJO };
-    batch.text(x + 8.0, y + h - 13.0, 1.4, col, &state.status);
+fn draw_about(batch: &mut UiBatch, lay: &Layout) {
+    draw_heading(batch, lay, "HUSHMINE", Page::Acerca.subtitle());
+    let [x, y, w, _] = lay.content.rect;
+    let mut y = y + HEADING_BLOCK + 4.0;
+    let intro = "Minería competitiva en vóxeles: dos cuadrillas roban oro a una \
+                 montaña que duerme. Cada explosión la despierta un poco más.";
+    for line in wrap_text(intro, TEXT_BODY, w) {
+        batch.text(x, y, TEXT_BODY, ENAMEL_CREAM, &line);
+        y += UiBatch::text_height(TEXT_BODY) + 12.0;
+    }
+    y += 22.0;
+    let controls = [
+        ("W A S D", "andar"),
+        ("Espacio", "saltar"),
+        ("Mayús", "correr"),
+        ("Clic izquierdo", "cavar"),
+        ("Clic derecho", "poner un bloque"),
+        ("1 a 6", "elegir bloque"),
+        ("V", "cambiar de cámara"),
+        ("Escape", "menú del juego"),
+    ];
+    let key_w = w * 0.42;
+    for (key, action) in controls {
+        batch.text(x, y, TEXT_BODY, ENAMEL_CREAM, key);
+        batch.text(x + key_w, y, TEXT_BODY, PAPER_AGED, action);
+        y += UiBatch::text_height(TEXT_BODY) + 12.0;
+    }
+    y += 22.0;
+    batch.text(
+        x,
+        y,
+        TEXT_BODY,
+        PAPER_AGED,
+        "Partidas por LAN en el puerto UDP 47400.",
+    );
+}
+
+/// Atajos de teclado de la página, al pie del contenido.
+pub(crate) fn draw_hints(batch: &mut UiBatch, lay: &Layout, hints: &[(&str, &str)]) {
+    let [x, y, _, h] = lay.content.rect;
+    let mut pen = x;
+    let base = y + h - UiBatch::text_height(TEXT_BODY);
+    for (key, action) in hints {
+        batch.text(pen, base, TEXT_BODY, ENAMEL_CREAM, key);
+        pen += UiBatch::text_width(TEXT_BODY, key) + 8.0;
+        batch.text(pen, base, TEXT_BODY, PAPER_AGED, action);
+        pen += UiBatch::text_width(TEXT_BODY, action) + 22.0;
+    }
 }

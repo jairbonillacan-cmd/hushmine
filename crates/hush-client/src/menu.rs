@@ -1,10 +1,10 @@
-//! Estado y navegación del menú (Launcher inicial, Pausa con Escape y
-//! configuración de controles).
+//! Estado y navegación del menú del juego: nueva partida, pausa con Escape
+//! y controles.
 
 use grisu_platform::{Input, KeyCode, MouseButton};
 use grisu_render::CameraMode;
 
-use crate::controls::{BindAction, Controls, key_label};
+use crate::controls::{BindAction, Controls, key_name};
 use crate::hud::row_rect;
 
 /// Eventos que el menú devuelve a `Game` cuando el jugador elige una acción.
@@ -58,7 +58,7 @@ impl MenuState {
         self.page != MenuPage::Hidden
     }
 
-    fn item_count(&self) -> usize {
+    pub fn item_count(&self) -> usize {
         match self.page {
             MenuPage::Hidden => 0,
             MenuPage::Launcher => 6,
@@ -123,7 +123,7 @@ impl MenuState {
         let mut clicked_dir: Option<i32> = None;
         if win_w > 0 && win_h > 0 {
             for idx in 0..count {
-                let row = row_rect(self.page, idx, win_w as f32, win_h as f32);
+                let row = row_rect(count, idx, win_w as f32, win_h as f32);
                 if row.contains(mx, my) {
                     self.selected = idx;
                     if input.was_button_pressed(MouseButton::Left) {
@@ -245,53 +245,84 @@ impl MenuState {
         MenuCommand::None
     }
 
-    pub fn item_labels(&self, controls: &Controls, camera_mode: CameraMode) -> Vec<String> {
+    /// Título de la página abierta.
+    pub fn title(&self) -> &'static str {
+        match self.page {
+            MenuPage::Launcher => "Nueva partida",
+            MenuPage::Pause => "Pausa",
+            MenuPage::Controls { .. } => "Controles",
+            MenuPage::Hidden => "",
+        }
+    }
+
+    /// Si la fila `idx` tiene un valor que se cambia con izquierda y derecha.
+    pub fn is_adjustable(&self, idx: usize) -> bool {
+        matches!(
+            (self.page, idx),
+            (MenuPage::Launcher, 1..=3)
+                | (MenuPage::Pause, 1..=3)
+                | (MenuPage::Controls { .. }, 7 | 8)
+        )
+    }
+
+    /// Filas (etiqueta, valor) de la página abierta; el valor puede ir vacío.
+    pub fn item_rows(&self, controls: &Controls, camera_mode: CameraMode) -> Vec<(String, String)> {
+        let row = |label: &str, value: String| (label.to_owned(), value);
         match self.page {
             MenuPage::Launcher => vec![
-                if self.remote_session {
-                    "ENTRAR A LA PARTIDA EN RED".into()
-                } else {
-                    "INICIAR PARTIDA LOCAL".into()
-                },
-                format!("BOTS EN PARTIDA: < {} >", self.launcher_bots),
-                format!("SEMILLA DEL MAPA: < {} >", self.launcher_seed),
-                format!("CAMARA INICIAL: < {} >", camera_mode.label()),
-                "CONFIGURAR CONTROLES Y RATON".into(),
-                "SALIR DEL JUEGO".into(),
+                row(
+                    if self.remote_session {
+                        "Entrar en la partida"
+                    } else {
+                        "Empezar"
+                    },
+                    String::new(),
+                ),
+                row("Bots", self.launcher_bots.to_string()),
+                row("Semilla del mapa", self.launcher_seed.to_string()),
+                row("Cámara", camera_mode.label().to_owned()),
+                row("Controles", String::new()),
+                row("Salir del juego", String::new()),
             ],
             MenuPage::Pause => vec![
-                "CONTINUAR PARTIDA (ESC)".into(),
-                format!("VISTA DE CAMARA: < {} >", camera_mode.label()),
-                format!(
-                    "DISTANCIA 3A PERSONA: < {:.1} BLOQUES >",
-                    controls.third_person_dist
+                row("Seguir jugando", String::new()),
+                row("Cámara", camera_mode.label().to_owned()),
+                row(
+                    "Distancia de la cámara",
+                    // Coma decimal, como se escribe en español.
+                    format!("{:.1} bloques", controls.third_person_dist).replace('.', ","),
                 ),
-                format!("MODO DE CARRERA: < {} >", controls.sprint_mode.label()),
-                "CAMBIAR CONTROLES Y SENSIBILIDAD".into(),
-                "ABRIR LAUNCHER (NUEVA PARTIDA)".into(),
-                "SALIR DEL JUEGO".into(),
+                row("Correr", controls.sprint_mode.label().to_owned()),
+                row("Controles", String::new()),
+                row("Nueva partida", String::new()),
+                row("Salir del juego", String::new()),
             ],
             MenuPage::Controls { .. } => {
-                let mut list: Vec<String> = BindAction::ALL
+                let mut list: Vec<(String, String)> = BindAction::ALL
                     .iter()
                     .map(|&act| {
-                        if self.rebinding == Some(act) {
-                            format!("{}: [ PULSA UNA TECLA... ]", act.label())
+                        let value = if self.rebinding == Some(act) {
+                            "Pulsa una tecla…".to_owned()
                         } else {
-                            format!("{}: [ {} ]", act.label(), key_label(controls.get(act)))
-                        }
+                            key_name(controls.get(act)).to_owned()
+                        };
+                        row(act.label(), value)
                     })
                     .collect();
-                list.push(format!(
-                    "SENSIBILIDAD RATON: < {}% >",
-                    controls.sensitivity_pct
+                list.push(row(
+                    "Sensibilidad del ratón",
+                    format!("{} %", controls.sensitivity_pct),
                 ));
-                list.push(format!("CAMPO DE VISION (FOV): < {} >", controls.fov_deg));
-                list.push("RESTAURAR CONTROLES POR DEFECTO".into());
-                list.push("GUARDAR Y VOLVER (ESC)".into());
+                list.push(row("Campo de visión", format!("{}°", controls.fov_deg)));
+                list.push(row("Restaurar los valores de fábrica", String::new()));
+                list.push(row("Volver", String::new()));
                 list
             }
             MenuPage::Hidden => Vec::new(),
         }
     }
 }
+
+#[cfg(test)]
+#[path = "menu_tests.rs"]
+mod tests;

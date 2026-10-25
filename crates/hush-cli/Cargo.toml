@@ -21,6 +21,7 @@ grisu-voxel.workspace = true
 grisu-noise.workspace = true
 image.workspace = true
 hush-art.workspace = true
+hush-client.workspace = true
 hush-launcher.workspace = true
 hush-net.workspace = true
 grisu-net.workspace = true

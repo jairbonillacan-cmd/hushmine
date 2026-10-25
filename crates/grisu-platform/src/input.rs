@@ -107,6 +107,34 @@ impl Input {
         }
     }
 
+    /// Entrada fabricada sin ventana, para probar menús y controles. Las
+    /// pulsaciones se añaden con [`Input::simulate_key`] y
+    /// [`Input::simulate_button`], y se olvidan con [`Input::simulate_frame`].
+    pub fn simulated(window_size: (u32, u32), cursor_pos: (f32, f32)) -> Self {
+        Self {
+            window_size,
+            cursor_pos,
+            ..Self::default()
+        }
+    }
+
+    pub fn simulate_key(&mut self, key: KeyCode, down: bool) {
+        self.key(key, down);
+    }
+
+    pub fn simulate_button(&mut self, button: MouseButton, down: bool) {
+        self.button(button, down);
+    }
+
+    pub fn simulate_cursor(&mut self, x: f32, y: f32) {
+        self.set_cursor_pos(x, y);
+    }
+
+    /// Pasa al fotograma siguiente: lo pulsado deja de contar como nuevo.
+    pub fn simulate_frame(&mut self) {
+        self.end_frame();
+    }
+
     /// Olvida lo que solo vale para un fotograma.
     pub(crate) fn end_frame(&mut self) {
         self.pressed.clear();

@@ -35,9 +35,9 @@ impl GameVersion {
 
     pub fn status_tag(&self) -> &'static str {
         if self.is_installed() {
-            "INSTALADO"
+            "Lista"
         } else {
-            "SIN COMPILAR"
+            "Sin compilar"
         }
     }
 }
@@ -83,9 +83,9 @@ impl StartMode {
 
     pub fn label(self) -> &'static str {
         match self {
-            Self::DirectMatch => "DIRECTO A PARTIDA",
-            Self::InGameMenu => "CASETA DEL VIGIA (MENU)",
-            Self::ConnectLocalLan => "CONECTAR A LAN (127.0.0.1)",
+            Self::DirectMatch => "Partida directa",
+            Self::InGameMenu => "Menú del juego",
+            Self::ConnectLocalLan => "Conectar por LAN",
         }
     }
 }
@@ -126,20 +126,20 @@ pub fn discover_versions(root: &Path) -> Vec<GameVersion> {
 
     let mut list = vec![
         GameVersion {
-            label: "v0.2.0 RELEASE (OPTIMIZADO)".into(),
-            subtitle: "target/release/hushmine.exe · Maximo rendimiento".into(),
+            label: "Versión optimizada".into(),
+            subtitle: "target/release/hushmine.exe · la más rápida".into(),
             kind: VersionKind::Release,
             binary_path: rel_bin.clone(),
         },
         GameVersion {
-            label: "v0.2.0 DEBUG (DESARROLLO)".into(),
-            subtitle: "target/debug/hushmine.exe · Compilacion rapida".into(),
+            label: "Versión de desarrollo".into(),
+            subtitle: "target/debug/hushmine.exe · compila antes".into(),
             kind: VersionKind::Debug,
             binary_path: dbg_bin,
         },
         GameVersion {
-            label: "v0.2.0 SERVIDOR + CLIENTE LAN".into(),
-            subtitle: "Arranca hush-server UDP (47400) + cliente conectado".into(),
+            label: "Servidor y cliente LAN".into(),
+            subtitle: "hush-server en el puerto UDP 47400 y un cliente conectado".into(),
             kind: VersionKind::LanHostAndClient,
             binary_path: rel_bin,
         },
@@ -160,7 +160,7 @@ pub fn discover_versions(root: &Path) -> Vec<GameVersion> {
         for path in custom {
             if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
                 list.push(GameVersion {
-                    label: format!("ARCHIVADA: {}", stem.to_uppercase()),
+                    label: format!("Archivada: {stem}"),
                     subtitle: format!(
                         "versions/{}",
                         path.file_name().unwrap_or_default().to_string_lossy()
@@ -193,13 +193,13 @@ pub fn compile_version(root: &Path, version: &GameVersion) -> Result<String, Str
                 .arg("hush-server");
         }
         VersionKind::Archived(_) => {
-            return Ok("VERSION ARCHIVADA LISTA PARA EJECUTAR".into());
+            return Ok("Versión archivada: no hace falta compilarla".into());
         }
     }
     match cmd.status() {
-        Ok(status) if status.success() => Ok(format!("COMPILACION COMPLETADA: {}", version.label)),
-        Ok(status) => Err(format!("CARGO TERMINO CON CODIGO {:?}", status.code())),
-        Err(err) => Err(format!("ERROR AL EJECUTAR CARGO: {err}")),
+        Ok(status) if status.success() => Ok(format!("Compilada: {}", version.label)),
+        Ok(status) => Err(format!("cargo terminó con el código {:?}", status.code())),
+        Err(err) => Err(format!("No se pudo ejecutar cargo: {err}")),
     }
 }
 
@@ -240,8 +240,8 @@ fn ensure_server_built(root: &Path) -> Result<(), String> {
         .status();
     match status {
         Ok(status) if status.success() => Ok(()),
-        Ok(status) => Err(format!("CARGO TERMINO CON CODIGO {:?}", status.code())),
-        Err(err) => Err(format!("ERROR AL EJECUTAR CARGO: {err}")),
+        Ok(status) => Err(format!("cargo terminó con el código {:?}", status.code())),
+        Err(err) => Err(format!("No se pudo ejecutar cargo: {err}")),
     }
 }
 
@@ -257,11 +257,11 @@ pub fn launch_server(root: &Path, seed: u64, bots: u32) -> Result<String, String
     cmd.spawn()
         .map(|child| {
             format!(
-                "SERVIDOR LAN EN MARCHA (PID {}) - PUERTO 47400 - SEMILLA {seed}",
+                "Servidor LAN en marcha (PID {}), puerto 47400, semilla {seed}",
                 child.id()
             )
         })
-        .map_err(|err| format!("NO SE PUDO LANZAR EL SERVIDOR: {err}"))
+        .map_err(|err| format!("No se pudo arrancar el servidor: {err}"))
 }
 
 /// Lanza el proceso del juego con los parámetros configurados.
@@ -305,8 +305,8 @@ pub fn launch_game(
     }
 
     cmd.spawn()
-        .map(|child| format!("JUEGO LANZADO (PID {}) - {}", child.id(), version.label))
-        .map_err(|err| format!("NO SE PUDO LANZAR EL BINARIO: {err}"))
+        .map(|child| format!("Juego lanzado (PID {}): {}", child.id(), version.label))
+        .map_err(|err| format!("No se pudo lanzar el juego: {err}"))
 }
 #[cfg(test)]
 mod tests {

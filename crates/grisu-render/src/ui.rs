@@ -2,7 +2,10 @@
 
 use bytemuck::{Pod, Zeroable};
 
-use crate::ui_font::glyph;
+use crate::ui_font::{ABOVE, CAP_HEIGHT, glyph};
+
+/// Columnas vacías entre una letra y la siguiente.
+const LETTER_SPACING: u32 = 1;
 
 /// Rectángulo 2D en píxeles de pantalla (origen arriba a la izquierda).
 #[repr(C)]
@@ -74,45 +77,48 @@ impl UiBatch {
 
     /// Anchura en píxeles de una cadena con tamaño de píxel `scale`.
     pub fn text_width(scale: f32, text: &str) -> f32 {
-        let count = text.chars().count();
-        if count == 0 {
-            0.0
-        } else {
-            (count as f32 * 6.0 - 1.0) * scale
-        }
+        let columns: u32 = text
+            .chars()
+            .map(|ch| u32::from(glyph(ch).width) + LETTER_SPACING)
+            .sum();
+        columns.saturating_sub(LETTER_SPACING) as f32 * scale.max(1.0)
     }
 
-    /// Altura en píxeles de una línea con tamaño de píxel `scale`.
+    /// Altura de mayúscula en píxeles con tamaño de píxel `scale`. Las
+    /// tildes de las mayúsculas suben 2 píxeles de fuente por encima y las
+    /// descendentes bajan 2 por debajo.
     pub fn text_height(scale: f32) -> f32 {
-        7.0 * scale
+        CAP_HEIGHT as f32 * scale
     }
 
-    /// Dibuja texto con la fuente matricial de 5×7. Une tramos horizontales
-    /// contiguos para minimizar el número de rectángulos enviados a la GPU.
+    /// Dibuja texto con la fuente de mapa de bits. `y` es la parte de
+    /// arriba de las mayúsculas. Une tramos horizontales contiguos para
+    /// enviar menos rectángulos a la GPU.
     pub fn text(&mut self, x: f32, y: f32, scale: f32, color: [f32; 4], text: &str) {
         let s = scale.max(1.0);
-        for (idx, ch) in text.chars().enumerate() {
-            let gx = x + idx as f32 * 6.0 * s;
-            let rows = glyph(ch);
-            for (row_idx, &bits) in rows.iter().enumerate() {
+        let mut pen = x;
+        for ch in text.chars() {
+            let g = glyph(ch);
+            for (row_idx, &bits) in g.rows.iter().enumerate() {
                 if bits == 0 {
                     continue;
                 }
-                let gy = y + row_idx as f32 * s;
+                let gy = y + (row_idx as f32 - ABOVE as f32) * s;
                 let mut col = 0usize;
-                while col < 5 {
-                    if (bits & (1 << (4 - col))) != 0 {
+                while col < 8 {
+                    if g.pixel(row_idx, col) {
                         let start = col;
-                        while col < 5 && (bits & (1 << (4 - col))) != 0 {
+                        while col < 8 && g.pixel(row_idx, col) {
                             col += 1;
                         }
                         let span = (col - start) as f32 * s;
-                        self.rect(gx + start as f32 * s, gy, span, s, color);
+                        self.rect(pen + start as f32 * s, gy, span, s, color);
                     } else {
                         col += 1;
                     }
                 }
             }
+            pen += f32::from(g.width + LETTER_SPACING as u8) * s;
         }
     }
 

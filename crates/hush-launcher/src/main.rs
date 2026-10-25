@@ -25,7 +25,7 @@ fn main() -> Result<()> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     let root = workspace_root();
     let launcher = LauncherApp::new(root);
-    grisu_platform::run_with_size("HUSHMINE Launcher", [1024, 640], launcher)
+    grisu_platform::run_with_size("HUSHMINE", [1024, 640], launcher)
 }
 
 fn now_secs() -> u64 {
@@ -72,7 +72,7 @@ impl LauncherApp {
             ui: None,
             batch: UiBatch::new(),
         };
-        app.set_status(format!("LISTO - {total} VERSIONES DETECTADAS"), true);
+        app.set_status(format!("Listo · {total} versiones encontradas"), true);
         app
     }
 

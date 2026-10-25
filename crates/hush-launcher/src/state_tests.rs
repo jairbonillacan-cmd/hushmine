@@ -103,5 +103,5 @@ fn record_launch_keeps_latest_per_label() {
         s.last_played_text(0),
         crate::history::format_age(3_000, 3_000)
     );
-    assert_eq!(s.last_played_text(1), "NUNCA JUGADO");
+    assert_eq!(s.last_played_text(1), "Sin jugar");
 }

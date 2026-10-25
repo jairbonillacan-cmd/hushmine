@@ -854,6 +854,7 @@ dependencies = [
  "grisu-render",
  "grisu-voxel",
  "hush-art",
+ "hush-client",
  "hush-launcher",
  "hush-net",
  "hush-sim",

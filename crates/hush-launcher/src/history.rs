@@ -56,17 +56,17 @@ fn serialize_last_played(entries: &[(String, u64)]) -> String {
     out
 }
 
-/// Edad relativa en español, para las tarjetas de Instalaciones.
+/// Edad relativa en español, para la lista de versiones.
 pub fn format_age(now_secs: u64, then_secs: u64) -> String {
     let delta = now_secs.saturating_sub(then_secs);
     if delta < 60 {
-        "JUGADO AHORA MISMO".into()
+        "Jugada hace un momento".into()
     } else if delta < 3600 {
-        format!("JUGADO HACE {} MIN", delta / 60)
+        format!("Jugada hace {} min", delta / 60)
     } else if delta < 86_400 {
-        format!("JUGADO HACE {} H", delta / 3600)
+        format!("Jugada hace {} h", delta / 3600)
     } else {
-        format!("JUGADO HACE {} D", delta / 86_400)
+        format!("Jugada hace {} días", delta / 86_400)
     }
 }
 
@@ -90,10 +90,10 @@ mod tests {
 
     #[test]
     fn age_text_uses_buckets() {
-        assert_eq!(format_age(100, 41), "JUGADO AHORA MISMO");
-        assert_eq!(format_age(3_600, 60), "JUGADO HACE 59 MIN");
-        assert_eq!(format_age(86_400, 60), "JUGADO HACE 23 H");
-        assert_eq!(format_age(172_800 * 3, 0), "JUGADO HACE 6 D");
-        assert_eq!(format_age(10, 9_999), "JUGADO AHORA MISMO");
+        assert_eq!(format_age(100, 41), "Jugada hace un momento");
+        assert_eq!(format_age(3_600, 60), "Jugada hace 59 min");
+        assert_eq!(format_age(86_400, 60), "Jugada hace 23 h");
+        assert_eq!(format_age(172_800 * 3, 0), "Jugada hace 6 días");
+        assert_eq!(format_age(10, 9_999), "Jugada hace un momento");
     }
 }

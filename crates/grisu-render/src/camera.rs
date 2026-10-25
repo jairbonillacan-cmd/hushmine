@@ -69,8 +69,8 @@ impl CameraMode {
     pub fn label(self) -> &'static str {
         match self {
             Self::FirstPerson => "Primera persona",
-            Self::ThirdPersonBack => "Tercera persona (detrás)",
-            Self::ThirdPersonFront => "Tercera persona (frente)",
+            Self::ThirdPersonBack => "Desde atrás",
+            Self::ThirdPersonFront => "Desde delante",
         }
     }
 }

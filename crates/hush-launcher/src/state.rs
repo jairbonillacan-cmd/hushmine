@@ -5,7 +5,7 @@ use crate::thumbnail::Preview;
 use crate::versions::{GameVersion, StartMode};
 
 pub const PRESET_SEEDS: [u64; 6] = [42, 1931, 1979, 7, 256, 999];
-pub const MINER_PROFILES: [&str; 5] = ["MINERO", "COBRE-1", "COBALTO-1", "VIGIA", "ZAPADOR"];
+pub const MINER_PROFILES: [&str; 5] = ["Minero", "Cobre", "Cobalto", "Vigía", "Zapador"];
 pub const MAX_BOTS: u32 = 8;
 
 /// Páginas del panel, en el orden de la barra lateral.
@@ -27,19 +27,19 @@ pub const PAGES: [Page; 4] = [
 impl Page {
     pub fn label(self) -> &'static str {
         match self {
-            Page::Play => "JUGAR",
-            Page::Instalaciones => "INSTALACIONES",
-            Page::Opciones => "OPCIONES",
-            Page::Acerca => "ACERCA DE",
+            Page::Play => "Jugar",
+            Page::Instalaciones => "Versiones",
+            Page::Opciones => "Opciones",
+            Page::Acerca => "Acerca de",
         }
     }
 
     pub fn subtitle(self) -> &'static str {
         match self {
-            Page::Play => "ELIGE VERSION Y ENTRA A LA MINA",
-            Page::Instalaciones => "BINARIOS DETECTADOS EN ESTE EQUIPO",
-            Page::Opciones => "AJUSTES DE LA PROXIMA PARTIDA",
-            Page::Acerca => "SOBRE HUSHMINE Y EL MOTOR GRISU",
+            Page::Play => "Elige versión y baja a la mina",
+            Page::Instalaciones => "Versiones compiladas en este equipo",
+            Page::Opciones => "Ajustes de la próxima partida",
+            Page::Acerca => "Sobre HUSHMINE y el motor Grisú",
         }
     }
 
@@ -87,8 +87,6 @@ pub struct LauncherState {
     pub status: String,
     pub status_ok: bool,
     pub mouse: (f32, f32),
-    /// Segundos de animación acumulados; alimenta los pulsos del dibujo.
-    pub animation: f32,
     /// Segundos desde el último cambio de página, para el fundido de entrada.
     pub page_fade: f32,
     /// Miniatura del terreno de la semilla elegida, si ya se generó.
@@ -109,10 +107,9 @@ impl LauncherState {
             seed_idx: 0,
             miner_idx: 0,
             close_on_launch: false,
-            status: "LISTO".into(),
+            status: "Listo".into(),
             status_ok: true,
             mouse: (-1.0, -1.0),
-            animation: 0.0,
             page_fade: 1.0,
             preview: None,
             page: Page::Play,
@@ -144,9 +141,8 @@ impl LauncherState {
         self.page_fade = 0.0;
     }
 
-    /// Avanza la animación de pulsos y el fundido de página.
+    /// Avanza el fundido de página.
     pub fn tick(&mut self, dt: f32) {
-        self.animation += dt;
         self.page_fade = (self.page_fade + dt).min(crate::theme::FADE_TIME);
     }
 
@@ -292,7 +288,7 @@ impl LauncherState {
         match self.versions.get(idx) {
             Some(ver) => match self.last_played_secs(&ver.label) {
                 Some(secs) => crate::history::format_age(self.now_secs, secs),
-                None => "NUNCA JUGADO".into(),
+                None => "Sin jugar".into(),
             },
             None => String::new(),
         }
@@ -308,29 +304,18 @@ impl LauncherState {
     /// Filas (etiqueta, valor) de la página Opciones.
     pub fn option_rows(&self) -> [(String, String); 5] {
         [
+            ("Arranque".into(), self.start_mode.label().to_owned()),
+            ("Bots".into(), self.bots.to_string()),
+            ("Semilla del mapa".into(), self.current_seed().to_string()),
+            ("Perfil".into(), self.current_miner().to_owned()),
             (
-                "MODO DE ARRANQUE".into(),
-                format!("< {} >", self.start_mode.label()),
-            ),
-            ("BOTS EN PARTIDA".into(), format!("< {} >", self.bots)),
-            (
-                "SEMILLA DEL MAPA".into(),
-                format!("< {} >", self.current_seed()),
-            ),
-            (
-                "PERFIL DE MINERO".into(),
-                format!("< {} >", self.current_miner()),
-            ),
-            (
-                "AL LANZAR".into(),
-                format!(
-                    "< {} >",
-                    if self.close_on_launch {
-                        "CERRAR LAUNCHER"
-                    } else {
-                        "DEJAR ABIERTO"
-                    }
-                ),
+                "Al lanzar".into(),
+                if self.close_on_launch {
+                    "Cerrar el lanzador"
+                } else {
+                    "Dejarlo abierto"
+                }
+                .to_owned(),
             ),
         ]
     }
@@ -338,7 +323,7 @@ impl LauncherState {
     /// Línea resumen de la página Jugar.
     pub fn summary_line(&self) -> String {
         format!(
-            "MODO: {} - BOTS: {} - SEMILLA: {} - PERFIL: {}",
+            "{} · {} bots · semilla {} · {}",
             self.start_mode.label(),
             self.bots,
             self.current_seed(),

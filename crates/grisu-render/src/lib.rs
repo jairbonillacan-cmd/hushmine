@@ -14,6 +14,7 @@ mod offscreen;
 mod texture;
 mod texture_array;
 mod ui;
+mod ui_fit;
 mod ui_font;
 mod voxel;
 
@@ -27,6 +28,7 @@ pub use offscreen::{OFFSCREEN_FORMAT, capture, render_to_image};
 pub use texture::TextureData;
 pub use texture_array::upload_texture_array;
 pub use ui::{UiBatch, UiRect, UiRenderer};
+pub use ui_fit::{fit_text, wrap_text};
 pub use voxel::{MeshStats, TerrainStyle, VoxelRenderer};
 
 /// Color de fondo: oscuridad de mina, ligeramente azulada.

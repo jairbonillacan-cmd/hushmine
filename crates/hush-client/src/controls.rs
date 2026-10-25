@@ -34,13 +34,13 @@ impl BindAction {
 
     pub fn label(self) -> &'static str {
         match self {
-            Self::Forward => "AVANZAR",
-            Self::Back => "RETROCEDER",
-            Self::Left => "IZQUIERDA",
-            Self::Right => "DERECHA",
-            Self::Jump => "SALTAR",
-            Self::Sprint => "CORRER",
-            Self::Camera => "CAMBIAR CAMARA",
+            Self::Forward => "Avanzar",
+            Self::Back => "Retroceder",
+            Self::Left => "Izquierda",
+            Self::Right => "Derecha",
+            Self::Jump => "Saltar",
+            Self::Sprint => "Correr",
+            Self::Camera => "Cambiar de cámara",
         }
     }
 }
@@ -65,8 +65,8 @@ impl SprintMode {
 
     pub fn label(self) -> &'static str {
         match self {
-            Self::Hold => "MANTENER",
-            Self::Toggle => "ALTERNAR",
+            Self::Hold => "Mantener pulsada",
+            Self::Toggle => "Pulsar una vez",
         }
     }
 }
@@ -186,7 +186,7 @@ impl Controls {
 
     pub fn serialize(&self) -> String {
         format!(
-            "forward={}\nback={}\nleft={}\nright={}\njump={}\nsprint={}\ncamera={}\nsprint_mode={}\nsensitivity={}\nfov={}\n",
+            "forward={}\nback={}\nleft={}\nright={}\njump={}\nsprint={}\ncamera={}\nsprint_mode={}\nsensitivity={}\nfov={}\nthird_person={:.1}\n",
             key_label(self.forward),
             key_label(self.back),
             key_label(self.left),
@@ -200,6 +200,7 @@ impl Controls {
             },
             self.sensitivity_pct,
             self.fov_deg,
+            self.third_person_dist,
         )
     }
 
@@ -260,6 +261,13 @@ impl Controls {
                 "fov" => {
                     if let Ok(n) = v.trim().parse::<u32>() {
                         c.fov_deg = n.clamp(60, 110);
+                    }
+                }
+                "third_person" => {
+                    if let Ok(d) = v.trim().parse::<f32>()
+                        && d.is_finite()
+                    {
+                        c.third_person_dist = d.clamp(1.5, 6.0);
                     }
                 }
                 _ => {}
@@ -328,6 +336,32 @@ pub fn key_label(key: KeyCode) -> &'static str {
         .unwrap_or("TECLA")
 }
 
+/// Nombre de la tecla para mostrarlo en pantalla. `key_label` es el del
+/// archivo de controles y no puede cambiar sin romper los ya guardados.
+pub fn key_name(key: KeyCode) -> &'static str {
+    match key {
+        KeyCode::Space => "Espacio",
+        KeyCode::ShiftLeft => "Mayús izq.",
+        KeyCode::ShiftRight => "Mayús der.",
+        KeyCode::ControlLeft => "Ctrl izq.",
+        KeyCode::ControlRight => "Ctrl der.",
+        KeyCode::AltLeft => "Alt izq.",
+        KeyCode::AltRight => "Alt der.",
+        KeyCode::Tab => "Tab",
+        KeyCode::CapsLock => "Bloq Mayús",
+        KeyCode::Enter => "Enter",
+        KeyCode::Backspace => "Retroceso",
+        KeyCode::ArrowUp => "Flecha arriba",
+        KeyCode::ArrowDown => "Flecha abajo",
+        KeyCode::ArrowLeft => "Flecha izquierda",
+        KeyCode::ArrowRight => "Flecha derecha",
+        other => match key_label(other) {
+            "TECLA" => "Otra tecla",
+            name => name,
+        },
+    }
+}
+
 fn parse_key(name: &str) -> Option<KeyCode> {
     let trimmed = name.trim();
     KEY_TABLE
@@ -348,7 +382,33 @@ mod tests {
         c.sprint_mode = SprintMode::Toggle;
         c.adjust_sensitivity(30);
         c.adjust_fov(15);
+        c.adjust_third_person_dist(1.0);
         let text = c.serialize();
         assert_eq!(Controls::deserialize(&text), c);
+    }
+
+    #[test]
+    fn bad_values_in_the_file_fall_back_or_clamp() {
+        let c = Controls::deserialize(
+            "forward=NOPE\nsensitivity=9999\nfov=10\nthird_person=NaN\nbasura\n",
+        );
+        assert_eq!(c.forward, KeyCode::KeyW);
+        assert_eq!(c.sensitivity_pct, 300);
+        assert_eq!(c.fov_deg, 60);
+        assert_eq!(c.third_person_dist, Controls::default().third_person_dist);
+        let far = Controls::deserialize("third_person=40\n");
+        assert_eq!(far.third_person_dist, 6.0);
+    }
+
+    #[test]
+    fn every_bindable_key_has_a_readable_name() {
+        for &(key, file_label) in KEY_TABLE {
+            let name = key_name(key);
+            assert!(!name.is_empty());
+            // El nombre visible nunca va todo en mayúsculas salvo letras y F.
+            if file_label.len() > 3 {
+                assert_ne!(name, name.to_uppercase(), "{file_label}");
+            }
+        }
     }
 }
