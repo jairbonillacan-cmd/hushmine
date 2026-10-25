@@ -18,17 +18,19 @@ pub enum BindAction {
     Right,
     Jump,
     Sprint,
+    Crouch,
     Camera,
 }
 
 impl BindAction {
-    pub const ALL: [Self; 7] = [
+    pub const ALL: [Self; 8] = [
         Self::Forward,
         Self::Back,
         Self::Left,
         Self::Right,
         Self::Jump,
         Self::Sprint,
+        Self::Crouch,
         Self::Camera,
     ];
 
@@ -40,6 +42,7 @@ impl BindAction {
             Self::Right => "Derecha",
             Self::Jump => "Saltar",
             Self::Sprint => "Correr",
+            Self::Crouch => "Agacharse",
             Self::Camera => "Cambiar de cámara",
         }
     }
@@ -80,6 +83,7 @@ pub struct Controls {
     pub right: KeyCode,
     pub jump: KeyCode,
     pub sprint: KeyCode,
+    pub crouch: KeyCode,
     pub camera: KeyCode,
     pub sprint_mode: SprintMode,
     /// Sensibilidad del ratón en porcentaje (`20..=300`, por defecto `100`).
@@ -99,6 +103,7 @@ impl Default for Controls {
             right: KeyCode::KeyD,
             jump: KeyCode::Space,
             sprint: KeyCode::ShiftLeft,
+            crouch: KeyCode::ControlLeft,
             camera: KeyCode::KeyV,
             sprint_mode: SprintMode::Hold,
             sensitivity_pct: 100,
@@ -134,6 +139,7 @@ impl Controls {
             BindAction::Right => self.right,
             BindAction::Jump => self.jump,
             BindAction::Sprint => self.sprint,
+            BindAction::Crouch => self.crouch,
             BindAction::Camera => self.camera,
         }
     }
@@ -158,6 +164,7 @@ impl Controls {
             BindAction::Right => self.right = key,
             BindAction::Jump => self.jump = key,
             BindAction::Sprint => self.sprint = key,
+            BindAction::Crouch => self.crouch = key,
             BindAction::Camera => self.camera = key,
         }
     }
@@ -186,13 +193,14 @@ impl Controls {
 
     pub fn serialize(&self) -> String {
         format!(
-            "forward={}\nback={}\nleft={}\nright={}\njump={}\nsprint={}\ncamera={}\nsprint_mode={}\nsensitivity={}\nfov={}\nthird_person={:.1}\n",
+            "forward={}\nback={}\nleft={}\nright={}\njump={}\nsprint={}\ncrouch={}\ncamera={}\nsprint_mode={}\nsensitivity={}\nfov={}\nthird_person={:.1}\n",
             key_label(self.forward),
             key_label(self.back),
             key_label(self.left),
             key_label(self.right),
             key_label(self.jump),
             key_label(self.sprint),
+            key_label(self.crouch),
             key_label(self.camera),
             match self.sprint_mode {
                 SprintMode::Hold => "hold",
@@ -239,6 +247,11 @@ impl Controls {
                 "sprint" => {
                     if let Some(code) = parse_key(v) {
                         c.sprint = code;
+                    }
+                }
+                "crouch" => {
+                    if let Some(code) = parse_key(v) {
+                        c.crouch = code;
                     }
                 }
                 "camera" => {

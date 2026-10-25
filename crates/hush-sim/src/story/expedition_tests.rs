@@ -42,6 +42,7 @@ fn same_orders_same_state_everywhere() {
                 wish_z: ((t * 7) % 30) as i8 - 15,
                 jump: t % 40 == 0,
                 sprint: t % 3 == 0,
+                crouch: false,
             })];
             e.step(&orders);
         }

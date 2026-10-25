@@ -39,6 +39,7 @@ pub fn story(seed: u64, ticks: u32, peaceful: bool, report_path: Option<&Path>) 
             wish_z: wz.clamp(-127, 127) as i8,
             jump: t % 90 == 0,
             sprint: false,
+            crouch: false,
         };
         // Pica el bloque bajo los pies en tandas continuas: el progreso se
         // reinicia si la orden se alterna con `Mine(None)`.

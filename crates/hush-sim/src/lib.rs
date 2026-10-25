@@ -40,8 +40,8 @@ pub use events::{EventLog, MatchEvent, MatchEventKind, Team};
 pub use fixed::{Fixed, FixedError};
 pub use loot::{GridPos, LootBag, LootContents, LootError, LootPickup, LootStore};
 pub use player::{
-    EYE_HEIGHT, HALF_WIDTH, HEIGHT, MoveInput, PlayerBody, SPRINT_PER_TICK, WALK_PER_TICK,
-    spawn_point,
+    CROUCH_EYE_HEIGHT, CROUCH_PER_TICK, EYE_HEIGHT, HALF_WIDTH, HEIGHT, MoveInput, PlayerBody,
+    SPRINT_PER_TICK, WALK_PER_TICK, spawn_point,
 };
 pub use report::SimReport;
 pub use rng::Rng;

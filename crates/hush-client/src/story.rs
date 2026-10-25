@@ -1,8 +1,10 @@
 //! Modo historia del cliente: expedición local a 20 Hz con ciclo diurno,
 //! fisiología, inventario y telemetría F3.
 //!
-//! Controles: clic captura el ratón; WASD anda; MAYÚS se agacha; CTRL
-//! corre; ESPACIO salta; clic izquierdo pica (mantener); clic derecho pone
+//! Controles (los mismos reasignables que el modo Turno, en
+//! `out/controls.cfg`): clic captura el ratón; WASD anda; MAYÚS corre; CTRL
+//! se agacha (despacio, en silencio y sin caerse por los bordes); ESPACIO
+//! salta; clic izquierdo pica (mantener); clic derecho pone
 //! el bloque empuñado; E interactúa (banco, horno, arcón, válvulas,
 //! engranajes, motor); F fabrica (menú compacto); R come; 1-9 elige casilla
 //! de la barra; F3 abre la telemetría; ESC suelta el ratón o cierra.
@@ -16,6 +18,8 @@ use grisu_render::{
 use grisu_voxel::{DualLightMap, FIXED_ONE, RayHit, raycast};
 use hush_sim::MoveInput;
 use hush_sim::story::{Expedition, STORY_TICK_RATE, StoryConfig, StoryOrder};
+
+use hush_client::controls::Controls;
 
 use crate::story_hud::{self, FpsTracker};
 use crate::story_orders::{CraftMenu, move_input_from_camera};
@@ -33,6 +37,7 @@ const MOB_COLORS: [[f32; 3]; 4] = [
 
 pub struct StoryApp {
     expedition: Expedition,
+    controls: Controls,
     camera: FlyCamera,
     camera_mode: CameraMode,
     exit_requested: bool,
@@ -62,6 +67,7 @@ impl StoryApp {
     pub fn new(config: StoryConfig) -> anyhow::Result<Self> {
         Ok(Self {
             expedition: Expedition::new(config)?,
+            controls: Controls::load_or_default(),
             camera: FlyCamera::default(),
             camera_mode: CameraMode::FirstPerson,
             exit_requested: false,
@@ -97,10 +103,14 @@ impl StoryApp {
             orders.push(StoryOrder::Mine(None));
             return orders;
         }
-        let movement =
-            move_input_from_camera(input, self.camera.flat_forward(), self.camera.flat_right());
+        let movement = move_input_from_camera(
+            input,
+            &self.controls,
+            self.camera.flat_forward(),
+            self.camera.flat_right(),
+        );
         orders.push(StoryOrder::Move(movement));
-        orders.push(StoryOrder::Sneak(input.is_held(KeyCode::ShiftLeft)));
+        orders.push(StoryOrder::Sneak(movement.crouch));
         // Picar: mantener el clic izquierdo sobre el bloque apuntado.
         let mine = if self.held_to_dig {
             self.target.map(|hit| hit.block)

@@ -47,6 +47,7 @@ impl DiggerBot {
                 wish_z: self.heading[1],
                 jump: self.rng.below(20) == 0,
                 sprint: false,
+                crouch: false,
             },
         }];
         if tick.is_multiple_of(DIG_EVERY) {

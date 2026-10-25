@@ -20,6 +20,15 @@ pub enum MenuCommand {
     Exit,
 }
 
+/// Filas de la página Controles: una por acción reasignable y, después,
+/// sensibilidad, campo de visión, restaurar y volver.
+const BINDS: usize = BindAction::ALL.len();
+const ROW_SENSITIVITY: usize = BINDS;
+const ROW_FOV: usize = BINDS + 1;
+const ROW_RESET: usize = BINDS + 2;
+const ROW_BACK: usize = BINDS + 3;
+const CONTROLS_ROWS: usize = BINDS + 4;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MenuPage {
     Hidden,
@@ -63,7 +72,7 @@ impl MenuState {
             MenuPage::Hidden => 0,
             MenuPage::Launcher => 6,
             MenuPage::Pause => 7,
-            MenuPage::Controls { .. } => 11,
+            MenuPage::Controls { .. } => CONTROLS_ROWS,
         }
     }
 
@@ -174,11 +183,11 @@ impl MenuState {
                 controls.sprint_mode = controls.sprint_mode.toggle();
                 controls.save_default_path();
             }
-            (MenuPage::Controls { .. }, 7) => {
+            (MenuPage::Controls { .. }, ROW_SENSITIVITY) => {
                 controls.adjust_sensitivity(dir * 10);
                 controls.save_default_path();
             }
-            (MenuPage::Controls { .. }, 8) => {
+            (MenuPage::Controls { .. }, ROW_FOV) => {
                 controls.adjust_fov(dir * 5);
                 controls.save_default_path();
             }
@@ -205,7 +214,7 @@ impl MenuState {
             }
             (MenuPage::Launcher, 1..=3)
             | (MenuPage::Pause, 1..=3)
-            | (MenuPage::Controls { .. }, 7 | 8) => {
+            | (MenuPage::Controls { .. }, ROW_SENSITIVITY | ROW_FOV) => {
                 self.adjust_item(idx, dir, controls, camera_mode);
             }
             (MenuPage::Launcher, 4) => {
@@ -226,12 +235,14 @@ impl MenuState {
                 self.page = MenuPage::Launcher;
                 self.selected = 0;
             }
-            (MenuPage::Controls { .. }, 0..=6) => self.rebinding = Some(BindAction::ALL[idx]),
-            (MenuPage::Controls { .. }, 9) => {
+            (MenuPage::Controls { .. }, i) if i < BINDS => {
+                self.rebinding = Some(BindAction::ALL[idx]);
+            }
+            (MenuPage::Controls { .. }, ROW_RESET) => {
                 *controls = Controls::default();
                 controls.save_default_path();
             }
-            (MenuPage::Controls { from_launcher }, 10) => {
+            (MenuPage::Controls { from_launcher }, ROW_BACK) => {
                 controls.save_default_path();
                 self.page = if from_launcher {
                     MenuPage::Launcher
@@ -261,7 +272,7 @@ impl MenuState {
             (self.page, idx),
             (MenuPage::Launcher, 1..=3)
                 | (MenuPage::Pause, 1..=3)
-                | (MenuPage::Controls { .. }, 7 | 8)
+                | (MenuPage::Controls { .. }, ROW_SENSITIVITY | ROW_FOV)
         )
     }
 

@@ -2,6 +2,9 @@
 
 use super::*;
 
+/// Alto de la caja de un minero agachado, en bloques.
+const CROUCH_BOX_HEIGHT: f32 = 1.35;
+
 impl Game {
     /// Vista según el modo de cámara. En tercera persona, el brazo se
     /// recorta contra el terreno para no atravesar paredes.
@@ -33,6 +36,9 @@ impl Game {
         let width = 2.0 * HALF_WIDTH as f64 / FIXED_ONE as f64;
         let height = HEIGHT as f64 / FIXED_ONE as f64;
         let size = Vec3::new(width as f32, height as f32, width as f32);
+        // Agachado, la caja baja: la silueta dice que va en silencio.
+        let crouched = Vec3::new(width as f32, CROUCH_BOX_HEIGHT, width as f32);
+        let client = self.session.client();
         let crew = |id: u16| CREW_COLORS[usize::from(id) % CREW_COLORS.len()];
         let mut list: Vec<ColorBox> = self
             .session
@@ -41,15 +47,25 @@ impl Game {
             .into_iter()
             .map(|(id, [x, y, z])| ColorBox {
                 min: DVec3::new(x - width / 2.0, y, z - width / 2.0),
-                size,
+                size: if client.remote_crouching(id) {
+                    crouched
+                } else {
+                    size
+                },
                 color: crew(id),
             })
             .collect();
         if self.camera_mode.is_third_person() {
-            let feet = self.camera.position - DVec3::Y * (EYE_HEIGHT as f64 / FIXED_ONE as f64);
+            let me = client.body();
+            let eye = if me.crouching {
+                CROUCH_EYE_HEIGHT
+            } else {
+                EYE_HEIGHT
+            };
+            let feet = self.camera.position - DVec3::Y * (eye as f64 / FIXED_ONE as f64);
             list.push(ColorBox {
                 min: DVec3::new(feet.x - width / 2.0, feet.y, feet.z - width / 2.0),
-                size,
+                size: if me.crouching { crouched } else { size },
                 color: crew(self.session.client().player().unwrap_or(0)),
             });
             let lamp =

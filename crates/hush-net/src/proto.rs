@@ -8,7 +8,7 @@ use hush_sim::{BlockChange, BlockKind, MoveInput, PlayerBody};
 
 /// Se incrementa con cada cambio incompatible del protocolo. La versión 2
 /// envía las posiciones en `i64` Q47.16 (mundo grande, ADR 0002).
-pub const PROTOCOL_VERSION: u16 = 2;
+pub const PROTOCOL_VERSION: u16 = 3;
 /// Longitud máxima del nombre de un jugador, en bytes.
 pub const MAX_NAME_LEN: usize = 32;
 /// Entradas que repite cada paquete del cliente, por si se pierden algunos.
@@ -44,10 +44,17 @@ pub enum ClientMsg {
 /// Posición de otro jugador en una instantánea.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RemotePlayer {
+    /// Identificador del jugador (`0..32_768`).
     pub id: u16,
     /// Pies, en punto fijo Q47.16.
     pub feet: [i64; 3],
+    /// Agachado: se dibuja más bajo.
+    pub crouching: bool,
 }
+
+/// Bit alto del `id` en el cable: marca al jugador agachado sin agrandar la
+/// entrada de 26 bytes de cada «otro» en la instantánea.
+const CROUCH_BIT: u16 = 0x8000;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ServerMsg {
@@ -123,7 +130,8 @@ fn put_frame(w: &mut Writer, f: &InputFrame) {
         .i8(f.movement.wish_x)
         .i8(f.movement.wish_z)
         .bool(f.movement.jump)
-        .bool(f.movement.sprint);
+        .bool(f.movement.sprint)
+        .bool(f.movement.crouch);
     match f.action {
         None => {
             w.u8(A_NONE);
@@ -147,6 +155,7 @@ fn get_frame(r: &mut Reader) -> Result<InputFrame, DecodeError> {
         wish_z: r.i8()?,
         jump: r.bool()?,
         sprint: r.bool()?,
+        crouch: r.bool()?,
     };
     let action = match r.u8()? {
         A_NONE => None,
@@ -169,7 +178,7 @@ fn get_frame(r: &mut Reader) -> Result<InputFrame, DecodeError> {
 fn put_body(w: &mut Writer, b: &PlayerBody) {
     put_pos(w, b.feet);
     w.i32(b.velocity[0]).i32(b.velocity[1]).i32(b.velocity[2]);
-    w.bool(b.on_ground);
+    w.bool(b.on_ground).bool(b.crouching);
 }
 
 fn get_body(r: &mut Reader) -> Result<PlayerBody, DecodeError> {
@@ -177,6 +186,7 @@ fn get_body(r: &mut Reader) -> Result<PlayerBody, DecodeError> {
         feet: get_pos(r)?,
         velocity: [r.i32()?, r.i32()?, r.i32()?],
         on_ground: r.bool()?,
+        crouching: r.bool()?,
     })
 }
 
@@ -263,7 +273,8 @@ impl ServerMsg {
                 put_body(&mut w, you);
                 w.u16(others.len() as u16);
                 for o in others {
-                    w.u16(o.id);
+                    let crouch = if o.crouching { CROUCH_BIT } else { 0 };
+                    w.u16((o.id & !CROUCH_BIT) | crouch);
                     put_pos(&mut w, o.feet);
                 }
             }
@@ -315,9 +326,11 @@ impl ServerMsg {
                 }
                 let mut others = Vec::with_capacity(count);
                 for _ in 0..count {
+                    let raw = r.u16()?;
                     others.push(RemotePlayer {
-                        id: r.u16()?,
+                        id: raw & !CROUCH_BIT,
                         feet: get_pos(&mut r)?,
+                        crouching: raw & CROUCH_BIT != 0,
                     });
                 }
                 Self::Snapshot {

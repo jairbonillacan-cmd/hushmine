@@ -10,7 +10,7 @@ use super::milestones::ProgressSignals;
 use super::mobs::TickContext;
 use super::vitals::{FATIGUE_JUMP, FATIGUE_SPRINT, FATIGUE_WALK};
 use crate::rng::Rng;
-use crate::{BlockKind, MoveInput, PlayerBody, SPRINT_PER_TICK, WALK_PER_TICK};
+use crate::{BlockKind, CROUCH_PER_TICK, MoveInput, PlayerBody, SPRINT_PER_TICK, WALK_PER_TICK};
 
 impl Expedition {
     /// Avanza un tick aplicando las órdenes del jugador. Devuelve los
@@ -66,27 +66,11 @@ impl Expedition {
         let input = self.pending_input;
         let was_on_ground = self.body.on_ground;
         self.vitals.pre_move(self.body.feet[1], was_on_ground);
-        let input = if self.sneak {
-            MoveInput {
-                wish_x: input.wish_x / 2,
-                wish_z: input.wish_z / 2,
-                ..input
-            }
-        } else {
-            input
-        };
-        let start = self.body;
+        // Acecho: la física común lo hace ir despacio, bajar los ojos y no
+        // caerse por los bordes.
+        let input = input.with_crouch(self.sneak);
+        let start = self.body.feet;
         self.body.step(&self.world, input);
-        // Seguridad en bordes: agachado no se cae. Se deshace el paso entero
-        // (no solo x y z: con la y ya bajada, el minero se hundiría en el
-        // suelo).
-        if self.sneak && was_on_ground && !self.body.on_ground && self.body.velocity[1] < 0 {
-            self.body = PlayerBody {
-                velocity: [0; 3],
-                ..start
-            };
-        }
-        let start = start.feet;
         // Mecánica de escalón: sube desniveles de un bloque sin saltar.
         self.try_step_up(input, start);
         // Fatiga metabólica y ruido de pasos.
@@ -136,6 +120,7 @@ impl Expedition {
             feet: [start[0], start[1] + FIXED_ONE, start[2]],
             velocity: [0; 3],
             on_ground: false,
+            crouching: self.sneak,
         };
         lifted.step(&self.world, input);
         let lifted_gain = (lifted.feet[0] - start[0]).abs() + (lifted.feet[2] - start[2]).abs();
@@ -145,7 +130,9 @@ impl Expedition {
     }
 
     fn speed(&self, input: MoveInput) -> i32 {
-        if input.sprint {
+        if input.crouch {
+            CROUCH_PER_TICK
+        } else if input.sprint {
             SPRINT_PER_TICK
         } else {
             WALK_PER_TICK

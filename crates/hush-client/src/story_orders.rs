@@ -2,6 +2,7 @@
 //! compacto (recetas con los materiales del inventario).
 
 use grisu_platform::{Input, KeyCode};
+use hush_client::controls::Controls;
 use hush_sim::story::items::{ItemId, ToolKind, tool_item};
 use hush_sim::story::{Expedition, StoryOrder};
 use hush_sim::{BlockKind, MoveInput};
@@ -10,19 +11,21 @@ use hush_sim::{BlockKind, MoveInput};
 /// simulación solo ve enteros cuantizados.
 pub fn move_input_from_camera(
     input: &Input,
+    controls: &Controls,
     flat_forward: glam::Vec3,
     flat_right: glam::Vec3,
 ) -> MoveInput {
     let axis = |pos: KeyCode, neg: KeyCode| {
         f32::from(u8::from(input.is_held(pos))) - f32::from(u8::from(input.is_held(neg)))
     };
-    let forward = axis(KeyCode::KeyW, KeyCode::KeyS);
-    let right = axis(KeyCode::KeyD, KeyCode::KeyA);
+    // Las mismas teclas reasignables que el modo Turno (out/controls.cfg).
+    let forward = axis(controls.forward, controls.back);
+    let right = axis(controls.right, controls.left);
     let wish = flat_forward * forward + flat_right * right;
-    let jump = input.is_held(KeyCode::Space);
-    let mut movement = MoveInput::from_direction(wish.x, wish.z, jump);
-    movement.sprint = input.is_held(KeyCode::ControlLeft);
-    movement
+    let crouch = input.is_held(controls.crouch);
+    MoveInput::from_direction(wish.x, wish.z, input.is_held(controls.jump))
+        .with_sprint(!crouch && input.is_held(controls.sprint))
+        .with_crouch(crouch)
 }
 
 /// Una receta del menú compacto.

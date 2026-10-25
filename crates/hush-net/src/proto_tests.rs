@@ -8,6 +8,7 @@ fn frame(seq: u32, action: Option<Action>) -> InputFrame {
             wish_z: 64,
             jump: true,
             sprint: seq.is_multiple_of(2),
+            crouch: false,
         },
         action,
     }
@@ -38,6 +39,7 @@ fn server_messages_round_trip() {
         feet: [1024, 2048, -5],
         velocity: [0, -31, 7],
         on_ground: true,
+        crouching: true,
     };
     let msgs = [
         ServerMsg::Welcome {
@@ -58,10 +60,19 @@ fn server_messages_round_trip() {
             tick: 5,
             last_input: 4,
             you: body,
-            others: vec![RemotePlayer {
-                id: 2,
-                feet: [9, 8, 7],
-            }],
+            // Uno agachado y otro de pie: el bit alto del id no se mezcla.
+            others: vec![
+                RemotePlayer {
+                    id: 2,
+                    feet: [9, 8, 7],
+                    crouching: true,
+                },
+                RemotePlayer {
+                    id: 32_767,
+                    feet: [-9, 8, 7],
+                    crouching: false,
+                },
+            ],
         },
         ServerMsg::Refused("lleno".into()),
     ];
@@ -90,6 +101,7 @@ fn malformed_messages_are_errors() {
         others: vec![RemotePlayer {
             id: 1,
             feet: [0; 3],
+            crouching: false,
         }],
     }
     .encode();

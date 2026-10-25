@@ -67,7 +67,7 @@ Qué hace cada uno, en orden:
 
 **Red:** nada en `grisu-net` ni en `hush-net` lee el reloj del sistema; todo recibe `now_ms`. Así las pruebas con latencia y pérdida son deterministas. Mantenlo así.
 
-**Controles del cliente:** clic para capturar el ratón; WASD para andar, espacio para saltar, clic izquierdo para cavar, clic derecho para poner y 1-6 para elegir bloque. Escape suelta el ratón y, si ya estaba suelto, cierra el juego.
+**Controles del cliente:** clic para capturar el ratón; WASD para andar, Mayús para correr, Ctrl para agacharse (despacio, en silencio y sin caerse por los bordes), espacio para saltar, clic izquierdo para cavar, clic derecho para poner y 1-6 para elegir bloque. Escape suelta el ratón y, si ya estaba suelto, cierra el juego.
 
 Con `HUSH_REQUIRE_GPU=1`, las pruebas de GPU fallan en vez de saltarse cuando no hay adaptador.
 **El directorio de compilación puede ser global** en algunas máquinas (por ejemplo, `C:\Users\T490s\fossil-target\`); `cargo metadata` indica cuál es.

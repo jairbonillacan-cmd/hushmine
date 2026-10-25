@@ -131,6 +131,11 @@ impl NetClient {
         self.remotes.sample(server_tick)
     }
 
+    /// Si otro jugador iba agachado en la última instantánea.
+    pub fn remote_crouching(&self, id: u16) -> bool {
+        self.remotes.is_crouching(id)
+    }
+
     /// Recibe y procesa lo que haya llegado del servidor.
     pub fn poll(&mut self, now_ms: u64, socket: &mut dyn Socket) {
         while let Some((from, packet)) = socket.recv_from() {

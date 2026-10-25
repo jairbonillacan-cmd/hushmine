@@ -11,7 +11,9 @@ use grisu_render::{
 };
 use grisu_voxel::{FIXED_ONE, LightMap, RayHit, raycast};
 use hush_net::{Action, ClientState};
-use hush_sim::{BlockKind, EYE_HEIGHT, HALF_WIDTH, HEIGHT, MoveInput, TICK_RATE};
+use hush_sim::{
+    BlockKind, CROUCH_EYE_HEIGHT, EYE_HEIGHT, HALF_WIDTH, HEIGHT, MoveInput, TICK_RATE,
+};
 
 use crate::session::Session;
 use hush_client::controls::{Controls, SprintMode};
@@ -162,10 +164,18 @@ impl Game {
         if !moving || self.controls.sprint_mode == SprintMode::Hold {
             self.sprint_toggled = false;
         }
-        self.sprinting = moving && (self.sprint_toggled || input.is_held(self.controls.sprint));
+        // Agachado no se corre: manda sobre la carrera.
+        let crouching = input.is_held(self.controls.crouch);
+        if crouching {
+            self.sprint_toggled = false;
+        }
+        self.sprinting = moving
+            && !crouching
+            && (self.sprint_toggled || input.is_held(self.controls.sprint));
         let wish = self.camera.flat_forward() * forward + self.camera.flat_right() * right;
         MoveInput::from_direction(wish.x, wish.z, input.is_held(self.controls.jump))
             .with_sprint(self.sprinting)
+            .with_crouch(crouching)
     }
 
     fn handle_actions(&mut self, input: &Input) {
