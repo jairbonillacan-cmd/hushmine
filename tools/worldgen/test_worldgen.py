@@ -110,6 +110,17 @@ class WorldGenDataTest(unittest.TestCase):
                 f"{curve_name}: las salidas deben estar en [-64, 950]",
             )
 
+    def test_base_height_stays_below_the_massif(self) -> None:
+        """relieve.ron: la altura base no alcanza el pico del macizo, que cabe en el mundo."""
+        peak = self.data["mundo.ron"]["sleeper_massif"]["peak_y"]
+        top = max(p["output"] for p in self.data["relieve.ron"]["base_height_curve"])
+        self.assertLess(top, peak)
+        self.assertLessEqual(peak, check_worldgen.WORLD_Y_MAX)
+        self.assertEqual(check_worldgen.check_relieve_vs_mundo(self.data["relieve.ron"], self.data["mundo.ron"]), [])
+        # Una curva que pase del pico se rechaza.
+        bad = {"base_height_curve": [{"input_q16": 0, "output": 950}]}
+        self.assertTrue(check_worldgen.check_relieve_vs_mundo(bad, self.data["mundo.ron"]))
+
     def test_surface_biomes(self) -> None:
         """biomas.ron: 8 biomas de superficie en orden con ids únicos 0..=7."""
         surface = self.data["biomas.ron"]["surface_biomes"]

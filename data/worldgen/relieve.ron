@@ -27,7 +27,10 @@ Relief(
     // picos y valles reescalada al rango Q16 [-65_536, 65_536]. Por eso la
     // curva no es monótona: mares profundos en el extremo negativo, un valle
     // de llanuras hacia el centro del índice y montañas que crecen hacia el
-    // extremo positivo (el macizo del Durmiente se suma aparte, hasta ~900).
+    // extremo positivo. El macizo del Durmiente NO se suma a esta curva: su
+    // perfil da una altura absoluta que llega a sleeper_massif.peak_y (900) y,
+    // donde coincide con la curva, manda la mayor de las dos. Por eso la curva
+    // se queda por debajo del pico del macizo y nada pasa de y_max (1_023).
     base_height_curve: [
         (input_q16: -65_536, output: -64),  // Mares interiores profundos, continentalidad mínima
         (input_q16: -49_152, output: -16),  // Plataforma costera somera y playas de grava
@@ -37,7 +40,7 @@ Relief(
         (input_q16: 16_384, output: 120),   // Llanuras altas
         (input_q16: 32_768, output: 260),   // Altiplanos y mesas
         (input_q16: 49_152, output: 560),   // Montañas (con erosión baja y picos altos)
-        (input_q16: 65_536, output: 950),   // Extremo: cumbres; el macizo se suma aparte
+        (input_q16: 65_536, output: 720),   // Extremo: cumbres, por debajo del macizo
     ],
     // Pendiente en milésimas de densidad por bloque; 950 = 0,95 bloques de
     // densidad por bloque de desnivel. Mismo índice combinado que la curva de

@@ -105,7 +105,8 @@ Ores(
 
         // Plata y plomo: corteza profunda (§8); filones que siguen las fallas
         // (macroceldas de 512), pico hacia -256..-192. Toda la curva queda en
-        // la corteza: por debajo de -256 el peso es nulo.
+        // la corteza (-256..-41): cierra con peso 0 en su techo, -41, para no
+        // entrar en la banda de superficie.
         (
             material: "silver_lead",
             block_id: 4,
@@ -115,7 +116,7 @@ Ores(
                 (y: -192, weight_per_100k: 120),
                 (y: -128, weight_per_100k: 60),
                 (y: -64, weight_per_100k: 20),
-                (y: 0, weight_per_100k: 8),
+                (y: -41, weight_per_100k: 0),
             ],
         ),
 

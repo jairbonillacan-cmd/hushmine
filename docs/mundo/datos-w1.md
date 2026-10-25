@@ -92,7 +92,10 @@ montañas hacia el positivo); la monotonía exigida es la del propio índice.
 **Invariantes:** 6 nombres exactos en orden con `period_shift`/`octaves`
 enteros positivos; en las dos curvas, primera entrada `-65_536`, última
 `65_536`, entradas estrictamente crecientes y salidas dentro de `[-64, 950]`;
-`river_threshold_q16` en `[0, 65_536]`.
+`river_threshold_q16` en `[0, 65_536]`. Cruce con `mundo.ron`: la altura
+base máxima queda por debajo de `sleeper_massif.peak_y`, y este no pasa de
+`y_max`. El macizo es una altura absoluta (manda la mayor de las dos), no un
+añadido sobre la curva.
 
 ## biomas.ron — `Biomes`
 

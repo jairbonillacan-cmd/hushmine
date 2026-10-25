@@ -169,6 +169,26 @@ def check_relieve(relief: dict[str, Any]) -> list[str]:
     return errors
 
 
+def check_relieve_vs_mundo(relief: dict[str, Any], world: dict[str, Any]) -> list[str]:
+    """La curva de altura base queda por debajo del pico del macizo, y este
+    cabe en el mundo: el macizo da una altura absoluta, no se suma."""
+    errors: list[str] = []
+    massif = world.get("sleeper_massif")
+    peak = massif.get("peak_y") if isinstance(massif, dict) else None
+    curve = relief.get("base_height_curve")
+    if not _is_int(peak) or not isinstance(curve, list):
+        return errors
+    if peak > WORLD_Y_MAX:
+        errors.append(f"mundo.ron: sleeper_massif.peak_y ({peak}) pasa de y_max ({WORLD_Y_MAX})")
+    outputs = [p.get("output") for p in curve if isinstance(p, dict) and _is_int(p.get("output"))]
+    if outputs and max(outputs) >= peak:
+        errors.append(
+            f"relieve.ron: base_height_curve llega a {max(outputs)}, que no queda por debajo "
+            f"del pico del macizo ({peak})"
+        )
+    return errors
+
+
 def check_biomas(biomes: dict[str, Any], world: dict[str, Any]) -> list[str]:
     """Invariantes de biomas.ron, con cruce de capas y cotas contra mundo.ron."""
     errors: list[str] = []
@@ -325,6 +345,8 @@ def run_checks() -> list[str]:
     relief = data.get("relieve.ron")
     if relief is not None:
         errors.extend(check_relieve(relief))
+        if world is not None:
+            errors.extend(check_relieve_vs_mundo(relief, world))
     biomes = data.get("biomas.ron")
     if biomes is not None:
         if world is None:
