@@ -405,6 +405,18 @@ Si no aparecen esas decisiones, **se rediseña antes de pasar al hito 5**.
 
 **Mundo grande (W0–W7):** el plan está en `docs/mundo/` y las decisiones, en `docs/adr/0002-mundo-grande.md`. Antes de la 1.0 solo entra **W0**, dentro del hito 1 (2–4 días): posiciones de entidad en `i64` Q47.16, chunks detrás de una interfaz, coordenadas negativas probadas y render relativo a la cámara. Los hitos W1–W7 llegan después del acceso anticipado y solo si el modo Turno tiene tracción.
 
+> **Pendiente (24 de octubre de 2026): W0 no se hizo dentro del hito 1.** Los hitos 1 y 2 se programaron en paralelo a este plan y usan un mundo finito: coordenadas de bloque `i32` positivas, un máximo de 128 bloques por eje (`grisu_voxel::MAX_WORLD_SIZE`), posiciones en punto fijo `i32` con 1024 unidades por bloque (`FIXED_ONE`), chunks guardados directamente en `VoxelWorld` y cámara en coordenadas absolutas `f32`. Basta para el modo Turno (64³–96×96×64), pero no para el mundo grande.
+>
+> **Qué cambiaría al hacer W0** (2–4 días, mejor **antes del hito 3**, cuando aún hay poco código encima):
+>
+> - `PlayerBody`, `Aabb` y `move_aabb` pasan de `i32` con `FIXED_ONE` a `i64` Q47.16, y el protocolo de `hush-net` envía posiciones de 64 bits.
+> - `VoxelWorld` queda detrás de una interfaz (`get`/`set`/`fill`) con `ChunkPos` que admite negativos; el mapa del Turno es una implementación finita de esa interfaz.
+> - `raycast`, colisión, luz y mallas se prueban en coordenadas negativas y en ±7 499 999.
+> - El render pasa a ser relativo a la cámara (las caras empaquetadas ya guardan coordenadas locales de 7 bits; falta el origen por chunk).
+> - La generación de terreno de `hush-sim` toma la forma de función pura `(semilla, ChunkPos) → Chunk`.
+>
+> Criterio de salida, el de `docs/mundo/04-verificacion-e-hitos.md`: pruebas de chunk, DDA y colisión en coordenadas negativas y extremas en verde, y el mapa de 64³ sin cambios visibles (mismas capturas, `netsim` consistente).
+
 **Gráficos:** el plan de cámaras (primera y tercera persona), animación por piezas, texturas de 32×32 y shaders propios está en `docs/graficos/` y las decisiones, en `docs/adr/0003-graficos.md`. En el hito 1 solo entra **G0** (2–3 días): tamaño de textura leído del manifiesto, luz de bloque en color, preprocesador de shaders y vistas de depuración. El resto se reparte entre los hitos 3 y 6 (unas 6–8 semanas en total).
 
 ---
