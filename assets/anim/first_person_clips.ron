@@ -1,0 +1,107 @@
+// Clips de animación en primera persona, en espacio de cámara.
+// Origen en el ojo, mirando hacia -Z, +X a la derecha, +Y arriba.
+// Solo enteros: pos en píxeles y rot_deg en grados. Ninguna reach_box puede
+// pasar de z -24 (nada del brazo o la herramienta atraviesa las paredes).
+ClipSet(
+    clips: [
+        // Guardia baja con vaivén lento, sin markers.
+        Clip(
+            name: "idle_1p",
+            duration_ms: 1600,
+            loop: true,
+            tracks: [
+                Track(part: "arm_r", keys: [
+                    Key(t_ms: 0, rot_deg: (0, 0, 4), pos: Some((7, -6, -4))), Key(t_ms: 800, rot_deg: (1, 0, 5), pos: Some((7, -8, -4))),
+                    Key(t_ms: 1600, rot_deg: (0, 0, 4), pos: Some((7, -6, -4))),
+                ]),
+                Track(part: "arm_l", keys: [
+                    Key(t_ms: 0, rot_deg: (0, 0, -4), pos: Some((-7, -7, -4))), Key(t_ms: 800, rot_deg: (1, 0, -5), pos: Some((-7, -9, -4))),
+                    Key(t_ms: 1600, rot_deg: (0, 0, -4), pos: Some((-7, -7, -4))),
+                ]),
+            ],
+            markers: [],
+            // Cajas conservadoras: contienen todo el vaivén de ambos brazos.
+            reach_boxes: [
+                Box(id: "arm_r", min: (2, -12, -10), max: (12, 0, 0)),
+                Box(id: "arm_l", min: (-12, -12, -10), max: (-2, 0, 0)),
+            ],
+        ),
+        // Golpe en primera persona: retroceso sobre el hombro y bajada seca.
+        Clip(
+            name: "dig_1p",
+            duration_ms: 600,
+            loop: false,
+            tracks: [
+                // El brazo derecho carga hacia la cámara y azota hacia -Z.
+                Track(part: "arm_r", keys: [
+                    Key(t_ms: 0, rot_deg: (0, 0, 0), pos: Some((7, -6, -6))), Key(t_ms: 200, rot_deg: (-24, 0, 0), pos: Some((9, 0, 2))),
+                    Key(t_ms: 360, rot_deg: (26, 0, 0), pos: Some((5, -10, -14))), Key(t_ms: 600, rot_deg: (0, 0, 0), pos: Some((7, -6, -6))),
+                ]),
+                // El izquierdo acompaña cerca del pecho.
+                Track(part: "arm_l", keys: [
+                    Key(t_ms: 0, rot_deg: (0, 0, 0), pos: Some((-3, -7, -6))), Key(t_ms: 200, rot_deg: (-8, 0, 0), pos: Some((-4, -5, -4))),
+                    Key(t_ms: 360, rot_deg: (12, 0, 0), pos: Some((-3, -9, -10))), Key(t_ms: 600, rot_deg: (0, 0, 0), pos: Some((-3, -7, -6))),
+                ]),
+            ],
+            markers: [
+                Marker(kind: "impact", t_ms: 360),
+            ],
+            // Contienen todo el barrido del golpe con margen: z_min >= -22.
+            reach_boxes: [
+                Box(id: "arm_r", min: (1, -14, -20), max: (13, 4, 6)),
+                Box(id: "arm_l", min: (-8, -13, -14), max: (1, -1, 2)),
+                // La herramienta sobresale de la mano derecha hacia -Z.
+                Box(id: "tool", min: (2, -16, -22), max: (12, 6, 8)),
+            ],
+        ),
+        // Colocar bloque: extensión corta al frente, pausa y sacudida.
+        Clip(
+            name: "place_1p",
+            duration_ms: 400,
+            loop: false,
+            tracks: [
+                Track(part: "arm_r", keys: [
+                    Key(t_ms: 0, rot_deg: (0, 0, 0), pos: Some((7, -6, -6))), Key(t_ms: 140, rot_deg: (6, 0, 0), pos: Some((6, -4, -16))),
+                    Key(t_ms: 260, rot_deg: (6, 0, 0), pos: Some((6, -4, -16))), Key(t_ms: 400, rot_deg: (4, 0, 0), pos: Some((7, -6, -12))),
+                ]),
+                // El izquierdo sostiene el bloque hasta la sacudida final.
+                Track(part: "arm_l", keys: [
+                    Key(t_ms: 0, rot_deg: (0, 0, 0), pos: Some((-7, -7, -6))), Key(t_ms: 140, rot_deg: (6, 0, 0), pos: Some((-6, -5, -14))),
+                    Key(t_ms: 260, rot_deg: (6, 0, 0), pos: Some((-6, -5, -14))), Key(t_ms: 400, rot_deg: (4, 0, 0), pos: Some((-7, -7, -10))),
+                ]),
+            ],
+            markers: [
+                Marker(kind: "release", t_ms: 260),
+            ],
+            // El bloque en la mano asoma hacia -Z sin pasar de -22.
+            reach_boxes: [
+                Box(id: "arm_r", min: (2, -9, -20), max: (12, 0, 0)),
+                Box(id: "arm_l", min: (-12, -10, -18), max: (-2, 0, 0)),
+                Box(id: "tool", min: (3, -8, -22), max: (10, -1, -2)),
+            ],
+        ),
+        // Cargar: brazos contra el pecho con el balanceo del paso.
+        Clip(
+            name: "carry_1p",
+            duration_ms: 800,
+            loop: true,
+            tracks: [
+                Track(part: "arm_r", keys: [
+                    Key(t_ms: 0, rot_deg: (24, 0, 6), pos: Some((5, -5, -10))), Key(t_ms: 400, rot_deg: (26, 0, 7), pos: Some((6, -6, -11))),
+                    Key(t_ms: 800, rot_deg: (24, 0, 6), pos: Some((5, -5, -10))),
+                ]),
+                Track(part: "arm_l", keys: [
+                    Key(t_ms: 0, rot_deg: (24, 0, -6), pos: Some((-5, -5, -10))), Key(t_ms: 400, rot_deg: (26, 0, -7), pos: Some((-6, -6, -11))),
+                    Key(t_ms: 800, rot_deg: (24, 0, -6), pos: Some((-5, -5, -10))),
+                ]),
+            ],
+            markers: [],
+            // La carga asoma entre los dos brazos, bien detrás del plano -24.
+            reach_boxes: [
+                Box(id: "arm_r", min: (1, -10, -16), max: (11, 0, -4)),
+                Box(id: "arm_l", min: (-11, -10, -16), max: (-1, 0, -4)),
+                Box(id: "tool", min: (-6, -9, -15), max: (7, 1, -5)),
+            ],
+        ),
+    ],
+)

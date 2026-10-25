@@ -1,0 +1,38 @@
+// Minero base: esqueleto de 14 piezas rígidas y 3 enganches
+// (docs/graficos/02-animacion.md, apartado 2).
+// Origen en el suelo bajo el centro del modelo, +Y arriba, mira hacia -Z.
+// Medidas en pixeles de textura: 32 px = 1 bloque. Minero cansado que
+// carga peso, unos 30 px de alto. UV sobre una hoja de 128x128, en
+// multiplos de 4 y sin solapar regiones entre piezas.
+Model(
+    name: "miner",
+    texture: "characters/miner",
+    slot: None,
+    parts: [
+        // Cadera (raiz) y tronco.
+        Part(id: "pelvis", parent: None, pivot: (0, 12, 0), cuboid: (min: (-4, 10, -2), max: (4, 14, 2)), uv: (48, 0)), // region 24x8
+        Part(id: "torso", parent: Some("pelvis"), pivot: (0, 14, 0), cuboid: (min: (-4, 14, -2), max: (4, 24, 2)), uv: (0, 0)), // region 24x16
+        // Cabeza con casco; el enganche de la lampara va encima.
+        Part(id: "head", parent: Some("torso"), pivot: (0, 24, 0), cuboid: (min: (-3, 24, -3), max: (3, 30, 3)), uv: (24, 0)), // region 24x12
+        // Brazos: hombro, codo y mano. Izquierdo en -X, derecho en +X.
+        Part(id: "upper_arm_l", parent: Some("torso"), pivot: (-6, 22, 0), cuboid: (min: (-8, 15, -2), max: (-4, 22, 2)), uv: (0, 16)), // region 16x12
+        Part(id: "upper_arm_r", parent: Some("torso"), pivot: (6, 22, 0), cuboid: (min: (4, 15, -2), max: (8, 22, 2)), uv: (16, 16)),
+        Part(id: "lower_arm_l", parent: Some("upper_arm_l"), pivot: (-6, 16, 0), cuboid: (min: (-8, 10, -2), max: (-4, 16, 2)), uv: (32, 16)),
+        Part(id: "lower_arm_r", parent: Some("upper_arm_r"), pivot: (6, 16, 0), cuboid: (min: (4, 10, -2), max: (8, 16, 2)), uv: (48, 16)),
+        Part(id: "hand_l", parent: Some("lower_arm_l"), pivot: (-6, 10, 0), cuboid: (min: (-8, 7, -2), max: (-4, 10, 2)), uv: (64, 16)), // region 16x8
+        Part(id: "hand_r", parent: Some("lower_arm_r"), pivot: (6, 10, 0), cuboid: (min: (4, 7, -2), max: (8, 10, 2)), uv: (80, 16)),
+        // Piernas: cadera y rodilla, simetricas.
+        Part(id: "upper_leg_l", parent: Some("pelvis"), pivot: (-2, 10, 0), cuboid: (min: (-4, 5, -2), max: (0, 10, 2)), uv: (96, 0)), // region 16x12
+        Part(id: "upper_leg_r", parent: Some("pelvis"), pivot: (2, 10, 0), cuboid: (min: (0, 5, -2), max: (4, 10, 2)), uv: (112, 0)),
+        Part(id: "lower_leg_l", parent: Some("upper_leg_l"), pivot: (-2, 6, 0), cuboid: (min: (-4, 0, -2), max: (0, 6, 2)), uv: (96, 16)),
+        Part(id: "lower_leg_r", parent: Some("upper_leg_r"), pivot: (2, 6, 0), cuboid: (min: (0, 0, -2), max: (4, 6, 2)), uv: (112, 16)),
+        // Saco de carga a la espalda (+Z); crece con lo que llevas.
+        Part(id: "pack", parent: Some("torso"), pivot: (0, 19, 2), cuboid: (min: (-4, 15, 2), max: (4, 23, 6)), uv: (72, 0)), // region 24x12
+    ],
+    attachments: [
+        Attachment(id: "lamp", part: "head", offset: (0, 6, 0)),
+        Attachment(id: "tool", part: "hand_r", offset: (0, -3, -2)),
+        Attachment(id: "back", part: "torso", offset: (0, 2, 3)),
+    ],
+    team_tint_mask: Some("team_mask"),
+)
