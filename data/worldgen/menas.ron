@@ -1,0 +1,205 @@
+// Distribución de menas por profundidad de HUSHMINE.
+// Cita: docs/mundo/02-generacion.md §8 (Litología y menas) y §10 (Vetas soñadas).
+//
+// curve: curva por tramos con interpolación lineal; weight_per_100k es el peso
+// por cada 100 000 bloques en esa cota y. Primer y <= -256, y estrictamente
+// creciente dentro de [-4_096, 1_023], pesos enteros >= 0.
+//
+// Convención A (data/blocks.ron): mientras no existan bloques dedicados de
+// carbón, cobre, estaño, hierro, tungsteno, plata-plomo, cobalto, azufre o
+// cuarzo, esas menas se marcan con block_id 4 (ore genérico) y se distinguen
+// por el nombre del material de supervivencia. Oro usa 5 y diamante usa 6.
+//
+// Las menas confinadas al manto (tungsteno, cobalto, diamante, azufre, cuarzo)
+// cierran su curva en -256 con peso 0: por encima del manto su peso es nulo.
+// INV-W07 medirá la distribución real en miles de chunks de muestra y la
+// comparará con estas curvas.
+
+Ores(
+    // Nota en inglés para herramientas y revisión (texto fuente, no visible en juego).
+    note: "block_id 4 is the generic ore of Convention A (data/blocks.ron); coal, copper, tin, iron, tungsten, silver_lead, cobalt, sulfur and quartz reuse id 4 with their survival material name until dedicated blocks exist, while gold uses 5 and diamond uses 6. Each curve is piecewise linear, weight per 100 000 blocks at a given y; INV-W07 measures the real distribution over sample chunks and compares it against these curves.",
+    materials: [
+        // Carbón: corteza y turberas (§8); estratos horizontales. Pico hacia
+        // -110 y cola somera hasta ~40 para las turberas.
+        (
+            material: "coal",
+            block_id: 4,
+            ore_shape: "strata_bound",
+            curve: [
+                (y: -256, weight_per_100k: 30),
+                (y: -220, weight_per_100k: 60),
+                (y: -160, weight_per_100k: 140),
+                (y: -110, weight_per_100k: 160),
+                (y: -60, weight_per_100k: 110),
+                (y: -20, weight_per_100k: 50),
+                (y: 40, weight_per_100k: 12),
+            ],
+        ),
+
+        // Cobre: corteza somera, abundante en el altiplano (§8); vetas y
+        // manchas cerca de la superficie, pico entre -128 y -48.
+        (
+            material: "copper",
+            block_id: 4,
+            ore_shape: "shallow_veins",
+            curve: [
+                (y: -256, weight_per_100k: 10),
+                (y: -192, weight_per_100k: 40),
+                (y: -128, weight_per_100k: 130),
+                (y: -80, weight_per_100k: 150),
+                (y: -48, weight_per_100k: 140),
+                (y: -10, weight_per_100k: 70),
+                (y: 30, weight_per_100k: 20),
+            ],
+        ),
+
+        // Estaño: corteza media (§8); vetas en elipsoides (geologia.md),
+        // más escaso que el hierro.
+        (
+            material: "tin",
+            block_id: 4,
+            ore_shape: "vein_ellipsoids",
+            curve: [
+                (y: -256, weight_per_100k: 20),
+                (y: -208, weight_per_100k: 60),
+                (y: -144, weight_per_100k: 120),
+                (y: -96, weight_per_100k: 130),
+                (y: -48, weight_per_100k: 80),
+                (y: -8, weight_per_100k: 25),
+                (y: 20, weight_per_100k: 5),
+            ],
+        ),
+
+        // Hierro: corteza media (§8); mismas vetas en elipsoide que el estaño
+        // pero con más densidad, base de las herramientas intermedias.
+        (
+            material: "iron",
+            block_id: 4,
+            ore_shape: "vein_ellipsoids",
+            curve: [
+                (y: -256, weight_per_100k: 40),
+                (y: -200, weight_per_100k: 90),
+                (y: -140, weight_per_100k: 150),
+                (y: -90, weight_per_100k: 170),
+                (y: -40, weight_per_100k: 110),
+                (y: 0, weight_per_100k: 40),
+                (y: 50, weight_per_100k: 10),
+            ],
+        ),
+
+        // Wolframio: solo manto, en granito (§8); vetas finas que endurecen el
+        // acero negro. La curva muere en -256 con peso 0: no baja a la corteza.
+        (
+            material: "tungsten",
+            block_id: 4,
+            ore_shape: "thin_veins",
+            curve: [
+                (y: -640, weight_per_100k: 20),
+                (y: -600, weight_per_100k: 45),
+                (y: -520, weight_per_100k: 80),
+                (y: -420, weight_per_100k: 90),
+                (y: -330, weight_per_100k: 55),
+                (y: -256, weight_per_100k: 0),
+            ],
+        ),
+
+        // Plata y plomo: corteza profunda (§8); filones que siguen las fallas
+        // (macroceldas de 512), pico hacia -256..-192. Toda la curva queda en
+        // la corteza: por debajo de -256 el peso es nulo.
+        (
+            material: "silver_lead",
+            block_id: 4,
+            ore_shape: "fault_filons",
+            curve: [
+                (y: -256, weight_per_100k: 140),
+                (y: -192, weight_per_100k: 120),
+                (y: -128, weight_per_100k: 60),
+                (y: -64, weight_per_100k: 20),
+                (y: 0, weight_per_100k: 8),
+            ],
+        ),
+
+        // Cobalto: solo manto (§8); nódulos, material de nivel 5. Peso 0 al
+        // salir del manto.
+        (
+            material: "cobalt",
+            block_id: 4,
+            ore_shape: "nodules",
+            curve: [
+                (y: -640, weight_per_100k: 25),
+                (y: -590, weight_per_100k: 55),
+                (y: -500, weight_per_100k: 95),
+                (y: -400, weight_per_100k: 100),
+                (y: -310, weight_per_100k: 60),
+                (y: -256, weight_per_100k: 0),
+            ],
+        ),
+
+        // Oro: en todas partes, cada vez más rico abajo (§8); filones de cuarzo
+        // en fallas, placeres de río y vetas del manto. Arranca en -3_072 con
+        // las Vetas soñadas de la Bóveda (§10), el peso máximo de la tabla.
+        (
+            material: "gold",
+            block_id: 5,
+            ore_shape: "quartz_filons",
+            curve: [
+                (y: -3_072, weight_per_100k: 180),
+                (y: -1_536, weight_per_100k: 110),
+                (y: -640, weight_per_100k: 75),
+                (y: -320, weight_per_100k: 55),
+                (y: -128, weight_per_100k: 38),
+                (y: -16, weight_per_100k: 18),
+                (y: 60, weight_per_100k: 10),
+            ],
+        ),
+
+        // Diamante: solo manto (§8); aparece únicamente en chimeneas de
+        // kimberlita, de ahí los pesos bajos y el corte en -256.
+        (
+            material: "diamond",
+            block_id: 6,
+            ore_shape: "kimberlite_pipes",
+            curve: [
+                (y: -640, weight_per_100k: 4),
+                (y: -600, weight_per_100k: 8),
+                (y: -520, weight_per_100k: 14),
+                (y: -430, weight_per_100k: 12),
+                (y: -340, weight_per_100k: 7),
+                (y: -256, weight_per_100k: 0),
+            ],
+        ),
+
+        // Azufre: pegado a la lava del manto (§7 y §8); costras sobre los lagos
+        // de lava (por debajo de -450) y los ríos de lava del basalto.
+        (
+            material: "sulfur",
+            block_id: 4,
+            ore_shape: "lava_crusts",
+            curve: [
+                (y: -640, weight_per_100k: 30),
+                (y: -600, weight_per_100k: 60),
+                (y: -540, weight_per_100k: 100),
+                (y: -480, weight_per_100k: 120),
+                (y: -430, weight_per_100k: 70),
+                (y: -380, weight_per_100k: 35),
+                (y: -256, weight_per_100k: 0),
+            ],
+        ),
+
+        // Cuarzo y cristal: geodas del manto (§8); revestimiento de cavidades,
+        // también pieza del cristal de la Bóveda.
+        (
+            material: "quartz",
+            block_id: 4,
+            ore_shape: "geode_linings",
+            curve: [
+                (y: -640, weight_per_100k: 20),
+                (y: -580, weight_per_100k: 50),
+                (y: -500, weight_per_100k: 90),
+                (y: -420, weight_per_100k: 110),
+                (y: -340, weight_per_100k: 70),
+                (y: -256, weight_per_100k: 0),
+            ],
+        ),
+    ],
+)
