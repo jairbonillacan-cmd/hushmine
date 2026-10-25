@@ -16,6 +16,7 @@ mod texture_array;
 mod ui;
 mod ui_fit;
 mod ui_font;
+mod ui_font_table;
 mod voxel;
 
 pub use boxes::{BoxRenderer, ColorBox};
