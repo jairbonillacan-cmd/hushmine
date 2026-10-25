@@ -24,6 +24,7 @@ hush-art.workspace = true
 hush-net.workspace = true
 grisu-net.workspace = true
 hush-sim.workspace = true
+hush-worldgen.workspace = true
 pollster.workspace = true
 serde_json.workspace = true
 
