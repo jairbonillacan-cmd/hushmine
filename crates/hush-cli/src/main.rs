@@ -5,6 +5,7 @@
 
 mod bench;
 mod netsim;
+mod noise;
 mod scenes;
 
 use std::fs;
@@ -97,6 +98,26 @@ enum Command {
         #[arg(long)]
         out: Option<PathBuf>,
     },
+    /// Dibuja un mapa 512×512 en gris de un fBm 2D de `grisu-noise`.
+    Noise {
+        #[arg(long, default_value_t = 42)]
+        seed: u64,
+        /// Ruta del PNG de salida.
+        #[arg(long, default_value = "out/noise.png")]
+        out: PathBuf,
+        /// Lado del mapa en píxeles (1 píxel = 1 bloque).
+        #[arg(long, default_value_t = 512)]
+        size: u32,
+        /// Octavas del fBm.
+        #[arg(long, default_value_t = 5)]
+        octaves: u32,
+        /// Período de la octava base, en bloques (potencia de dos).
+        #[arg(long, default_value_t = 64)]
+        period: u32,
+        /// Dibuja ruido en cresta en vez de fBm.
+        #[arg(long)]
+        ridged: bool,
+    },
     /// Muestra la GPU y el backend que usaría el juego.
     Gpu,
 }
@@ -139,6 +160,23 @@ fn main() -> Result<()> {
             report.as_deref(),
         ),
         Command::Bench { seed, runs, out } => bench::run(seed, runs, out.as_deref()),
+        Command::Noise {
+            seed,
+            out,
+            size,
+            octaves,
+            period,
+            ridged,
+        } => noise::run(
+            &noise::Options {
+                seed,
+                size,
+                octaves,
+                period,
+                ridged,
+            },
+            &out,
+        ),
         Command::Gpu => gpu_info(),
     }
 }
