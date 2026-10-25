@@ -1,0 +1,35 @@
+// Dimensiones del modo Historia, en el orden de DimensionId:
+// 0 el Silencio, 1 el Sueño, 2 el Hervor, 3 el Eco y 4 el Revés.
+// gravity_q16: gravedad en punto fijo, 65_536 equivale a 1 g; negativa en el Revés (gravedad invertida).
+// noise_multiplier_q16: cuánto se amplifica el ruido en la dimensión (65_536 = sin cambios).
+// exclusive_material: material que solo se encuentra ahí (cadena vacía en el mundo base).
+
+DimensionCatalog(
+    dimensions: [
+        // El Silencio: el mundo base, del Párpado a las Raíces. El cielo es el Párpado:
+        // se abre (día) y se cierra (noche). No tiene material exclusivo: todo lo suyo
+        // se encuentra en el terreno o llega por el comercio de los pueblos.
+        Dimension( id: "the_hush", index: 0, name: "The Hush", gravity_q16: 65_536,
+            light_rule: "lid_cycle", noise_multiplier_q16: 65_536, exclusive_material: "" ),
+        // El Sueño: lo que sueñan todos los Durmientes a la vez. Se reordena por épocas y
+        // lo construido se borra, salvo lo fijado con un cristal de memoria; morir es despertar.
+        // Gravedad suave: se salta más alto y se cae más despacio. El ruido se apaga un poco.
+        Dimension( id: "the_dream", index: 1, name: "The Dream", gravity_q16: 39_322,
+            light_rule: "drifting_epochs", noise_multiplier_q16: 49_152, exclusive_material: "dreamstuff" ),
+        // El Hervor: la sangre de los Durmientes, un mar de magma con islas de basalto.
+        // Nunca es de noche: resplandor rojo constante. Sin traje de hervorita el calor daña,
+        // y la presión hace que el ruido de máquinas y calderas se oiga más lejos.
+        Dimension( id: "the_seethe", index: 2, name: "The Seethe", gravity_q16: 65_536,
+            light_rule: "always_glow", noise_multiplier_q16: 98_304, exclusive_material: "seethe_stone" ),
+        // El Eco: el sonido hecho materia. Cada ruido crea plataformas de cristal sonoro
+        // que el silencio erosiona; el ruido cuenta el doble, así que un grito levanta
+        // puentes y a la vez atrae Disonancias.
+        Dimension( id: "the_echo", index: 3, name: "The Echo", gravity_q16: 65_536,
+            light_rule: "sound_light", noise_multiplier_q16: 131_072, exclusive_material: "resonant_quartz" ),
+        // El Revés: el otro lado del Párpado, dominio del Insomne. Gravedad invertida:
+        // se camina por el dorso del cielo. Siempre es de día y la luz fuerte ciega;
+        // las Vigilias ven la luz y no el ruido, así que ahí la sombra es el refugio.
+        Dimension( id: "the_underside", index: 4, name: "The Underside", gravity_q16: -65_536,
+            light_rule: "always_day", noise_multiplier_q16: 32_768, exclusive_material: "lumen_crystal" ),
+    ],
+)

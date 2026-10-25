@@ -1,0 +1,235 @@
+// Comercio del modo Historia (supervivencia): oficios NPC, precios y tramos de reputación.
+// Cifras provisionales de docs/supervivencia/03-pueblos-y-comercio.md (§3 y §4); precios en granos
+// de oro ensayado, todos enteros. Convención desde el punto de vista del JUGADOR:
+//   buy_price_gold  = lo que el jugador PAGA al comprar al NPC.
+//   sell_price_gold = lo que el jugador RECIBE al vender al NPC.
+// Invariante de economía: en toda oferta buy_price_gold > sell_price_gold >= 1 (nadie compra más
+// caro de lo que vende). El ancla son los base_value_gold de objetos.ron: comprar ronda el
+// 130-200 % del valor base (el mecánico y el polvorinero de la Consolidada pagan por encima)
+// y vender el 50-100 %. reputation_tiers da el descuento porcentual que
+// se aplica al precio de compra según la reputación del pueblo con la facción del NPC.
+
+Traders(
+    traders: [
+        // Lampistería de los Llegados: compra cristales y polvos luminosos, vende lámparas,
+        // combustible y piadores en jaula. La lámpara de luz fría no prende el gas.
+        (
+            id: "lamplighter",
+            name: "Lamplighter",
+            faction: "arrivals",
+            offers: [
+                ( item_id: "vault_glass", buy_price_gold: 30, sell_price_gold: 12 ),
+                ( item_id: "mica_dust", buy_price_gold: 9, sell_price_gold: 3 ),
+                ( item_id: "lumen_crystal", buy_price_gold: 15, sell_price_gold: 6 ),
+                ( item_id: "candle", buy_price_gold: 3, sell_price_gold: 1 ),
+                ( item_id: "oil_lamp", buy_price_gold: 5, sell_price_gold: 2 ),
+                ( item_id: "safety_lamp", buy_price_gold: 36, sell_price_gold: 14 ),
+                ( item_id: "cold_light_lamp", buy_price_gold: 40, sell_price_gold: 16 ),
+                ( item_id: "lumen_lamp", buy_price_gold: 48, sell_price_gold: 19 ),
+                ( item_id: "lamp_oil", buy_price_gold: 5, sell_price_gold: 2 ),
+                ( item_id: "peeper_cage", buy_price_gold: 8, sell_price_gold: 3 ),
+            ],
+            reputation_tiers: [
+                ( min_reputation: -100, discount_pct: 0 ),
+                ( min_reputation: 25, discount_pct: 10 ),
+                ( min_reputation: 50, discount_pct: 20 ),
+                ( min_reputation: 75, discount_pct: 30 ),
+            ],
+        ),
+        // Herrero de los Llegados: compra menas, lingotes y carbón; vende herramientas y
+        // herramientas-arma. Reparación y mejora se ofrecen en la fragua, no en la tabla.
+        (
+            id: "blacksmith",
+            name: "Blacksmith",
+            faction: "arrivals",
+            offers: [
+                ( item_id: "copper_ore", buy_price_gold: 3, sell_price_gold: 1 ),
+                ( item_id: "tin_ore", buy_price_gold: 3, sell_price_gold: 1 ),
+                ( item_id: "iron_ore", buy_price_gold: 3, sell_price_gold: 1 ),
+                ( item_id: "coal", buy_price_gold: 3, sell_price_gold: 1 ),
+                ( item_id: "copper_ingot", buy_price_gold: 6, sell_price_gold: 2 ),
+                ( item_id: "iron_ingot", buy_price_gold: 9, sell_price_gold: 3 ),
+                ( item_id: "bronze_ingot", buy_price_gold: 9, sell_price_gold: 3 ),
+                ( item_id: "stone_pick", buy_price_gold: 9, sell_price_gold: 3 ),
+                ( item_id: "shovel", buy_price_gold: 8, sell_price_gold: 3 ),
+                ( item_id: "mace", buy_price_gold: 18, sell_price_gold: 6 ),
+                ( item_id: "pry_bar", buy_price_gold: 24, sell_price_gold: 9 ),
+                ( item_id: "shears", buy_price_gold: 24, sell_price_gold: 9 ),
+                ( item_id: "iron_pick", buy_price_gold: 24, sell_price_gold: 9 ),
+                ( item_id: "bronze_pick", buy_price_gold: 27, sell_price_gold: 10 ),
+            ],
+            reputation_tiers: [
+                ( min_reputation: -100, discount_pct: 0 ),
+                ( min_reputation: 25, discount_pct: 10 ),
+                ( min_reputation: 50, discount_pct: 20 ),
+                ( min_reputation: 75, discount_pct: 30 ),
+            ],
+        ),
+        // Ensayador de los Llegados: compra todo el mineral y lo convierte en granos; distingue
+        // el oro soñado. Dilema del §4: paga el oro soñado a 8 granos, ~70 % del oro normal
+        // (12 de base); ofrendarlo calma al Durmiente de la zona. Su buy_price_gold del oro
+        // soñado es solo la tasación de referencia: no guarda existencias para revender, así
+        // que hush-sim no debe ponerlo a la venta en su tienda.
+        (
+            id: "assayer",
+            name: "Assayer",
+            faction: "arrivals",
+            offers: [
+                ( item_id: "copper_ore", buy_price_gold: 3, sell_price_gold: 1 ),
+                ( item_id: "tin_ore", buy_price_gold: 3, sell_price_gold: 1 ),
+                ( item_id: "iron_ore", buy_price_gold: 3, sell_price_gold: 1 ),
+                ( item_id: "coal", buy_price_gold: 3, sell_price_gold: 1 ),
+                ( item_id: "gold_ore", buy_price_gold: 6, sell_price_gold: 3 ),
+                ( item_id: "cobalt_ore", buy_price_gold: 6, sell_price_gold: 2 ),
+                ( item_id: "dreamed_gold", buy_price_gold: 12, sell_price_gold: 8 ),
+            ],
+            reputation_tiers: [
+                ( min_reputation: -100, discount_pct: 0 ),
+                ( min_reputation: 25, discount_pct: 10 ),
+                ( min_reputation: 50, discount_pct: 20 ),
+                ( min_reputation: 75, discount_pct: 30 ),
+            ],
+        ),
+        // Topógrafo de los Llegados: compra mapas levantados por el jugador y vende instrumentos,
+        // mapas en blanco y planos de ruinas recuperados.
+        (
+            id: "cartographer",
+            name: "Cartographer",
+            faction: "arrivals",
+            offers: [
+                ( item_id: "survey_map", buy_price_gold: 5, sell_price_gold: 2 ),
+                ( item_id: "theodolite", buy_price_gold: 45, sell_price_gold: 18 ),
+                ( item_id: "geophone", buy_price_gold: 33, sell_price_gold: 13 ),
+                ( item_id: "ancient_plans", buy_price_gold: 60, sell_price_gold: 24 ),
+            ],
+            reputation_tiers: [
+                ( min_reputation: -100, discount_pct: 0 ),
+                ( min_reputation: 25, discount_pct: 10 ),
+                ( min_reputation: 50, discount_pct: 20 ),
+                ( min_reputation: 75, discount_pct: 30 ),
+            ],
+        ),
+        // Mercader de los Quedos en las aldeas de las profundidades: trueque silencioso, sin
+        // regateo a voz en grito. Ofrece lo que nadie más tiene (amortiguadores, calzado
+        // silencioso, cristal cultivado, nanas pequeñas) y valora lo que cuesta hacer:
+        // compra herramientas y materiales honrados, no menas que solo brillan.
+        (
+            id: "quedo_barterer",
+            name: "Quedo Barterer",
+            faction: "the_still",
+            offers: [
+                ( item_id: "felt_boots", buy_price_gold: 9, sell_price_gold: 3 ),
+                ( item_id: "damper_pad", buy_price_gold: 18, sell_price_gold: 7 ),
+                ( item_id: "resonant_quartz", buy_price_gold: 18, sell_price_gold: 6 ),
+                ( item_id: "trapped_note", buy_price_gold: 8, sell_price_gold: 3 ),
+                ( item_id: "silent_chamber", buy_price_gold: 48, sell_price_gold: 19 ),
+                ( item_id: "shovel", buy_price_gold: 9, sell_price_gold: 3 ),
+                ( item_id: "rope", buy_price_gold: 6, sell_price_gold: 2 ),
+                ( item_id: "wool", buy_price_gold: 4, sell_price_gold: 1 ),
+                ( item_id: "felt_pad", buy_price_gold: 6, sell_price_gold: 2 ),
+                ( item_id: "hard_leather", buy_price_gold: 7, sell_price_gold: 2 ),
+            ],
+            // Los descuentos llegan con la etiqueta del silencio y la lengua de golpes.
+            reputation_tiers: [
+                ( min_reputation: -100, discount_pct: 0 ),
+                ( min_reputation: 0, discount_pct: 5 ),
+                ( min_reputation: 25, discount_pct: 15 ),
+                ( min_reputation: 75, discount_pct: 30 ),
+            ],
+        ),
+        // Almacenero de los Llegados: compra lana, madera y comida; vende comida, cuerda,
+        // combustible de lámpara y sacos.
+        (
+            id: "storekeeper",
+            name: "Storekeeper",
+            faction: "arrivals",
+            offers: [
+                ( item_id: "wool", buy_price_gold: 3, sell_price_gold: 1 ),
+                ( item_id: "wood", buy_price_gold: 4, sell_price_gold: 1 ),
+                ( item_id: "raw_meat", buy_price_gold: 4, sell_price_gold: 1 ),
+                ( item_id: "pelt", buy_price_gold: 4, sell_price_gold: 1 ),
+                ( item_id: "leather_hide", buy_price_gold: 5, sell_price_gold: 2 ),
+                ( item_id: "canteen_meal", buy_price_gold: 5, sell_price_gold: 2 ),
+                ( item_id: "rope", buy_price_gold: 5, sell_price_gold: 2 ),
+                ( item_id: "lamp_oil", buy_price_gold: 5, sell_price_gold: 2 ),
+                ( item_id: "sack", buy_price_gold: 7, sell_price_gold: 3 ),
+            ],
+            reputation_tiers: [
+                ( min_reputation: -100, discount_pct: 0 ),
+                ( min_reputation: 25, discount_pct: 10 ),
+                ( min_reputation: 50, discount_pct: 20 ),
+                ( min_reputation: 75, discount_pct: 30 ),
+            ],
+        ),
+        // Polvorinero de la Consolidada: paga más, pero en vales de economato (company_scrip).
+        // Vende explosivos bajo licencia: pide reputación o examen; el ruido máximo del juego.
+        (
+            id: "powderman",
+            name: "Powderman",
+            faction: "consolidated",
+            offers: [
+                ( item_id: "saltpeter", buy_price_gold: 5, sell_price_gold: 2 ),
+                ( item_id: "sulfur", buy_price_gold: 5, sell_price_gold: 2 ),
+                ( item_id: "guano", buy_price_gold: 4, sell_price_gold: 1 ),
+                ( item_id: "black_powder", buy_price_gold: 8, sell_price_gold: 3 ),
+                ( item_id: "directed_charge", buy_price_gold: 28, sell_price_gold: 13 ),
+                ( item_id: "cable_detonator", buy_price_gold: 19, sell_price_gold: 8 ),
+            ],
+            // Vales de la Consolidada: descuentos más agresivos para amarrar al minero.
+            reputation_tiers: [
+                ( min_reputation: -100, discount_pct: 0 ),
+                ( min_reputation: 0, discount_pct: 5 ),
+                ( min_reputation: 25, discount_pct: 15 ),
+                ( min_reputation: 50, discount_pct: 25 ),
+                ( min_reputation: 75, discount_pct: 40 ),
+            ],
+        ),
+        // Mecánico de la Consolidada: compra cobre y chatarra (paga más por el cobre que los
+        // Llegados) y vende vagonetas, raíles, bombas, cabrestantes y calderas.
+        (
+            id: "mechanic",
+            name: "Mechanic",
+            faction: "consolidated",
+            offers: [
+                ( item_id: "copper_ore", buy_price_gold: 4, sell_price_gold: 2 ),
+                ( item_id: "copper_ingot", buy_price_gold: 7, sell_price_gold: 3 ),
+                ( item_id: "copper_cable", buy_price_gold: 4, sell_price_gold: 1 ),
+                ( item_id: "slag_core", buy_price_gold: 26, sell_price_gold: 11 ),
+                ( item_id: "rail_segment", buy_price_gold: 15, sell_price_gold: 6 ),
+                ( item_id: "piston", buy_price_gold: 30, sell_price_gold: 11 ),
+                ( item_id: "minecart", buy_price_gold: 36, sell_price_gold: 13 ),
+                ( item_id: "winch", buy_price_gold: 36, sell_price_gold: 13 ),
+                ( item_id: "boiler", buy_price_gold: 50, sell_price_gold: 18 ),
+            ],
+            reputation_tiers: [
+                ( min_reputation: -100, discount_pct: 0 ),
+                ( min_reputation: 0, discount_pct: 5 ),
+                ( min_reputation: 25, discount_pct: 15 ),
+                ( min_reputation: 50, discount_pct: 25 ),
+                ( min_reputation: 75, discount_pct: 40 ),
+            ],
+        ),
+        // Curandero de los Llegados: compra lana para vendas y cenizas de hongos y resinas del
+        // subsuelo (sustitutos provisionales de hongos y resinas); vende vendas, antídotos,
+        // poción de sueño y equipo contra gas.
+        (
+            id: "healer",
+            name: "Healer",
+            faction: "arrivals",
+            offers: [
+                ( item_id: "wool", buy_price_gold: 4, sell_price_gold: 1 ),
+                ( item_id: "ember_ash", buy_price_gold: 7, sell_price_gold: 2 ),
+                ( item_id: "wisp_ash", buy_price_gold: 12, sell_price_gold: 5 ),
+                ( item_id: "bandage", buy_price_gold: 5, sell_price_gold: 2 ),
+                ( item_id: "sleep_draught", buy_price_gold: 8, sell_price_gold: 3 ),
+                ( item_id: "respirator", buy_price_gold: 36, sell_price_gold: 14 ),
+            ],
+            reputation_tiers: [
+                ( min_reputation: -100, discount_pct: 0 ),
+                ( min_reputation: 25, discount_pct: 10 ),
+                ( min_reputation: 50, discount_pct: 20 ),
+                ( min_reputation: 75, discount_pct: 30 ),
+            ],
+        ),
+    ],
+)

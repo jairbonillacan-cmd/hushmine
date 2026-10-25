@@ -1,0 +1,97 @@
+// Jefes (guardianes) del modo Historia.
+// Cada guardián es un problema que se resuelve con un oficio, no una bolsa de vida:
+// escuchar (el Tapón), orientarse (la Pesadilla), presión (la Caldera), mecánica (la Línea),
+// resonar (el Coro) y todos a la vez (el Insomne).
+// arc: arco de la historia, 1..=5. hp: vida entera (el jugador tiene 100).
+// acoustic_weakness / luminous_weakness: 0..=100; 100 = máxima vulnerabilidad a resonancia o luz.
+// hp_below_pct: la fase se activa cuando la vida baja de ese porcentaje; la primera fase es 100.
+
+BossCatalog(
+    bosses: [
+        // Arco I. El Tapón sella el pozo maestro de los Antiguos y vuelve a cerrar todo lo que se cava.
+        // Oficio: escuchar. Sus costuras frías se encuentran con el geófono y se vuela al ritmo de su pulso,
+        // entibando cada carga para no quedar aplastado. El premio no es material: el acceso al fondo de la gran mina.
+        Boss( id: "the_plug", name: "The Plug", arc: 1, arena: "ancients_main_shaft",
+            hp: 900, damage: 40, acoustic_weakness: 80, luminous_weakness: 5,
+            phases: [
+                ( id: "sealed_shut", name: "Sealed Shut", hp_below_pct: 100,
+                    tactic: "It reseals every tunnel dug out of rhythm; map its cold seams with the geophone first." ),
+                ( id: "quickening_pulse", name: "Quickening Pulse", hp_below_pct: 50,
+                    tactic: "Its pulse doubles; set each charge on the beat and shore the heading before it slams shut." ),
+            ],
+            rewards: [] ),
+        // Arco II. La Pesadilla es el Sueño reordenándose para echarte.
+        // Oficio: orientarse. Llegar a su centro mientras el plano cambia, levantando tu propio mapa.
+        Boss( id: "the_nightmare", name: "The Nightmare", arc: 2, arena: "dream_center",
+            hp: 700, damage: 25, acoustic_weakness: 30, luminous_weakness: 50,
+            phases: [
+                ( id: "drifting_gallery", name: "Drifting Gallery", hp_below_pct: 100,
+                    tactic: "The Dream shifts every epoch; hold your own map and walk toward the center, not the exits you remember." ),
+                ( id: "false_exits", name: "False Exits", hp_below_pct: 60,
+                    tactic: "It copies familiar galleries that lead in circles; only walls fixed with memory crystals stay true." ),
+                ( id: "the_chase", name: "The Chase", hp_below_pct: 25,
+                    tactic: "It collapses the way back; sprint the last stretch between two epochs." ),
+            ],
+            rewards: [ ( item_id: "dream_note", qty: 1 ) ] ),
+        // Arco III. La Caldera es la gran caldera de los Fundidores, viva y a punto de reventar.
+        // Oficio: presión. Abrir y cerrar sus válvulas en el orden justo para bajarle la presión
+        // mientras sus Forjados recorren las pasarelas buscando ruido.
+        Boss( id: "the_boiler", name: "The Boiler", arc: 3, arena: "foundry_caldera",
+            hp: 800, damage: 30, acoustic_weakness: 50, luminous_weakness: 15,
+            phases: [
+                ( id: "overpressure", name: "Overpressure", hp_below_pct: 100,
+                    tactic: "Steam screams from every valve; close them in the order marked by the pressure gauges." ),
+                ( id: "the_forge_wakes", name: "The Forge Wakes", hp_below_pct: 55,
+                    tactic: "Forged automata sweep the walkways; vent them or fight quietly while the valves cool." ),
+                ( id: "white_heat", name: "White Heat", hp_below_pct: 20,
+                    tactic: "One valve out of order and it bursts; turn the last valve under full heat." ),
+            ],
+            rewards: [ ( item_id: "seethe_note", qty: 1 ) ] ),
+        // Arco III. La Línea es la cadena de cangilones colosal de la Consolidada, del Hervor al Corazón.
+        // NO se destruye: se frena. Oficio: mecánica. Bloquear sus estaciones motrices en orden y en silencio,
+        // porque la Línea caza el ruido (acoustic_weakness 0: el ruido no la daña, la alimenta).
+        Boss( id: "the_line", name: "The Line", arc: 3, arena: "bucket_chain_spine",
+            hp: 1_200, damage: 35, acoustic_weakness: 0, luminous_weakness: 10,
+            phases: [
+                ( id: "full_speed", name: "Full Speed", hp_below_pct: 100,
+                    tactic: "The chain devours every sound; sneak to the drive stations and jam them one by one." ),
+                ( id: "straining", name: "Straining", hp_below_pct: 60,
+                    tactic: "Half-stopped, it rattles and hunts noise-makers; move only between bucket passes." ),
+                ( id: "stalled", name: "Stalled", hp_below_pct: 25,
+                    tactic: "The last station spins free; block it and the whole Line grinds to a halt." ),
+            ],
+            // La Línea parada suelta una pieza para montar la Nana junto al Corazón.
+            rewards: [ ( item_id: "lullaby_frame", qty: 1 ), ( item_id: "bucket_chain_segment", qty: 2 ) ] ),
+        // Arco IV. El Coro son los Silbadores desafinados por los Desvelos del Insomne.
+        // No se le vence: se le AFINA. Oficio: resonar. Encontrar la nota de cada voz con resonadores
+        // mientras las Disonancias rompen el suelo de cristal.
+        Boss( id: "the_choir", name: "The Choir", arc: 4, arena: "whistler_cathedral",
+            hp: 600, damage: 20, acoustic_weakness: 100, luminous_weakness: 5,
+            phases: [
+                ( id: "detuned", name: "Detuned", hp_below_pct: 100,
+                    tactic: "Every voice is off-key; find each wrong note with a resonator and hold it." ),
+                ( id: "counterpoint", name: "Counterpoint", hp_below_pct: 55,
+                    tactic: "Discordances shatter the glass floor while you tune; tune voices in pairs, in silence." ),
+                ( id: "unison", name: "Unison", hp_below_pct: 20,
+                    tactic: "All voices must hold one chord; play the sleeper's own note to seal the tuning." ),
+            ],
+            rewards: [ ( item_id: "echo_note", qty: 1 ) ] ),
+        // Arco V. El Insomne es lo único que se combate y el jefe final.
+        // Oficio: todos. Sombra contra sus Vigilias, silencio contra sus Desvelos y las tres Notas
+        // para cerrar la costura. El premio no es material: tras caer llega la decisión final
+        // (Arrullar, Despertar o Quedarse).
+        Boss( id: "the_sleepless", name: "The Sleepless", arc: 5, arena: "underside_seam",
+            hp: 1_500, damage: 45, acoustic_weakness: 70, luminous_weakness: 40,
+            phases: [
+                ( id: "the_open_eye", name: "The Open Eye", hp_below_pct: 100,
+                    tactic: "Its Watchlights sweep the pale land; cross only in shadow or be blinded and dragged." ),
+                ( id: "scream_of_wakers", name: "Scream of Wakers", hp_below_pct: 75,
+                    tactic: "Its Wakers clamor to wake the mountain; silence them fast inside dark pockets." ),
+                ( id: "the_lid_strains", name: "The Lid Strains", hp_below_pct: 45,
+                    tactic: "It pries the Lid open and light floods the land; shadows shrink, so move between blinds." ),
+                ( id: "three_notes", name: "Three Notes", hp_below_pct: 15,
+                    tactic: "The seam itself is its body; play the three Notes in order while it holds the Lid." ),
+            ],
+            rewards: [] ),
+    ],
+)

@@ -1,0 +1,44 @@
+// Árbol de tecnologías del modo Historia: seis ramas × cinco niveles.
+// Cada receta de recetas.ron exige la tecnología que desbloquea su producto.
+// Se descubre con materiales, planos de ruinas, maestros o dimensiones; no se compra con puntos.
+
+TechTree(
+    techs: [
+        // Excavación: picos, fragua, acero negro, pólvora y cobalto.
+        Tech( id: "surface_mining", name: "Surface Mining", branch: "excavation", tier: 1, prereqs: [], unlocks: ["stone_pick", "shovel", "survey_map"] ),
+        Tech( id: "bronze_works", name: "Bronze Works", branch: "excavation", tier: 2, prereqs: ["surface_mining"], unlocks: ["copper_ingot", "bronze_ingot", "foundry_brass", "assayed_gold", "bronze_pick", "shears"] ),
+        Tech( id: "deep_iron", name: "Deep Iron", branch: "excavation", tier: 3, prereqs: ["bronze_works"], unlocks: ["iron_ingot", "iron_pick", "pry_bar", "mace", "black_steel", "black_steel_pick", "theodolite"] ),
+        Tech( id: "powder_magazine", name: "Powder Magazine", branch: "excavation", tier: 4, prereqs: ["deep_iron"], unlocks: ["saltpeter", "black_powder", "directed_charge", "cable_detonator"] ),
+        Tech( id: "cobalt_edge", name: "Cobalt Edge", branch: "excavation", tier: 5, prereqs: ["powder_magazine"], unlocks: ["cobalt_ingot", "cobalt_pick"] ),
+        // Entibado y construcción: puntales, marcos, jaula de pozo, marcos que absorben temblores.
+        Tech( id: "basic_shoring", name: "Basic Shoring", branch: "shoring_construction", tier: 1, prereqs: [], unlocks: ["wood", "wood_plank", "shoring_prop", "rope", "bandage", "canteen_meal", "sack"] ),
+        Tech( id: "timber_frames", name: "Timber Frames", branch: "shoring_construction", tier: 2, prereqs: ["basic_shoring"], unlocks: ["wood_frame"] ),
+        Tech( id: "iron_shoring", name: "Iron Shoring", branch: "shoring_construction", tier: 3, prereqs: ["timber_frames"], unlocks: ["iron_shoring_frame"] ),
+        Tech( id: "shaft_works", name: "Shaft Works", branch: "shoring_construction", tier: 4, prereqs: ["iron_shoring"], unlocks: ["shaft_cage"] ),
+        Tech( id: "quaked_frames", name: "Quaked Frames", branch: "shoring_construction", tier: 5, prereqs: ["shaft_works"], unlocks: ["resonant_frame"] ),
+        // Luz y detección: llama abierta, disciplina del gas, lámpara de seguridad, luz fría, lumen.
+        Tech( id: "open_flame", name: "Open Flame", branch: "lighting_detection", tier: 1, prereqs: [], unlocks: ["candle", "oil_lamp", "lamp_oil"] ),
+        Tech( id: "gas_discipline", name: "Gas Discipline", branch: "lighting_detection", tier: 2, prereqs: ["open_flame"], unlocks: ["peeper_cage", "flare_pistol"] ),
+        Tech( id: "safety_lamp", name: "Safety Lamp", branch: "lighting_detection", tier: 3, prereqs: ["gas_discipline"], unlocks: ["safety_lamp", "geophone"] ),
+        Tech( id: "cold_light_cultivation", name: "Cold Light Cultivation", branch: "lighting_detection", tier: 4, prereqs: ["safety_lamp"], unlocks: ["cold_light_lamp"] ),
+        Tech( id: "lumen_light", name: "Lumen Light", branch: "lighting_detection", tier: 5, prereqs: ["cold_light_cultivation"], unlocks: ["lumen_lamp"] ),
+        // Transporte y máquinas: arrastre, cabrestante, raíles, vapor y línea de cangilones.
+        Tech( id: "hand_hauling", name: "Hand Hauling", branch: "transport_machines", tier: 1, prereqs: [], unlocks: ["haul_sled"] ),
+        Tech( id: "rope_and_winch", name: "Rope and Winch", branch: "transport_machines", tier: 2, prereqs: ["hand_hauling"], unlocks: ["winch"] ),
+        Tech( id: "iron_roads", name: "Iron Roads", branch: "transport_machines", tier: 3, prereqs: ["rope_and_winch"], unlocks: ["rail_segment", "minecart"] ),
+        Tech( id: "steam_pressure", name: "Steam Pressure", branch: "transport_machines", tier: 4, prereqs: ["iron_roads"], unlocks: ["boiler", "piston", "steam_hammer", "copper_cable"] ),
+        Tech( id: "bucket_lines", name: "Bucket Lines", branch: "transport_machines", tier: 5, prereqs: ["steam_pressure"], unlocks: ["steam_engine", "bucket_chain_segment", "echo_relay"] ),
+        // Silencio y acústica: fieltro de los Quedos, amortiguación, cámaras sordas, resonadores.
+        Tech( id: "felt_craft", name: "Felt Craft", branch: "silence_acoustics", tier: 1, prereqs: [], unlocks: ["felt_pad"] ),
+        Tech( id: "quedos_weaving", name: "Quedos Weaving", branch: "silence_acoustics", tier: 2, prereqs: ["felt_craft"], unlocks: ["felt_boots"] ),
+        Tech( id: "damping_foundations", name: "Damping Foundations", branch: "silence_acoustics", tier: 3, prereqs: ["quedos_weaving"], unlocks: ["damper_pad"] ),
+        Tech( id: "silent_chambers", name: "Silent Chambers", branch: "silence_acoustics", tier: 4, prereqs: ["damping_foundations"], unlocks: ["silent_chamber"] ),
+        Tech( id: "resonant_attunement", name: "Resonant Attunement", branch: "silence_acoustics", tier: 5, prereqs: ["silent_chambers"], unlocks: ["resonator"] ),
+        // Oficio del Durmiente: encantos, notas, cristal de memoria, ropa del Hervor y la Nana.
+        Tech( id: "dream_tokens", name: "Dream Tokens", branch: "sleeper_craft", tier: 1, prereqs: [], unlocks: ["dream_charm"] ),
+        Tech( id: "fragment_reading", name: "Fragment Reading", branch: "sleeper_craft", tier: 2, prereqs: ["dream_tokens"], unlocks: ["sleep_draught"] ),
+        Tech( id: "memory_imprints", name: "Memory Imprints", branch: "sleeper_craft", tier: 3, prereqs: ["fragment_reading"], unlocks: ["memory_crystal"] ),
+        Tech( id: "seethe_garments", name: "Seethe Garments", branch: "sleeper_craft", tier: 4, prereqs: ["memory_imprints"], unlocks: ["vault_glass", "heat_suit", "respirator"] ),
+        Tech( id: "lullaby_assembly", name: "Lullaby Assembly", branch: "sleeper_craft", tier: 5, prereqs: ["seethe_garments"], unlocks: ["dreamstuff", "dreamstuff_pick", "lullaby_frame", "lullaby_bell", "lullaby_memory_drum", "shadow_cloak"] ),
+    ],
+)

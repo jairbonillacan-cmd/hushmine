@@ -1,0 +1,98 @@
+// Criaturas del modo Historia (supervivencia).
+// hearing_threshold: ruido mínimo que la despierta o atrae (andar 1, correr 4, picar tierra 3,
+// roca 6, roca dura 10, martillo de vapor 20, explosión 60). Umbral bajo = oído más fino.
+// light_reaction: flee (la luz fuerte la espanta), attract (la busca), neutral, petrify (su mirada ciega).
+// hp: vida entera (el jugador tiene 100). noise_on_alert: ruido que emite al alertarse.
+// drops: solo ids de objetos.ron; min_qty puede ser 0 para botín poco frecuente.
+
+CreatureCatalog(
+    creatures: [
+        // === Fauna del Silencio ===
+        // Lanudos: rebaños de pradera; se quedan quietos al oír ruido y huyen si sigue. Se crían.
+        Creature( id: "woolie", name: "Woolie", habitat: "surface", hearing_threshold: 3,
+            light_reaction: "flee", hp: 20, damage: 0, noise_on_alert: 4,
+            drops: [ ( item_id: "wool", min_qty: 1, max_qty: 3 ), ( item_id: "raw_meat", min_qty: 1, max_qty: 2 ), ( item_id: "leather_hide", min_qty: 0, max_qty: 1 ) ] ),
+        // Porteadores: bestias de carga lentas y fuertes de los valles; se doman como montura.
+        Creature( id: "hauler", name: "Hauler", habitat: "surface", hearing_threshold: 6,
+            light_reaction: "neutral", hp: 60, damage: 0, noise_on_alert: 6,
+            drops: [ ( item_id: "leather_hide", min_qty: 2, max_qty: 4 ) ] ),
+        // Piadores: pájaros de las entradas de cueva; se desmayan con el gas antes que tú. No dan botín: son un aviso vivo.
+        Creature( id: "peeper", name: "Peeper", habitat: "surface", hearing_threshold: 2,
+            light_reaction: "neutral", hp: 4, damage: 0, noise_on_alert: 3,
+            drops: [] ),
+        // Aleteos: bandadas de cueva que salen volando con el ruido y delatan al minero; su guano da salitre.
+        Creature( id: "flutter", name: "Flutter", habitat: "crust", hearing_threshold: 4,
+            light_reaction: "neutral", hp: 6, damage: 1, noise_on_alert: 5,
+            drops: [ ( item_id: "guano", min_qty: 1, max_qty: 2 ) ] ),
+        // Ratas de veta: roban comida y huyen antes de un derrumbe; su pánico es un aviso gratis.
+        Creature( id: "vein_rat", name: "Vein Rat", habitat: "crust", hearing_threshold: 2,
+            light_reaction: "flee", hp: 6, damage: 1, noise_on_alert: 2,
+            drops: [] ),
+        // Cavadores: bestias grandes de tierra blanda que excavan siguiendo las vibraciones.
+        Creature( id: "burrower", name: "Burrower", habitat: "crust", hearing_threshold: 2,
+            light_reaction: "neutral", hp: 70, damage: 15, noise_on_alert: 8,
+            drops: [ ( item_id: "hard_leather", min_qty: 1, max_qty: 2 ) ] ),
+        // Acechadores: depredadores de noche, con el Párpado cerrado; cazan por el oído y huyen de la luz fuerte.
+        Creature( id: "stalker", name: "Stalker", habitat: "surface", hearing_threshold: 2,
+            light_reaction: "flee", hp: 45, damage: 20, noise_on_alert: 2,
+            drops: [ ( item_id: "fang", min_qty: 1, max_qty: 2 ), ( item_id: "pelt", min_qty: 1, max_qty: 2 ) ] ),
+        // === Criaturas de la montaña ===
+        // Ecos: siluetas de niebla que imitan voces para llevar a galerías que se hunden; la luz fuerte las disuelve.
+        Creature( id: "echo", name: "Echo", habitat: "crust", hearing_threshold: 3,
+            light_reaction: "flee", hp: 15, damage: 0, noise_on_alert: 6,
+            drops: [] ),
+        // Selladores: costras de cuarzo que reptan y vuelven a cerrar las galerías; a veces llevan una ficha perdida dentro.
+        Creature( id: "sealer", name: "Sealer", habitat: "mantle", hearing_threshold: 8,
+            light_reaction: "neutral", hp: 55, damage: 8, noise_on_alert: 6,
+            drops: [ ( item_id: "quartz_shard", min_qty: 1, max_qty: 3 ), ( item_id: "lost_brass_tally", min_qty: 0, max_qty: 1 ) ] ),
+        // Aire malo: nubes de gas que derivan hacia el calor; no se golpean, se ventilan o se prenden a distancia.
+        Creature( id: "bad_air", name: "Bad Air", habitat: "crust", hearing_threshold: 20,
+            light_reaction: "neutral", hp: 10, damage: 0, noise_on_alert: 2,
+            drops: [] ),
+        // Escorias: basalto con núcleo fundido que rueda hacia las vibraciones; el agua las vuelve roca minable.
+        Creature( id: "slag", name: "Slag", habitat: "mantle", hearing_threshold: 6,
+            light_reaction: "neutral", hp: 90, damage: 25, noise_on_alert: 10,
+            drops: [ ( item_id: "slag_core", min_qty: 1, max_qty: 1 ) ] ),
+        // Filón errante: una veta de oro que huye por la roca del ruido; no ataca. Se caza con silencio y geófono.
+        Creature( id: "wandering_lode", name: "Wandering Lode", habitat: "crust", hearing_threshold: 4,
+            light_reaction: "neutral", hp: 150, damage: 0, noise_on_alert: 2,
+            drops: [ ( item_id: "dreamed_gold", min_qty: 2, max_qty: 5 ) ] ),
+        // Polillas de mica: enjambres de la Bóveda que se comen la luz; bengalas como señuelo y lámparas tapadas.
+        Creature( id: "mica_moth", name: "Mica Moth", habitat: "vault", hearing_threshold: 8,
+            light_reaction: "attract", hp: 5, damage: 0, noise_on_alert: 3,
+            drops: [ ( item_id: "mica_dust", min_qty: 1, max_qty: 2 ) ] ),
+        // Raicillas: filamentos de cristal de las Raíces que atrapan al oír cualquier ruido; se cruzan en silencio absoluto.
+        Creature( id: "rootlet", name: "Rootlet", habitat: "roots", hearing_threshold: 1,
+            light_reaction: "neutral", hp: 30, damage: 10, noise_on_alert: 1,
+            drops: [ ( item_id: "crystal_thorn", min_qty: 1, max_qty: 2 ) ] ),
+        // Desvelos: mensajeros del Insomne que hacen ruido a propósito para despertar lo que haya cerca; hay que callarlos rápido.
+        Creature( id: "waker", name: "Waker", habitat: "crust", hearing_threshold: 0,
+            light_reaction: "flee", hp: 35, damage: 5, noise_on_alert: 15,
+            drops: [ ( item_id: "wisp_ash", min_qty: 1, max_qty: 2 ) ] ),
+        // === Criaturas de las dimensiones ===
+        // Soñados: recuerdos con forma de persona, neutrales; repiten un recuerdo y dan pistas sobre los Llegados.
+        Creature( id: "dreamed", name: "Dreamed", habitat: "the_dream", hearing_threshold: 6,
+            light_reaction: "neutral", hp: 40, damage: 0, noise_on_alert: 2,
+            drops: [ ( item_id: "memory_fragment", min_qty: 0, max_qty: 1 ) ] ),
+        // Forjados: autómatas de los Fundidores que atacan cualquier fuente de ruido; se desactivan o reprograman con planos.
+        Creature( id: "forged", name: "Forged", habitat: "the_seethe", hearing_threshold: 4,
+            light_reaction: "neutral", hp: 80, damage: 18, noise_on_alert: 8,
+            drops: [ ( item_id: "foundry_brass", min_qty: 1, max_qty: 3 ) ] ),
+        // Rescoldos: enjambres de brasas que prenden el gas del Hervor; atraídos por llama y luz.
+        Creature( id: "ember", name: "Ember", habitat: "the_seethe", hearing_threshold: 6,
+            light_reaction: "attract", hp: 10, damage: 3, noise_on_alert: 4,
+            drops: [ ( item_id: "ember_ash", min_qty: 1, max_qty: 2 ) ] ),
+        // Silbadores: los avisadores; silban antes de cada derrumbe y nunca atacan. Enseñan la Resonancia.
+        Creature( id: "whistler", name: "Whistler", habitat: "the_echo", hearing_threshold: 1,
+            light_reaction: "neutral", hp: 25, damage: 0, noise_on_alert: 8,
+            drops: [ ( item_id: "trapped_note", min_qty: 0, max_qty: 1 ) ] ),
+        // Disonancias: bestias de sonido que rompen las plataformas de cristal; gritar las atrae.
+        Creature( id: "discordance", name: "Discordance", habitat: "the_echo", hearing_threshold: 2,
+            light_reaction: "neutral", hp: 70, damage: 22, noise_on_alert: 16,
+            drops: [ ( item_id: "resonant_quartz", min_qty: 1, max_qty: 2 ) ] ),
+        // Vigilias: seres de luz del Revés; no ven el ruido sino la luz, y su mirada ciega (petrify).
+        Creature( id: "watchlight", name: "Watchlight", habitat: "the_underside", hearing_threshold: 16,
+            light_reaction: "petrify", hp: 50, damage: 0, noise_on_alert: 4,
+            drops: [ ( item_id: "lumen_crystal", min_qty: 1, max_qty: 2 ) ] ),
+    ],
+)
