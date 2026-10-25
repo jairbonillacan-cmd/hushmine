@@ -324,12 +324,15 @@ mod tests {
 
     #[test]
     fn slice_below_surface_shows_solids() {
-        let slice = render_slice(42, SliceAxis::X, 0, (-4, -4), (4, 4));
+        // De y = -64 a 0: queda bajo la superficie del origen aunque el
+        // generador lo ponga en el fondo del mar (sin agua todavía, la franja
+        // de y = 0 puede ser aire).
+        let slice = render_slice(42, SliceAxis::X, 0, (-4, -64), (4, 0));
         let dirt = Rgba([134, 87, 51, 255]);
         let rock = Rgba([128, 128, 128, 255]);
         assert!(
             slice.pixels().any(|p| *p == dirt || *p == rock),
-            "bajo y = 0 debería verse tierra o roca"
+            "entre y = -64 y 0 debería verse tierra o roca"
         );
     }
 }
