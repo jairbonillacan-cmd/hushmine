@@ -752,6 +752,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "grisu-noise"
+version = "0.0.1"
+
+[[package]]
 name = "grisu-platform"
 version = "0.0.1"
 dependencies = [
@@ -845,11 +849,13 @@ dependencies = [
  "env_logger",
  "glam",
  "grisu-net",
+ "grisu-noise",
  "grisu-render",
  "grisu-voxel",
  "hush-art",
  "hush-net",
  "hush-sim",
+ "image",
  "pollster",
  "serde_json",
 ]
