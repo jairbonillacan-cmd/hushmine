@@ -15,11 +15,13 @@ struct Globals {
     selected: vec4<i32>,
     // Segundos desde el arranque, para animar la lava.
     time: f32,
-    // Relleno hasta el tamaño del uniforme (múltiplo de 16). Tres f32
-    // sueltos: un vec3 alienaría a 16 y agrandaría el uniforme.
-    _pad0: f32,
-    _pad1: f32,
-    _pad2: f32,
+    // Vista de depuración (DebugView en Rust); 0 = dibujo normal.
+    debug_view: u32,
+    // Relleno hasta el tamaño del uniforme (múltiplo de 16). Los offsets de
+    // Rust y WGSL coinciden: view_proj 0..64, eye 64..80, fog 80..96,
+    // selected 96..112, time 112..116, debug_view 116..120, pad 120..128.
+    _pad0: u32,
+    _pad1: u32,
 };
 
 // Lava: identificador de bloque, capa de su fotograma 0 y capa del primer
@@ -55,6 +57,15 @@ struct VertexOut {
     @location(4) @interpolate(flat) highlight: f32,
     // Luz de la celda de delante de la cara, de 0 a 1.
     @location(5) @interpolate(flat) block_light: f32,
+    // Índice 0..5 de la normal de la cara; las caras solo existen en el
+    // vertex shader, así que las vistas de depuración la pasan plana.
+    @location(6) @interpolate(flat) dir: u32,
+    // Factor PURO de oclusión ambiental de la esquina (ao_curve, sin el
+    // sombreado por dirección): lo pinta la vista `ao`.
+    @location(7) @interpolate(flat) ao: f32,
+    // Tinte damero del chunk; el grupo 1 solo es visible en el vertex
+    // shader, así que el color de la vista `chunks` se calcula aquí.
+    @location(8) @interpolate(flat) chunk_tint: vec3<f32>,
 };
 
 @vertex
@@ -126,12 +137,74 @@ fn vs_main(@builtin(vertex_index) vertex: u32, face: FaceIn) -> VertexOut {
         1.0,
         sel.w == 1 && all(chunk.origin.xyz + vec3<i32>(cell) == sel.xyz),
     );
+    // Datos para las vistas de depuración: dirección de la cara, oclusión
+    // ambiental pura de la esquina y damero 3D por chunk (los orígenes son
+    // múltiplos de 16, así que >> 4 da la coordenada en la rejilla de
+    // chunks y vecinos inmediatos quedan con tinte distinto).
+    out.dir = dir;
+    out.ao = ao_curve[ao[corner]];
+    let parity = ((chunk.origin.x + chunk.origin.y + chunk.origin.z) >> 4) & 1;
+    out.chunk_tint = select(
+        vec3<f32>(1.0, 0.82, 0.55),
+        vec3<f32>(0.55, 0.72, 1.0),
+        parity == 1,
+    );
     return out;
+}
+
+// Vista `light`: mapa de calor de la luz de bloque (0..1) con dos tramos,
+// negro → ámbar hasta 0.5 y ámbar → blanco hasta 1.
+fn debug_light(l: f32) -> vec3<f32> {
+    let amber = vec3<f32>(1.0, 0.55, 0.1);
+    let lower = clamp(l / 0.5, 0.0, 1.0);
+    let upper = clamp((l - 0.5) / 0.5, 0.0, 1.0);
+    return mix(mix(vec3<f32>(0.0), amber, lower), vec3<f32>(1.0), upper);
+}
+
+// Vista `sky`: hoy no existe canal de luz de cielo, así que representamos el
+// nivel de luz disponible con azul frío; usará la luz de cielo real cuando
+// exista.
+fn debug_sky(l: f32) -> vec3<f32> {
+    return vec3<f32>(0.25, 0.5, 1.0) * l;
+}
+
+// Vista `ao`: la oclusión ambiental pura de la esquina, en escala de grises.
+fn debug_ao(ao: f32) -> vec3<f32> {
+    return vec3<f32>(ao);
+}
+
+// Vista `normals`: color por dirección de la cara (n * 0.5 + 0.5: +X
+// rojizo claro, -X azulado, etc.). Debe coincidir con `normals` de vs_main.
+fn debug_normals(dir: u32) -> vec3<f32> {
+    var normals = array<vec3<f32>, 6>(
+        vec3(1.0, 0.0, 0.0), vec3(-1.0, 0.0, 0.0),
+        vec3(0.0, 1.0, 0.0), vec3(0.0, -1.0, 0.0),
+        vec3(0.0, 0.0, 1.0), vec3(0.0, 0.0, -1.0),
+    );
+    return normals[dir] * 0.5 + vec3<f32>(0.5);
 }
 
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     let texel = textureSample(block_textures, block_sampler, in.uv, in.layer).rgb;
+    // Vistas de depuración (docs/graficos/04-shaders.md, sección 12):
+    // muestran un canal interno, ignoran textura, niebla, lámpara y
+    // resaltado, y devuelven pronto. El control de flujo depende solo de un
+    // uniforme, así que el muestreo de arriba sigue siendo válido.
+    if globals.debug_view > 0u {
+        // 5 Chunks es el valor por defecto; los demás lo sobrescriben.
+        var color = in.chunk_tint;
+        if globals.debug_view == 1u {
+            color = debug_light(in.block_light);
+        } else if globals.debug_view == 2u {
+            color = debug_sky(in.block_light);
+        } else if globals.debug_view == 3u {
+            color = debug_ao(in.ao);
+        } else if globals.debug_view == 4u {
+            color = debug_normals(in.dir);
+        }
+        return vec4<f32>(color, 1.0);
+    }
     let dist = distance(in.world, globals.eye.xyz);
     // Luz del mundo (cielo y emisores) con un mínimo para no ver negro puro,
     // y la lámpara del casco, que alumbra alrededor del jugador.
