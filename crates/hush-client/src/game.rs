@@ -51,6 +51,8 @@ pub struct Game {
     session: Session,
     camera: FlyCamera,
     accumulator: f32,
+    /// Segundos desde el arranque, para animar el terreno (lava).
+    elapsed: f32,
     /// Ojos del jugador en el tick anterior y en el actual, para interpolar.
     prev_eye: Vec3,
     eye: Vec3,
@@ -71,6 +73,7 @@ impl Game {
             session,
             camera: FlyCamera::default(),
             accumulator: 0.0,
+            elapsed: 0.0,
             prev_eye: Vec3::ZERO,
             eye: Vec3::ZERO,
             target: None,
@@ -209,6 +212,7 @@ impl App for Game {
     }
 
     fn update(&mut self, dt: f32, input: &Input) {
+        self.elapsed += dt;
         let (dx, dy) = input.mouse_delta();
         self.camera
             .rotate(-dx * MOUSE_SENSITIVITY, -dy * MOUSE_SENSITIVITY);
@@ -252,6 +256,7 @@ impl App for Game {
             fog_distance: FOG_DISTANCE,
             selected: self.target.map(|hit| hit.block),
             lamp_radius: 14.0,
+            time_seconds: self.elapsed,
         };
         terrain.render(&gpu.queue, encoder, color, depth, &view, &style);
         let remotes = self.remote_boxes();

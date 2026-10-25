@@ -112,6 +112,29 @@ static TEXTURES: [EmbeddedTexture; 17] = [
     },
 ];
 
+/// Capa del fotograma 0 de la lava dentro del texture array (bloque 7).
+/// Debe coincidir con `LAVA_LAYER` en `voxel.wgsl`.
+pub const LAVA_LAYER: u32 = 6;
+/// Fotogramas de la lava en el array: el 0 en su capa y los 1-3 extra.
+pub const LAVA_FRAMES: u32 = 4;
+
+/// Fotogramas 1-3 de la lava: capas extra al final del texture array para
+/// que el shader las anime con el tiempo.
+static LAVA_EXTRA_FRAMES: [(&str, &[u8]); 3] = [
+    (
+        "lava_1.png",
+        include_bytes!("../../../assets/textures/blocks/lava_1.png"),
+    ),
+    (
+        "lava_2.png",
+        include_bytes!("../../../assets/textures/blocks/lava_2.png"),
+    ),
+    (
+        "lava_3.png",
+        include_bytes!("../../../assets/textures/blocks/lava_3.png"),
+    ),
+];
+
 /// Error al decodificar una textura de bloque incrustada.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BlockTextureError {
@@ -153,13 +176,24 @@ impl fmt::Display for BlockTextureError {
 
 impl std::error::Error for BlockTextureError {}
 
-/// Texturas de todos los bloques salvo el aire, en orden de identificador.
+/// Texturas de todos los bloques salvo el aire, en orden de identificador,
+/// más los fotogramas 1-3 de la lava como capas extra al final.
 ///
 /// Decodifica los PNG incrustados en tiempo de compilación; no lee el disco
 /// en ejecución. Falla (sin `panic!`) si algún PNG no se puede decodificar o
 /// no mide 16×16.
 pub fn block_textures() -> Result<Vec<TextureData>, BlockTextureError> {
-    TEXTURES.iter().map(decode).collect()
+    let mut layers: Vec<TextureData> = TEXTURES
+        .iter()
+        .map(|t| decode(t.file, t.bytes))
+        .collect::<Result<_, _>>()?;
+    layers.extend(
+        LAVA_EXTRA_FRAMES
+            .iter()
+            .map(|&(file, bytes)| decode(file, bytes))
+            .collect::<Result<Vec<_>, _>>()?,
+    );
+    Ok(layers)
 }
 
 /// Archivo PNG de `assets/textures/blocks` que usa cada bloque (`None` para
@@ -169,14 +203,14 @@ pub fn texture_file(block: BlockKind) -> Option<&'static str> {
 }
 
 /// Decodifica un PNG incrustado a [`TextureData`] RGBA de 16×16.
-fn decode(texture: &EmbeddedTexture) -> Result<TextureData, BlockTextureError> {
-    let decoded = image::load_from_memory(texture.bytes)
-        .map_err(|_| BlockTextureError::Undecodable { file: texture.file })?;
+fn decode(file: &'static str, bytes: &'static [u8]) -> Result<TextureData, BlockTextureError> {
+    let decoded =
+        image::load_from_memory(bytes).map_err(|_| BlockTextureError::Undecodable { file })?;
     let rgba = decoded.to_rgba8();
     let (width, height) = rgba.dimensions();
     if width != SIZE || height != SIZE {
         return Err(BlockTextureError::WrongSize {
-            file: texture.file,
+            file,
             width,
             height,
         });
@@ -266,12 +300,33 @@ mod tests {
     }
 
     #[test]
-    fn seventeen_layers_of_16x16_rgba() {
+    fn one_16x16_layer_per_block_plus_lava_frames() {
         let textures = block_textures().expect("decodificar los PNG incrustados");
-        assert_eq!(textures.len(), 17);
+        // Una capa por bloque sólido (17) y los fotogramas extra de la lava.
+        assert_eq!(textured_blocks().len(), 17);
+        assert_eq!(textures.len(), 17 + LAVA_EXTRA_FRAMES.len());
         for t in &textures {
             assert_eq!((t.width, t.height), (16, 16));
             assert_eq!(t.rgba.len(), (16 * 16 * 4) as usize);
+        }
+    }
+
+    /// El fotograma 0 ocupa la capa de la lava (`LAVA_LAYER`) y los 1-3 van
+    /// al final del array; los cuatro difieren entre sí.
+    #[test]
+    fn lava_frames_append_four_distinct_layers() {
+        let textures = block_textures().expect("decodificar los PNG incrustados");
+        let mut frames: Vec<&TextureData> =
+            vec![&textures[usize::try_from(LAVA_LAYER).expect("capa de la lava")]];
+        frames.extend(&textures[textures.len() - LAVA_EXTRA_FRAMES.len()..]);
+        assert_eq!(frames.len(), LAVA_FRAMES as usize);
+        for i in 0..frames.len() {
+            for j in i + 1..frames.len() {
+                assert_ne!(
+                    frames[i].rgba, frames[j].rgba,
+                    "los fotogramas {i} y {j} de la lava son idénticos"
+                );
+            }
         }
     }
 

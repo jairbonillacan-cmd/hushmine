@@ -8,7 +8,7 @@
 mod embedded;
 mod procedural;
 
-pub use embedded::{BlockTextureError, block_textures, texture_file};
+pub use embedded::{BlockTextureError, LAVA_FRAMES, LAVA_LAYER, block_textures, texture_file};
 pub use procedural::{procedural_block_texture, procedural_block_textures};
 
 use hush_sim::BlockKind;

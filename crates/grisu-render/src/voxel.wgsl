@@ -9,7 +9,22 @@ struct Globals {
     fog: vec4<f32>,
     // xyz: bloque señalado; w: 1 si hay bloque señalado.
     selected: vec4<i32>,
+    // Segundos desde el arranque, para animar la lava.
+    time: f32,
+    // Relleno hasta el tamaño del uniforme (múltiplo de 16). Tres f32
+    // sueltos: un vec3 alienaría a 16 y agrandaría el uniforme.
+    _pad0: f32,
+    _pad1: f32,
+    _pad2: f32,
 };
+
+// Lava: identificador de bloque, capa de su fotograma 0 y capa del primer
+// fotograma extra (ver hush_art::block_textures: 17 capas de bloque y los
+// fotogramas 1-3 de la lava al final del array).
+const LAVA_ID: u32 = 7u;
+const LAVA_LAYER: u32 = 6u;
+const LAVA_EXTRA_LAYER: u32 = 17u;
+const LAVA_FRAMES: u32 = 4u;
 
 @group(0) @binding(0) var<uniform> globals: Globals;
 @group(0) @binding(1) var block_textures: texture_2d_array<f32>;
@@ -85,7 +100,14 @@ fn vs_main(@builtin(vertex_index) vertex: u32, face: FaceIn) -> VertexOut {
     var out: VertexOut;
     out.clip = globals.view_proj * vec4<f32>(world, 1.0);
     out.uv = vec2(0.5 + 0.5 * s.x, 0.5 - 0.5 * s.y);
-    out.layer = (face.b & 0xFFu) - 1u;
+    // La capa i es el bloque i + 1; la lava (id 7) elige su fotograma con
+    // el tiempo, a 4 fotogramas por segundo: el 0 está en LAVA_LAYER y los
+    // demás en las capas extra del final. Con select (sin ramas) el
+    // muestreo se queda en flujo de control uniforme.
+    let block_id = face.b & 0xFFu;
+    let frame = u32(max(globals.time, 0.0) * 4.0) % LAVA_FRAMES;
+    let lava = select(LAVA_LAYER, LAVA_EXTRA_LAYER + frame - 1u, frame > 0u);
+    out.layer = select(block_id - 1u, lava, block_id == LAVA_ID);
     out.light = shades[dir] * ao_curve[ao[corner]];
     out.block_light = f32((face.b >> 8u) & 0xFu) / 15.0;
     out.world = world;

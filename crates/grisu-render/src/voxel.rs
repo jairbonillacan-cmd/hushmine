@@ -15,6 +15,10 @@ struct Globals {
     eye: [f32; 4],
     fog: [f32; 4],
     selected: [i32; 4],
+    /// Segundos desde el arranque, para animar la lava.
+    time: f32,
+    /// Relleno hasta el tamaño del uniforme (múltiplo de 16).
+    pad: [f32; 3],
 }
 
 /// Ajustes de dibujo del terreno que cambian cada fotograma.
@@ -26,6 +30,8 @@ pub struct TerrainStyle {
     pub selected: Option<[i32; 3]>,
     /// Alcance de la lámpara del casco, en bloques (0 = apagada).
     pub lamp_radius: f32,
+    /// Segundos desde el arranque; anima los bloques con fotogramas (lava).
+    pub time_seconds: f32,
 }
 
 impl Default for TerrainStyle {
@@ -34,6 +40,7 @@ impl Default for TerrainStyle {
             fog_distance: 48.0,
             selected: None,
             lamp_radius: 14.0,
+            time_seconds: 0.0,
         }
     }
 }
@@ -272,6 +279,8 @@ impl VoxelRenderer {
             eye: view.eye.extend(style.lamp_radius).to_array(),
             fog,
             selected,
+            time: style.time_seconds,
+            pad: [0.0; 3],
         };
         queue.write_buffer(&self.globals, 0, bytemuck::bytes_of(&globals));
 
