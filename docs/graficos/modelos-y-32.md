@@ -23,6 +23,10 @@ Convenciones de espacio, comunes a todos los modelos:
   agarre).
 - `rot_deg = (pitch, yaw, roll)` en **grados enteros**; el pitch positivo
   inclina la pieza hacia delante.
+- **El braceo va por pitch** (adelante y atrás); el roll de una extremidad
+  solo la separa del cuerpo (como mucho 10°). Los codos doblan hacia delante
+  (pitch ≥ 0) y las rodillas hacia atrás (pitch ≤ 0); en los clips con pasos,
+  los dos muslos alternan. `check_models.py` lo comprueba.
 - Las hojas de textura son de 128×128 y las regiones UV van en múltiplos de 4
   sin solaparse.
 
@@ -132,8 +136,10 @@ mitad de zancada.
 
 Clips de primera persona: `idle_1p` (1600 ms, ciclo), `dig_1p` (600, impact
 360), `place_1p` (400, release 260) y `carry_1p` (800, ciclo). Animar solo
-`arm_l`/`arm_r` (modelo propio de brazos) y, en el espacio de cámara, el
-origen es el ojo.
+`arm_l`/`arm_r` del modelo `assets/models/first_person_arms.ron` (raíz
+`shoulders` detrás del ojo, enganche `tool` en `arm_r`); en el espacio de
+cámara, el origen es el ojo. El verificador exige que cada pista 1P exista
+en ese modelo.
 
 **Regla de primera persona (no atravesar paredes):** en toda `reach_boxes`,
 `min < max` componente a componente y `min[2] >= -24`: nada del brazo o de la
@@ -190,6 +196,7 @@ y mírala. Las pruebas generan las texturas en memoria y no dependen de `out/`.
 | `assets/models/tools.ron` | 6 herramientas (5 slot `tool`, 1 slot `lamp`) |
 | `assets/models/creatures.ron` | 3 criaturas del yacimiento |
 | `assets/anim/miner_clips.ron` | 9 clips de tercera persona |
+| `assets/models/first_person_arms.ron` | brazos de la vista en primera persona |
 | `assets/anim/first_person_clips.ron` | 4 clips de primera persona con `reach_boxes` |
 | `tools/models/tex32.py` | generador determinista de texturas 32×32 y mip 16×16 |
 | `tools/models/check_models.py` | verificador completo de la entrega (exit 0/1) |

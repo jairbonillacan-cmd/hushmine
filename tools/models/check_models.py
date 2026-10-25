@@ -68,6 +68,11 @@ MARKER_KINDS: frozenset[str] = frozenset({"impact", "step_l", "step_r", "release
 
 # Límite de saltos padre-arriba en el minero: 14 piezas, cadena máxima de 13.
 MINER_MAX_HOPS: int = 13
+# Brazos de primera persona: las piezas que pueden animar los clips 1P.
+FP_ARM_PARTS: frozenset[str] = frozenset({"shoulders", "arm_l", "arm_r"})
+# Extremidades del minero: el braceo va por pitch, el roll solo las separa.
+LIMB_PREFIXES: tuple[str, ...] = ("upper_arm_", "lower_arm_", "hand_", "upper_leg_", "lower_leg_")
+LIMB_MAX_ROLL: int = 10
 
 FAILURES: list[str] = []
 
@@ -201,6 +206,35 @@ def box_errors(clips: list[dict]) -> list[str]:
     return errors
 
 
+def limb_errors(clips: list[dict]) -> list[str]:
+    """Braceo por pitch (roll de extremidades <= LIMB_MAX_ROLL), codos que solo
+    doblan hacia delante, rodillas que solo doblan hacia atrás y, en los clips
+    con pasos, muslos que alternan (signo opuesto en el mismo instante)."""
+    errors: list[str] = []
+    for clip in clips:
+        name, pitch_at = clip.get("name"), {}
+        for track in clip.get("tracks", []):
+            part = track.get("part", "")
+            for key in track.get("keys", []):
+                rot = key.get("rot_deg")
+                if not (isinstance(rot, tuple) and len(rot) == 3):
+                    continue
+                if part.startswith(LIMB_PREFIXES) and abs(rot[2]) > LIMB_MAX_ROLL:
+                    errors.append(f"{name}/{part}: roll {rot[2]} (el braceo va por pitch)")
+                if part.startswith("lower_arm_") and rot[0] < 0:
+                    errors.append(f"{name}/{part}: codo doblado hacia atrás ({rot[0]})")
+                if part.startswith("lower_leg_") and rot[0] > 0:
+                    errors.append(f"{name}/{part}: rodilla doblada hacia delante ({rot[0]})")
+                pitch_at[(part, key.get("t_ms"))] = rot[0]
+        kinds = {m.get("kind") for m in clip.get("markers", [])}
+        if {"step_l", "step_r"} <= kinds:
+            for (part, t), left in pitch_at.items():
+                right = pitch_at.get(("upper_leg_r", t))
+                if part == "upper_leg_l" and right is not None and left * right > 0:
+                    errors.append(f"{name}: los muslos no alternan en t={t} ({left} y {right})")
+    return errors
+
+
 def impacts_of(clips: list[dict], name: str) -> list[dict]:
     """Markers impact del clip pedido (lista vacía si el clip no existe)."""
     clip = next((c for c in clips if c.get("name") == name), None)
@@ -289,6 +323,7 @@ def main() -> None:
     creatures = load_ron(MODELS_DIR / "creatures.ron")
     miner_clips = load_ron(ANIM_DIR / "miner_clips.ron")
     fp_clips = load_ron(ANIM_DIR / "first_person_clips.ron")
+    fp_arms = load_ron(MODELS_DIR / "first_person_arms.ron")
 
     review_miner(miner)
     review_models(tools, "tools.ron", TOOL_SLOTS, min_parts=1)
@@ -296,10 +331,22 @@ def main() -> None:
 
     review_clips(miner_clips, "miner_clips.ron", MINER_CLIPS,
                  set(MINER_PARENTS), with_boxes=False)
-    # Los ids de pieza en primera persona (arm_l/arm_r) son de otro modelo: no
-    # se validan contra miner.ron.
+    if miner_clips is not None:
+        bad = limb_errors(miner_clips.get("clips", []))
+        check(not bad, "miner_clips.ron: braceo por pitch, codos y rodillas en su sentido, pasos alternos",
+              "; ".join(bad[:4]))
+    # Los clips 1P animan el modelo de brazos, no el minero.
+    if fp_arms is not None:
+        arm_parts = fp_arms.get("parts", [])
+        ids = {p.get("id") for p in arm_parts}
+        check(ids == FP_ARM_PARTS, "first_person_arms.ron: piezas shoulders/arm_l/arm_r",
+              f"encontradas: {sorted(str(i) for i in ids)}")
+        validate_tree(arm_parts, "first_person_arms.ron")
+        tool = {a.get("id"): a.get("part") for a in fp_arms.get("attachments", [])}
+        check(tool == {"tool": "arm_r"}, "first_person_arms.ron: enganche tool en arm_r",
+              f"encontrados: {tool}")
     review_clips(fp_clips, "first_person_clips.ron", FIRST_PERSON_CLIPS,
-                 None, with_boxes=True)
+                 set(FP_ARM_PARTS), with_boxes=True)
 
     mip_ok, mip_errors = tex32.verify_mip_rule()
     check(mip_ok, "tex32: regla del mip de 16×16 (paleta, bandas, distinción y mosaico)",

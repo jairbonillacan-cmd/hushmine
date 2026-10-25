@@ -1,8 +1,10 @@
 // Clips de animación del minero en tercera persona.
 // Solo enteros: tiempos en milisegundos y ángulos en grados.
 // rot_deg = (pitch, yaw, roll); el minero mira hacia -Z y el pitch positivo
-// inclina la pieza hacia delante. El braceo de piernas y brazos va por el eje
-// roll, con signo espejo entre el lado izquierdo y el derecho.
+// inclina la pieza hacia delante. El braceo de piernas y brazos va por pitch
+// (adelante y atrás); el roll de las extremidades queda para separarlas del
+// cuerpo, como en el reposo. Los codos solo doblan hacia delante (pitch >= 0)
+// y las rodillas hacia atrás (pitch <= 0).
 ClipSet(
     clips: [
         // Reposo: respiración sutil, brazos caídos y mirada que pasea.
@@ -34,23 +36,23 @@ ClipSet(
             loop: true,
             tracks: [
                 Track(part: "upper_leg_l", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 14)), Key(t_ms: 400, rot_deg: (0, 0, -14)), Key(t_ms: 800, rot_deg: (0, 0, 14)),
+                    Key(t_ms: 0, rot_deg: (14, 0, 0)), Key(t_ms: 400, rot_deg: (-14, 0, 0)), Key(t_ms: 800, rot_deg: (14, 0, 0)),
                 ]),
                 Track(part: "upper_leg_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, -14)), Key(t_ms: 400, rot_deg: (0, 0, 14)), Key(t_ms: 800, rot_deg: (0, 0, -14)),
+                    Key(t_ms: 0, rot_deg: (-14, 0, 0)), Key(t_ms: 400, rot_deg: (14, 0, 0)), Key(t_ms: 800, rot_deg: (-14, 0, 0)),
                 ]),
                 // Rodilla que se flexa a mitad de cada zancada.
                 Track(part: "lower_leg_l", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, -6)), Key(t_ms: 200, rot_deg: (0, 0, -26)), Key(t_ms: 400, rot_deg: (0, 0, -6)), Key(t_ms: 800, rot_deg: (0, 0, -6)),
+                    Key(t_ms: 0, rot_deg: (-6, 0, 0)), Key(t_ms: 200, rot_deg: (-26, 0, 0)), Key(t_ms: 400, rot_deg: (-6, 0, 0)), Key(t_ms: 800, rot_deg: (-6, 0, 0)),
                 ]),
                 Track(part: "lower_leg_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 6)), Key(t_ms: 600, rot_deg: (0, 0, 26)), Key(t_ms: 800, rot_deg: (0, 0, 6)),
+                    Key(t_ms: 0, rot_deg: (-6, 0, 0)), Key(t_ms: 600, rot_deg: (-26, 0, 0)), Key(t_ms: 800, rot_deg: (-6, 0, 0)),
                 ]),
                 Track(part: "upper_arm_l", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, -8)), Key(t_ms: 400, rot_deg: (0, 0, 8)), Key(t_ms: 800, rot_deg: (0, 0, -8)),
+                    Key(t_ms: 0, rot_deg: (-8, 0, 0)), Key(t_ms: 400, rot_deg: (8, 0, 0)), Key(t_ms: 800, rot_deg: (-8, 0, 0)),
                 ]),
                 Track(part: "upper_arm_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 8)), Key(t_ms: 400, rot_deg: (0, 0, -8)), Key(t_ms: 800, rot_deg: (0, 0, 8)),
+                    Key(t_ms: 0, rot_deg: (8, 0, 0)), Key(t_ms: 400, rot_deg: (-8, 0, 0)), Key(t_ms: 800, rot_deg: (8, 0, 0)),
                 ]),
                 // Torso inclinado por la carga, con balanceo lateral y rebote.
                 Track(part: "torso", keys: [
@@ -70,22 +72,22 @@ ClipSet(
             loop: true,
             tracks: [
                 Track(part: "upper_leg_l", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 30)), Key(t_ms: 280, rot_deg: (0, 0, -30)), Key(t_ms: 560, rot_deg: (0, 0, 30)),
+                    Key(t_ms: 0, rot_deg: (30, 0, 0)), Key(t_ms: 280, rot_deg: (-30, 0, 0)), Key(t_ms: 560, rot_deg: (30, 0, 0)),
                 ]),
                 Track(part: "upper_leg_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, -30)), Key(t_ms: 280, rot_deg: (0, 0, 30)), Key(t_ms: 560, rot_deg: (0, 0, -30)),
+                    Key(t_ms: 0, rot_deg: (-30, 0, 0)), Key(t_ms: 280, rot_deg: (30, 0, 0)), Key(t_ms: 560, rot_deg: (-30, 0, 0)),
                 ]),
                 Track(part: "lower_leg_l", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, -12)), Key(t_ms: 140, rot_deg: (0, 0, -48)), Key(t_ms: 280, rot_deg: (0, 0, -12)), Key(t_ms: 560, rot_deg: (0, 0, -12)),
+                    Key(t_ms: 0, rot_deg: (-12, 0, 0)), Key(t_ms: 140, rot_deg: (-48, 0, 0)), Key(t_ms: 280, rot_deg: (-12, 0, 0)), Key(t_ms: 560, rot_deg: (-12, 0, 0)),
                 ]),
                 Track(part: "lower_leg_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 12)), Key(t_ms: 420, rot_deg: (0, 0, 48)), Key(t_ms: 560, rot_deg: (0, 0, 12)),
+                    Key(t_ms: 0, rot_deg: (-12, 0, 0)), Key(t_ms: 420, rot_deg: (-48, 0, 0)), Key(t_ms: 560, rot_deg: (-12, 0, 0)),
                 ]),
                 Track(part: "upper_arm_l", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, -16)), Key(t_ms: 280, rot_deg: (0, 0, 16)), Key(t_ms: 560, rot_deg: (0, 0, -16)),
+                    Key(t_ms: 0, rot_deg: (-16, 0, 0)), Key(t_ms: 280, rot_deg: (16, 0, 0)), Key(t_ms: 560, rot_deg: (-16, 0, 0)),
                 ]),
                 Track(part: "upper_arm_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 16)), Key(t_ms: 280, rot_deg: (0, 0, -16)), Key(t_ms: 560, rot_deg: (0, 0, 16)),
+                    Key(t_ms: 0, rot_deg: (16, 0, 0)), Key(t_ms: 280, rot_deg: (-16, 0, 0)), Key(t_ms: 560, rot_deg: (16, 0, 0)),
                 ]),
                 Track(part: "torso", keys: [
                     Key(t_ms: 0, rot_deg: (8, 0, 0), pos: Some((0, 0, 0))), Key(t_ms: 280, rot_deg: (8, 0, 0), pos: Some((0, -2, 0))),
@@ -111,16 +113,16 @@ ClipSet(
                     Key(t_ms: 1000, rot_deg: (0, 0, 0), pos: Some((0, -8, 0))),
                 ]),
                 Track(part: "upper_leg_l", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 32)), Key(t_ms: 1000, rot_deg: (0, 0, 32)),
+                    Key(t_ms: 0, rot_deg: (32, 0, 0)), Key(t_ms: 1000, rot_deg: (32, 0, 0)),
                 ]),
                 Track(part: "upper_leg_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, -32)), Key(t_ms: 1000, rot_deg: (0, 0, -32)),
+                    Key(t_ms: 0, rot_deg: (32, 0, 0)), Key(t_ms: 1000, rot_deg: (32, 0, 0)),
                 ]),
                 Track(part: "lower_leg_l", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, -52)), Key(t_ms: 1000, rot_deg: (0, 0, -52)),
+                    Key(t_ms: 0, rot_deg: (-52, 0, 0)), Key(t_ms: 1000, rot_deg: (-52, 0, 0)),
                 ]),
                 Track(part: "lower_leg_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 52)), Key(t_ms: 1000, rot_deg: (0, 0, 52)),
+                    Key(t_ms: 0, rot_deg: (-52, 0, 0)), Key(t_ms: 1000, rot_deg: (-52, 0, 0)),
                 ]),
                 Track(part: "torso", keys: [
                     Key(t_ms: 0, rot_deg: (12, 0, 0)), Key(t_ms: 500, rot_deg: (13, 0, 0)), Key(t_ms: 1000, rot_deg: (12, 0, 0)),
@@ -140,26 +142,26 @@ ClipSet(
             tracks: [
                 // Brazo derecho dominante: carga atrás y azote al frente.
                 Track(part: "upper_arm_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 15)), Key(t_ms: 200, rot_deg: (0, 0, 80)),
-                    Key(t_ms: 360, rot_deg: (0, 0, -85)), Key(t_ms: 600, rot_deg: (0, 0, 15)),
+                    Key(t_ms: 0, rot_deg: (-15, 0, 0)), Key(t_ms: 200, rot_deg: (-80, 0, 0)),
+                    Key(t_ms: 360, rot_deg: (85, 0, 0)), Key(t_ms: 600, rot_deg: (-15, 0, 0)),
                 ]),
                 Track(part: "lower_arm_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 10)), Key(t_ms: 200, rot_deg: (0, 0, 45)),
-                    Key(t_ms: 360, rot_deg: (0, 0, 5)), Key(t_ms: 600, rot_deg: (0, 0, 10)),
+                    Key(t_ms: 0, rot_deg: (10, 0, 0)), Key(t_ms: 200, rot_deg: (45, 0, 0)),
+                    Key(t_ms: 360, rot_deg: (5, 0, 0)), Key(t_ms: 600, rot_deg: (10, 0, 0)),
                 ]),
                 // Muñeca que remata el arco en el impacto.
                 Track(part: "hand_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 0)), Key(t_ms: 200, rot_deg: (0, 0, 20)),
-                    Key(t_ms: 360, rot_deg: (0, 0, -12)), Key(t_ms: 600, rot_deg: (0, 0, 0)),
+                    Key(t_ms: 0, rot_deg: (0, 0, 0)), Key(t_ms: 200, rot_deg: (-20, 0, 0)),
+                    Key(t_ms: 360, rot_deg: (12, 0, 0)), Key(t_ms: 600, rot_deg: (0, 0, 0)),
                 ]),
                 // Brazo izquierdo de apoyo: ambas manos en el mango.
                 Track(part: "upper_arm_l", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, -10)), Key(t_ms: 200, rot_deg: (0, 0, -50)),
-                    Key(t_ms: 360, rot_deg: (0, 0, 60)), Key(t_ms: 600, rot_deg: (0, 0, -10)),
+                    Key(t_ms: 0, rot_deg: (-10, 0, 0)), Key(t_ms: 200, rot_deg: (-50, 0, 0)),
+                    Key(t_ms: 360, rot_deg: (60, 0, 0)), Key(t_ms: 600, rot_deg: (-10, 0, 0)),
                 ]),
                 Track(part: "lower_arm_l", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, -15)), Key(t_ms: 200, rot_deg: (0, 0, -35)),
-                    Key(t_ms: 360, rot_deg: (0, 0, -20)), Key(t_ms: 600, rot_deg: (0, 0, -15)),
+                    Key(t_ms: 0, rot_deg: (15, 0, 0)), Key(t_ms: 200, rot_deg: (35, 0, 0)),
+                    Key(t_ms: 360, rot_deg: (20, 0, 0)), Key(t_ms: 600, rot_deg: (15, 0, 0)),
                 ]),
                 // El torso bobina hacia atrás y gira en el golpe.
                 Track(part: "torso", keys: [
@@ -182,21 +184,21 @@ ClipSet(
             loop: false,
             tracks: [
                 Track(part: "upper_arm_l", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 0)), Key(t_ms: 140, rot_deg: (0, 0, 70)),
-                    Key(t_ms: 260, rot_deg: (0, 0, 70)), Key(t_ms: 400, rot_deg: (0, 0, 74)),
+                    Key(t_ms: 0, rot_deg: (0, 0, 0)), Key(t_ms: 140, rot_deg: (70, 0, 0)),
+                    Key(t_ms: 260, rot_deg: (70, 0, 0)), Key(t_ms: 400, rot_deg: (74, 0, 0)),
                 ]),
                 Track(part: "upper_arm_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 0)), Key(t_ms: 140, rot_deg: (0, 0, -70)),
-                    Key(t_ms: 260, rot_deg: (0, 0, -70)), Key(t_ms: 400, rot_deg: (0, 0, -74)),
+                    Key(t_ms: 0, rot_deg: (0, 0, 0)), Key(t_ms: 140, rot_deg: (70, 0, 0)),
+                    Key(t_ms: 260, rot_deg: (70, 0, 0)), Key(t_ms: 400, rot_deg: (74, 0, 0)),
                 ]),
                 // Codos ligeramente flexionados para asentar la pieza.
                 Track(part: "lower_arm_l", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, -10)), Key(t_ms: 140, rot_deg: (0, 0, -25)),
-                    Key(t_ms: 260, rot_deg: (0, 0, -25)), Key(t_ms: 400, rot_deg: (0, 0, -20)),
+                    Key(t_ms: 0, rot_deg: (10, 0, 0)), Key(t_ms: 140, rot_deg: (25, 0, 0)),
+                    Key(t_ms: 260, rot_deg: (25, 0, 0)), Key(t_ms: 400, rot_deg: (20, 0, 0)),
                 ]),
                 Track(part: "lower_arm_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 10)), Key(t_ms: 140, rot_deg: (0, 0, 25)),
-                    Key(t_ms: 260, rot_deg: (0, 0, 25)), Key(t_ms: 400, rot_deg: (0, 0, 20)),
+                    Key(t_ms: 0, rot_deg: (10, 0, 0)), Key(t_ms: 140, rot_deg: (25, 0, 0)),
+                    Key(t_ms: 260, rot_deg: (25, 0, 0)), Key(t_ms: 400, rot_deg: (20, 0, 0)),
                 ]),
                 // Pecho al frente; la sacudida final es el asiento del bloque.
                 Track(part: "torso", keys: [
@@ -215,22 +217,22 @@ ClipSet(
             loop: true,
             tracks: [
                 Track(part: "upper_arm_l", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 110)), Key(t_ms: 360, rot_deg: (0, 0, 80)), Key(t_ms: 720, rot_deg: (0, 0, 110)),
+                    Key(t_ms: 0, rot_deg: (110, 0, 0)), Key(t_ms: 360, rot_deg: (80, 0, 0)), Key(t_ms: 720, rot_deg: (110, 0, 0)),
                 ]),
                 Track(part: "upper_arm_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, -80)), Key(t_ms: 360, rot_deg: (0, 0, -120)), Key(t_ms: 720, rot_deg: (0, 0, -80)),
+                    Key(t_ms: 0, rot_deg: (80, 0, 0)), Key(t_ms: 360, rot_deg: (120, 0, 0)), Key(t_ms: 720, rot_deg: (80, 0, 0)),
                 ]),
                 Track(part: "upper_leg_l", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 40)), Key(t_ms: 360, rot_deg: (0, 0, -10)), Key(t_ms: 720, rot_deg: (0, 0, 40)),
+                    Key(t_ms: 0, rot_deg: (40, 0, 0)), Key(t_ms: 360, rot_deg: (-10, 0, 0)), Key(t_ms: 720, rot_deg: (40, 0, 0)),
                 ]),
                 Track(part: "upper_leg_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 10)), Key(t_ms: 360, rot_deg: (0, 0, -40)), Key(t_ms: 720, rot_deg: (0, 0, 10)),
+                    Key(t_ms: 0, rot_deg: (-10, 0, 0)), Key(t_ms: 360, rot_deg: (40, 0, 0)), Key(t_ms: 720, rot_deg: (-10, 0, 0)),
                 ]),
                 Track(part: "lower_leg_l", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, -60)), Key(t_ms: 360, rot_deg: (0, 0, -15)), Key(t_ms: 720, rot_deg: (0, 0, -60)),
+                    Key(t_ms: 0, rot_deg: (-60, 0, 0)), Key(t_ms: 360, rot_deg: (-15, 0, 0)), Key(t_ms: 720, rot_deg: (-60, 0, 0)),
                 ]),
                 Track(part: "lower_leg_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 15)), Key(t_ms: 360, rot_deg: (0, 0, 60)), Key(t_ms: 720, rot_deg: (0, 0, 15)),
+                    Key(t_ms: 0, rot_deg: (-15, 0, 0)), Key(t_ms: 360, rot_deg: (-60, 0, 0)), Key(t_ms: 720, rot_deg: (-15, 0, 0)),
                 ]),
                 // Pecho pegado a la escalera, con leve balanceo por tramo.
                 Track(part: "torso", keys: [
@@ -252,23 +254,23 @@ ClipSet(
                 ]),
                 // Brazos hacia atrás y abajo, sujetando el pack.
                 Track(part: "upper_arm_l", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 8, -30)), Key(t_ms: 400, rot_deg: (0, 8, -34)), Key(t_ms: 800, rot_deg: (0, 8, -30)),
+                    Key(t_ms: 0, rot_deg: (-30, 8, 0)), Key(t_ms: 400, rot_deg: (-34, 8, 0)), Key(t_ms: 800, rot_deg: (-30, 8, 0)),
                 ]),
                 Track(part: "upper_arm_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, -8, 30)), Key(t_ms: 400, rot_deg: (0, -8, 34)), Key(t_ms: 800, rot_deg: (0, -8, 30)),
+                    Key(t_ms: 0, rot_deg: (-30, -8, 0)), Key(t_ms: 400, rot_deg: (-34, -8, 0)), Key(t_ms: 800, rot_deg: (-30, -8, 0)),
                 ]),
                 // Codos flexionados agarrando las correas.
                 Track(part: "lower_arm_l", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, -50)), Key(t_ms: 800, rot_deg: (0, 0, -50)),
+                    Key(t_ms: 0, rot_deg: (50, 0, 0)), Key(t_ms: 800, rot_deg: (50, 0, 0)),
                 ]),
                 Track(part: "lower_arm_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 50)), Key(t_ms: 800, rot_deg: (0, 0, 50)),
+                    Key(t_ms: 0, rot_deg: (50, 0, 0)), Key(t_ms: 800, rot_deg: (50, 0, 0)),
                 ]),
                 Track(part: "upper_leg_l", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 10)), Key(t_ms: 400, rot_deg: (0, 0, -10)), Key(t_ms: 800, rot_deg: (0, 0, 10)),
+                    Key(t_ms: 0, rot_deg: (10, 0, 0)), Key(t_ms: 400, rot_deg: (-10, 0, 0)), Key(t_ms: 800, rot_deg: (10, 0, 0)),
                 ]),
                 Track(part: "upper_leg_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, -10)), Key(t_ms: 400, rot_deg: (0, 0, 10)), Key(t_ms: 800, rot_deg: (0, 0, -10)),
+                    Key(t_ms: 0, rot_deg: (-10, 0, 0)), Key(t_ms: 400, rot_deg: (10, 0, 0)), Key(t_ms: 800, rot_deg: (-10, 0, 0)),
                 ]),
                 // La cabeza mira al frente pese a la carga.
                 Track(part: "head", keys: [
@@ -292,16 +294,16 @@ ClipSet(
                 ]),
                 // Rodillas dobladas al máximo: sentado sobre los talones.
                 Track(part: "upper_leg_l", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 85)), Key(t_ms: 2000, rot_deg: (0, 0, 85)),
+                    Key(t_ms: 0, rot_deg: (85, 0, 0)), Key(t_ms: 2000, rot_deg: (85, 0, 0)),
                 ]),
                 Track(part: "upper_leg_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, -85)), Key(t_ms: 2000, rot_deg: (0, 0, -85)),
+                    Key(t_ms: 0, rot_deg: (85, 0, 0)), Key(t_ms: 2000, rot_deg: (85, 0, 0)),
                 ]),
                 Track(part: "lower_leg_l", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, -100)), Key(t_ms: 2000, rot_deg: (0, 0, -100)),
+                    Key(t_ms: 0, rot_deg: (-100, 0, 0)), Key(t_ms: 2000, rot_deg: (-100, 0, 0)),
                 ]),
                 Track(part: "lower_leg_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 100)), Key(t_ms: 2000, rot_deg: (0, 0, 100)),
+                    Key(t_ms: 0, rot_deg: (-100, 0, 0)), Key(t_ms: 2000, rot_deg: (-100, 0, 0)),
                 ]),
                 // Torso plegado al frente con la cabeza cerca del suelo.
                 Track(part: "torso", keys: [
@@ -312,7 +314,7 @@ ClipSet(
                 ]),
                 // Mano derecha sujetando el geófono contra la oreja.
                 Track(part: "upper_arm_r", keys: [
-                    Key(t_ms: 0, rot_deg: (0, 0, 35)), Key(t_ms: 1200, rot_deg: (0, 0, 37)), Key(t_ms: 2000, rot_deg: (0, 0, 35)),
+                    Key(t_ms: 0, rot_deg: (-35, 0, 0)), Key(t_ms: 1200, rot_deg: (-37, 0, 0)), Key(t_ms: 2000, rot_deg: (-35, 0, 0)),
                 ]),
             ],
             markers: [],

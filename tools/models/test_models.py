@@ -1,6 +1,6 @@
 """Pruebas de los modelos RON, los clips y el mip 32×32 → 16×16 de HUSHMINE.
 
-Cubre el parseo entero de los cinco .ron de la entrega, el esqueleto de 14
+Cubre el parseo entero de los seis .ron de la entrega, el esqueleto de 14
 piezas y los 3 enganches del minero, la estructura de herramientas y
 criaturas, los invariantes de los clips (tercera y primera persona) y el
 generador de texturas `tex32` (mip en paleta, verificación y determinismo).
@@ -23,7 +23,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from tools.balance import ron_lite  # noqa: E402
-from tools.models import tex32  # noqa: E402
+from tools.models import check_models, tex32  # noqa: E402
 from tools.textures import palette  # noqa: E402
 
 MODELS_DIR: Path = REPO_ROOT / "assets" / "models"
@@ -35,6 +35,7 @@ RON_FILES: tuple[Path, ...] = (
     MODELS_DIR / "creatures.ron",
     ANIM_DIR / "miner_clips.ron",
     ANIM_DIR / "first_person_clips.ron",
+    MODELS_DIR / "first_person_arms.ron",
 )
 
 # Esqueleto del minero: id de pieza -> padre (None para la raíz).
@@ -170,7 +171,7 @@ TEXTURES: dict[str, bytes] = tex32.generate_textures()
 
 
 class TestRonParsing(unittest.TestCase):
-    """Los cinco archivos cargan con ron_lite y no tienen decimales."""
+    """Los seis archivos cargan con ron_lite y no tienen decimales."""
 
     def test_five_ron_files_parse_without_decimals(self) -> None:
         for path in RON_FILES:
@@ -279,6 +280,26 @@ class TestClips(unittest.TestCase):
                 self.assertGreaterEqual(lo[2], -24,
                                         f"{clip['name']}/{box['id']}: min[2] < -24")
         self.assertGreater(seen, 0, "first_person_clips.ron sin reach_boxes")
+
+    def test_first_person_clips_animate_the_arms_model(self) -> None:
+        arms = ron_lite.load(MODELS_DIR / "first_person_arms.ron")
+        ids = {p["id"] for p in arms["parts"]}
+        self.assertEqual(ids, set(check_models.FP_ARM_PARTS))
+        used = {t["part"] for c in CLIPS_1P for t in c["tracks"]}
+        self.assertTrue(used <= ids, f"pistas 1P sin pieza en el modelo: {used - ids}")
+        self.assertEqual([(a["id"], a["part"]) for a in arms["attachments"]], [("tool", "arm_r")])
+
+    def test_miner_limbs_swing_on_pitch_and_alternate(self) -> None:
+        self.assertEqual(check_models.limb_errors(CLIPS_3P), [])
+        # Un clip con el braceo en roll, un codo al revés y muslos a la vez.
+        bad = [{"name": "walk", "markers": [{"kind": "step_l"}, {"kind": "step_r"}], "tracks": [
+            {"part": "upper_leg_l", "keys": [{"t_ms": 0, "rot_deg": (14, 0, 0)}]},
+            {"part": "upper_leg_r", "keys": [{"t_ms": 0, "rot_deg": (14, 0, 0)}]},
+            {"part": "upper_arm_l", "keys": [{"t_ms": 0, "rot_deg": (0, 0, 30)}]},
+            {"part": "lower_arm_r", "keys": [{"t_ms": 0, "rot_deg": (-5, 0, 0)}]},
+        ]}]
+        errors = check_models.limb_errors(bad)
+        self.assertEqual(len(errors), 3, errors)
 
 
 class TestTextures32(unittest.TestCase):
