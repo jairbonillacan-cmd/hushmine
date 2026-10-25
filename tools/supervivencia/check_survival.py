@@ -28,7 +28,7 @@ MIN_BOSSES, MIN_BOSS_PHASES, MIN_TRADERS, MIN_ORDERS = 5, 2, 5, 12
 CATEGORIES = {"material", "tool", "lamp", "explosive", "machine_part", "relic", "consumable", "food"}
 BRANCHES = {"excavation", "shoring_construction", "lighting_detection", "transport_machines", "silence_acoustics", "sleeper_craft"}
 STATIONS = {"workbench", "forge", "pressure_workshop", "powder_magazine", "grow_table", "quiet_loom", "memory_altar"}
-HABITATS = {"surface", "crust", "mantle", "vault", "roots", "the_dream", "the_seethe", "the_echo", "the_underside"}
+HABITATS = {"anywhere", "surface", "crust", "mantle", "vault", "roots", "the_dream", "the_seethe", "the_echo", "the_underside"}
 LIGHT_REACTIONS = {"flee", "attract", "neutral", "petrify"}
 LIGHT_RULES = {"lid_cycle", "drifting_epochs", "always_glow", "sound_light", "always_day"}
 FACTIONS = {"arrivals", "the_still", "watchers", "consolidated"}
@@ -69,7 +69,7 @@ def _require_list(entry: Any, key: str, ctx: str, errors: list[str]) -> list[Any
 
 def _id_set(docs: dict[str, Any], name: str, key: str) -> set[str] | None:  # None si falta el catálogo
     doc = docs.get(name)
-    return {e["id"] for e in _rows_of(doc, key) if isinstance(e.get("id"), str)} if isinstance(doc, dict) else None
+    return {e["id"] for e in _rows_of(doc, key) if isinstance(_field(e, "id"), str)} if isinstance(doc, dict) else None
 
 def _entry_int(entry: Any, key: str, ctx: str, errors: list[str], min_v: int | None = None, max_v: int | None = None) -> int | None:
     """Valida un campo entero y su rango; devuelve el valor o None."""
@@ -336,7 +336,7 @@ def check_no_profit(docs: dict[str, Any], errors: list[str]) -> None:
     if "objetos.ron" not in docs or "recetas.ron" not in docs:
         return  # catálogos ausentes: ya notificados como falta de archivo
     values = {e["id"]: e["base_value_gold"] for e in _rows_of(docs.get("objetos.ron"), "items")
-              if isinstance(e.get("id"), str) and _is_int(e.get("base_value_gold"))}
+              if isinstance(_field(e, "id"), str) and _is_int(_field(e, "base_value_gold"))}
     for recipe in _rows_of(docs.get("recetas.ron"), "recipes"):
         spent, produced = _recipe_value(recipe, "inputs", values), _recipe_value(recipe, "outputs", values)
         if 0 <= spent < produced:

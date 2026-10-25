@@ -66,7 +66,8 @@ CreatureCatalog(
             light_reaction: "neutral", hp: 30, damage: 10, noise_on_alert: 1,
             drops: [ ( item_id: "crystal_thorn", min_qty: 1, max_qty: 2 ) ] ),
         // Desvelos: mensajeros del Insomne que hacen ruido a propósito para despertar lo que haya cerca; hay que callarlos rápido.
-        Creature( id: "waker", name: "Waker", habitat: "crust", hearing_threshold: 0,
+        // Aparecen en cualquier sitio, también en el Sueño y el Revés (04-criaturas-y-jefes.md), más cuanto más crece el Insomne.
+        Creature( id: "waker", name: "Waker", habitat: "anywhere", hearing_threshold: 0,
             light_reaction: "flee", hp: 35, damage: 5, noise_on_alert: 15,
             drops: [ ( item_id: "wisp_ash", min_qty: 1, max_qty: 2 ) ] ),
         // === Criaturas de las dimensiones ===

@@ -134,7 +134,7 @@ Raíz: `( creatures: [ ... ] )`.
 |---|---|---|
 | `id` | cadena | Único en el archivo |
 | `name` | cadena | Nombre fuente en inglés |
-| `habitat` | cadena | `surface`, `crust`, `mantle`, `vault`, `roots`, `the_dream`, `the_seethe`, `the_echo`, `the_underside` |
+| `habitat` | cadena | `surface`, `crust`, `mantle`, `vault`, `roots`, `the_dream`, `the_seethe`, `the_echo`, `the_underside`, o `anywhere` para las que aparecen en todas partes (los Desvelos) |
 | `hearing_threshold` | entero | `>= 0`; ruido mínimo que la despierta |
 | `light_reaction` | cadena | `flee`, `attract`, `neutral`, `petrify` |
 | `hp` | entero | `>= 1` |

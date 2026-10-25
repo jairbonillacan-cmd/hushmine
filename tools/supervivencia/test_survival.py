@@ -115,6 +115,16 @@ class HelperSnippetsTest(unittest.TestCase):
         self.assertTrue(any("category" in error for error in errors), "Debe detectar la categoría desconocida")
         self.assertTrue(any("max_stack" in error for error in errors), "Debe detectar max_stack=0")
 
+    def test_rows_that_are_not_structs_are_reported_not_crashed(self) -> None:
+        """Una fila que no es struct (p. ej. `items: [1]`) da fallos, no una excepción."""
+        docs = {"objetos.ron": ron_lite.loads("( items: [ 1 ] )"),
+                "recetas.ron": ron_lite.loads("( recipes: [ 2 ] )")}
+        errors: list[str] = []
+        check_survival.check_items(docs["objetos.ron"], errors)
+        check_survival.check_cross_refs(docs, errors)
+        check_survival.check_no_profit(docs, errors)
+        self.assertTrue(errors, "La fila no-struct debe notificarse como fallo")
+
 
 class _SurvivalDataCase(unittest.TestCase):
     """Base común: carga los datos una vez o salta las pruebas si faltan."""
@@ -210,6 +220,8 @@ class DataSchemaTest(_SurvivalDataCase):
             )
             for drop in creature["drops"]:
                 self.assertLessEqual(drop["min_qty"], drop["max_qty"], f"{creature['id']} con drops incoherentes")
+        waker = next(c for c in creatures if c["id"] == "waker")
+        self.assertEqual(waker["habitat"], "anywhere", "Los Desvelos aparecen en cualquier sitio")
 
     def test_bosses_phases_and_weaknesses(self) -> None:
         """jefes.ron: al menos 5 jefes, cada uno con >= 2 fases y debilidades 0..=100."""
