@@ -9,7 +9,6 @@
 mod game;
 mod session;
 mod story;
-mod story_hud;
 mod story_orders;
 
 use std::net::{SocketAddr, ToSocketAddrs};

@@ -52,29 +52,29 @@ impl Milestone {
 
     pub fn label(self) -> &'static str {
         match self {
-            Self::Awakening => "EL DESPERTAR",
-            Self::StoneAge => "EDAD DE PIEDRA",
-            Self::LightHome => "LUZ Y HOGAR",
-            Self::Metallurgy => "METALURGIA",
-            Self::DarkRift => "GRIETA OSCURA",
-            Self::SteelTempering => "ACERO TEMPLADO",
-            Self::FireMantle => "MANTO DE FUEGO",
-            Self::AncestralWell => "POZO ANCESTRAL",
-            Self::FinalAscent => "ASCENSO FINAL",
+            Self::Awakening => "El despertar",
+            Self::StoneAge => "Edad de piedra",
+            Self::LightHome => "Luz y hogar",
+            Self::Metallurgy => "Metalurgia",
+            Self::DarkRift => "Grieta oscura",
+            Self::SteelTempering => "Acero templado",
+            Self::FireMantle => "Manto de fuego",
+            Self::AncestralWell => "Pozo ancestral",
+            Self::FinalAscent => "Ascenso final",
         }
     }
 
     pub fn goal(self) -> &'static str {
         match self {
-            Self::Awakening => "FABRICA HERRAMIENTAS DE MADERA",
-            Self::StoneAge => "FABRICA UN PICO DE PIEDRA Y MINA CARBON",
-            Self::LightHome => "COLOCA 8 ANTORCHAS DE CAMPAMENTO",
-            Self::Metallurgy => "FUNDE UN LINGOTE DE HIERRO",
-            Self::DarkRift => "DESCIENDE AL ESTRATO ABISAL",
-            Self::SteelTempering => "FORJA UNA HERRAMIENTA DE ACERO",
-            Self::FireMantle => "OBTEN UN DIAMANTE DEL MANTO",
-            Self::AncestralWell => "SELLA EL POZO Y ACTIVA EL ASCENSOR",
-            Self::FinalAscent => "SOBREVIVE EL ASEDIO Y ASCIENDE",
+            Self::Awakening => "Fabrica herramientas de madera",
+            Self::StoneAge => "Fabrica un pico de piedra y saca carbón",
+            Self::LightHome => "Pon 8 antorchas en el campamento",
+            Self::Metallurgy => "Funde un lingote de hierro",
+            Self::DarkRift => "Baja al estrato abisal",
+            Self::SteelTempering => "Forja una herramienta de acero",
+            Self::FireMantle => "Saca un diamante del manto",
+            Self::AncestralWell => "Sella el pozo y pon en marcha el ascensor",
+            Self::FinalAscent => "Aguanta el asedio y sube",
         }
     }
 }

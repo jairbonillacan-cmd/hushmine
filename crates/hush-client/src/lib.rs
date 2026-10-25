@@ -5,3 +5,6 @@
 pub mod controls;
 pub mod hud;
 pub mod menu;
+pub mod story_hud;
+pub mod story_overlays;
+pub mod story_view;

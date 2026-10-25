@@ -45,3 +45,81 @@ pub(super) fn story_scene(seed: u64) -> Result<Option<TerrainScene>> {
     };
     Ok(Some(scene))
 }
+
+/// HUD del modo Historia sobre una expedición real (semilla 42), con la
+/// barra rápida llena y el minero a media vida y algo de hambre.
+pub(super) fn story_hud_scene(variant: u64) -> Result<Option<TerrainScene>> {
+    use hush_client::story_hud;
+    use hush_client::story_view::{CraftRow, HudView};
+    use hush_sim::story::inventory::ItemStack;
+    use hush_sim::story::items::{COAL, ItemId, ToolKind, tool_item};
+    use hush_sim::story::{Expedition, StoryConfig};
+
+    let mut e = Expedition::new(StoryConfig {
+        seed: 42,
+        ..StoryConfig::default()
+    })?;
+    // Que caiga y se asiente antes de mirar.
+    for _ in 0..40 {
+        e.step(&[]);
+    }
+    let pick = tool_item(1, ToolKind::Pickaxe);
+    let stacks = [
+        ItemStack::tool(pick, pick.max_durability() * 2 / 5),
+        ItemStack::new(ItemId::of_block(BlockKind::Plank), 12),
+        ItemStack::new(ItemId::of_block(BlockKind::Torch), 7),
+        ItemStack::new(ItemId(COAL), 3),
+        ItemStack::new(ItemId::of_block(BlockKind::Rock), 40),
+    ];
+    for stack in stacks {
+        e.inventory_mut().add(stack);
+    }
+    let mut view = HudView::from_expedition(&e, None);
+    view.vitals.health = 13;
+    view.vitals.food = 9;
+    match variant {
+        2 => {
+            view.craft_open = true;
+            view.craft_rows = [
+                ("Tablón ×4", true),
+                ("Mango ×4", true),
+                ("Antorcha ×4", true),
+                ("Banco de trabajo", false),
+                ("Horno de piedra", true),
+                ("Pico de piedra", true),
+                ("Pico de hierro", false),
+            ]
+            .map(|(label, available)| CraftRow {
+                label: label.to_owned(),
+                available,
+            })
+            .to_vec();
+            view.craft_selected = 4;
+        }
+        3 => view.paused = true,
+        4 => {
+            view.f3_open = true;
+            view.fps = (144.0, 98.0, 6.94);
+            view.facing = "norte";
+        }
+        5 => view.dead = true,
+        _ => view.banner = Some(("Edad de piedra", 2.0)),
+    }
+    let mut ui = UiBatch::new();
+    story_hud::draw(&mut ui, [1024, 640], &view);
+    let eye = e.body().eye().map(|c| c as f64 / FIXED_ONE as f64);
+    Ok(Some(TerrainScene {
+        world: SceneWorld::Story(e.world().clone()),
+        camera: Camera::Fly(FlyCamera {
+            position: DVec3::from_array(eye),
+            pitch: -10f32.to_radians(),
+            ..FlyCamera::default()
+        }),
+        boxes: Vec::new(),
+        ui,
+        style: TerrainStyle {
+            fog_distance: 56.0,
+            ..TerrainStyle::default()
+        },
+    }))
+}

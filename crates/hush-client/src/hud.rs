@@ -180,7 +180,7 @@ fn draw_hints(batch: &mut UiBatch, x: f32, bottom: f32, max_w: f32, hints: &[(&s
 }
 
 /// Texto con una sombra de un píxel para leerse sobre el mundo sin caja.
-fn shadowed(batch: &mut UiBatch, x: f32, y: f32, colour: Color, text: &str) {
+pub(crate) fn shadowed(batch: &mut UiBatch, x: f32, y: f32, colour: Color, text: &str) {
     batch.text(
         x + 2.0,
         y + 2.0,

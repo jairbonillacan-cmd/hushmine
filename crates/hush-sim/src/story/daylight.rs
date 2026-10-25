@@ -31,10 +31,10 @@ pub enum Phase {
 impl Phase {
     pub fn label(self) -> &'static str {
         match self {
-            Self::Day => "DIA",
-            Self::Dusk => "OCASO",
-            Self::Night => "NOCHE",
-            Self::Dawn => "AMANECER",
+            Self::Day => "Día",
+            Self::Dusk => "Ocaso",
+            Self::Night => "Noche",
+            Self::Dawn => "Amanecer",
         }
     }
 }

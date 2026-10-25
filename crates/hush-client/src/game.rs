@@ -169,9 +169,8 @@ impl Game {
         if crouching {
             self.sprint_toggled = false;
         }
-        self.sprinting = moving
-            && !crouching
-            && (self.sprint_toggled || input.is_held(self.controls.sprint));
+        self.sprinting =
+            moving && !crouching && (self.sprint_toggled || input.is_held(self.controls.sprint));
         let wish = self.camera.flat_forward() * forward + self.camera.flat_right() * right;
         MoveInput::from_direction(wish.x, wish.z, input.is_held(self.controls.jump))
             .with_sprint(self.sprinting)

@@ -264,7 +264,11 @@ fn crouching_never_walks_off_a_ledge() {
     assert_eq!(careful.feet[1], 4 * ONE, "agachado no se cae");
     assert!(careful.on_ground);
     // Llega hasta asomarse: la base aún pisa el último bloque.
-    assert!(careful.feet[0] > 10 * ONE - HALF_WIDTH, "{}", careful.feet[0]);
+    assert!(
+        careful.feet[0] > 10 * ONE - HALF_WIDTH,
+        "{}",
+        careful.feet[0]
+    );
     assert!(careful.feet[0] < 10 * ONE + HALF_WIDTH);
     // De pie, el mismo paseo acaba en el suelo de abajo.
     assert!(walk_off(false).feet[1] < 4 * ONE);
@@ -283,7 +287,10 @@ fn crouching_slides_along_a_ledge() {
     }
     assert_eq!(body.feet[1], 4 * ONE);
     assert!(body.feet[0] < 10 * ONE + HALF_WIDTH);
-    assert!(body.feet[2] - start_z > ONE / 2, "avanza a lo largo del borde");
+    assert!(
+        body.feet[2] - start_z > ONE / 2,
+        "avanza a lo largo del borde"
+    );
 }
 
 #[test]

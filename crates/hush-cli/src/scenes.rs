@@ -41,6 +41,10 @@ pub enum Scene {
     Launcher,
     /// Mundo del modo historia al atardecer: estratos, antorcha y pozo.
     Story,
+    /// HUD del modo Historia sobre la expedición, dibujado con el mismo
+    /// código que el juego. La semilla elige la capa: 2 fabricar, 3 pausa,
+    /// 4 telemetría F3, 5 muerte; cualquier otra, el HUD en partida.
+    StoryHud,
 }
 
 /// Mundo de una escena: finito (el mapa del Turno) o abierto ([`SparseWorld`]).
@@ -165,6 +169,7 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
         Scene::Launcher => launcher_scene(world, seed),
         Scene::Type => type_scene(world),
         Scene::Story => return story_scene(seed),
+        Scene::StoryHud => return story_hud_scene(seed),
         Scene::Shaft => {
             carve_shaft(&mut world);
             TerrainScene {
@@ -358,4 +363,4 @@ mod frontier;
 use frontier::frontier_scene;
 #[path = "scenes_story.rs"]
 mod story;
-use story::story_scene;
+use story::{story_hud_scene, story_scene};

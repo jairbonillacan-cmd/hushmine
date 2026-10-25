@@ -164,7 +164,7 @@ use crate::ui_font_table::body;
 mod tests {
     use super::*;
 
-    const SPANISH: &str = "¿Versión rápida? ¡Sí! Ñandú, pingüino, «Vigía», ‹1931–1979›…";
+    const SPANISH: &str = "¿Versión rápida? ¡Sí! Ñandú, pingüino, «Vigía», ‹1931–1979›… ×12";
 
     #[test]
     fn spanish_text_has_no_missing_glyphs() {

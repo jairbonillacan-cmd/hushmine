@@ -50,12 +50,12 @@ pub enum Stratum {
 impl Stratum {
     pub fn label(self) -> &'static str {
         match self {
-            Self::Bedrock => "LECHO DE ROCA MADRE",
-            Self::BasalticMantle => "MANTO BASALTICO",
-            Self::Abyssal => "ESTRATO ABISAL",
-            Self::Crystalline => "ESTRATO CRISTALINO",
-            Self::Sedimentary => "ESTRATO SEDIMENTARIO",
-            Self::Surface => "SUPERFICIE",
+            Self::Bedrock => "Lecho de roca madre",
+            Self::BasalticMantle => "Manto basáltico",
+            Self::Abyssal => "Estrato abisal",
+            Self::Crystalline => "Estrato cristalino",
+            Self::Sedimentary => "Estrato sedimentario",
+            Self::Surface => "Superficie",
         }
     }
 }
