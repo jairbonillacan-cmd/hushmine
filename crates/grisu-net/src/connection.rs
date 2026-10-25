@@ -18,6 +18,10 @@ use crate::socket::MAX_PACKET;
 pub const PROTOCOL_MAGIC: u16 = 0x4853;
 const HEADER_SIZE: usize = 10;
 const MAX_PAYLOAD: usize = MAX_PACKET - HEADER_SIZE;
+/// Tamaño máximo de un mensaje no fiable: tiene que caber entero en un
+/// paquete con su cabecera de entrada (etiqueta y longitud, 3 bytes).
+/// Los más grandes se descartan.
+pub const MAX_UNRELIABLE: usize = MAX_PAYLOAD - 3;
 /// Tamaño máximo de cada pieza de un mensaje fiable.
 const PIECE_SIZE: usize = 1024;
 /// Paquetes enviados que se recuerdan para procesar acuses.
@@ -150,7 +154,7 @@ impl Connection {
     /// Encola un mensaje que puede perderse. Se descarta si no cabe en un
     /// paquete.
     pub fn send_unreliable(&mut self, data: Vec<u8>) {
-        if data.len() + 3 > MAX_PAYLOAD {
+        if data.len() > MAX_UNRELIABLE {
             log::warn!("mensaje no fiable de {} bytes descartado", data.len());
             return;
         }

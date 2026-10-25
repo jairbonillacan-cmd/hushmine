@@ -41,6 +41,16 @@ pub enum ClientMsg {
     Bye,
 }
 
+/// Bytes fijos de una instantánea: etiqueta, tick, última entrada, cuerpo
+/// propio (pies Q47.16, velocidad Q16.16 y suelo) y número de jugadores.
+pub const SNAPSHOT_FIXED_BYTES: usize = 1 + 4 + 4 + (3 * 8 + 3 * 4 + 1) + 2;
+/// Bytes de cada otro jugador en una instantánea: id y pies Q47.16.
+pub const SNAPSHOT_REMOTE_BYTES: usize = 2 + 3 * 8;
+/// Otros jugadores que caben en una instantánea sin pasar del tamaño de un
+/// mensaje no fiable. El servidor envía los más cercanos.
+pub const MAX_REMOTES_PER_SNAPSHOT: usize =
+    (grisu_net::MAX_UNRELIABLE - SNAPSHOT_FIXED_BYTES) / SNAPSHOT_REMOTE_BYTES;
+
 /// Posición de otro jugador en una instantánea.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RemotePlayer {

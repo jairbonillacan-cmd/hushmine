@@ -96,3 +96,25 @@ fn malformed_messages_are_errors() {
         assert!(ServerMsg::decode(&snapshot[..len]).is_err());
     }
 }
+
+#[test]
+fn fullest_snapshot_fits_in_one_unreliable_message() {
+    let remote = |id: u16| RemotePlayer {
+        id,
+        feet: [i64::MAX, i64::MIN, -1],
+    };
+    let snapshot = |n: usize| ServerMsg::Snapshot {
+        tick: u32::MAX,
+        last_input: u32::MAX,
+        you: PlayerBody::new([i64::MIN; 3]),
+        others: (0..n as u16).map(remote).collect(),
+    };
+    let full = snapshot(MAX_REMOTES_PER_SNAPSHOT).encode();
+    assert_eq!(
+        full.len(),
+        SNAPSHOT_FIXED_BYTES + MAX_REMOTES_PER_SNAPSHOT * SNAPSHOT_REMOTE_BYTES,
+        "las constantes de tamaño no coinciden con la codificación"
+    );
+    assert!(full.len() <= grisu_net::MAX_UNRELIABLE);
+    assert!(snapshot(MAX_REMOTES_PER_SNAPSHOT + 1).encode().len() > grisu_net::MAX_UNRELIABLE);
+}

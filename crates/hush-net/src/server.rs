@@ -8,7 +8,10 @@ use std::collections::BTreeMap;
 use grisu_net::{Connection, PeerAddr, Socket};
 use hush_sim::{BlockChange, Command, MatchConfig, MoveInput, Simulation, TICK_RATE};
 
-use crate::proto::{Action, ClientMsg, InputFrame, PROTOCOL_VERSION, RemotePlayer, ServerMsg};
+use crate::proto::{
+    Action, ClientMsg, InputFrame, MAX_REMOTES_PER_SNAPSHOT, PROTOCOL_VERSION, RemotePlayer,
+    ServerMsg,
+};
 
 #[derive(Clone, Debug)]
 pub struct ServerConfig {
@@ -315,11 +318,7 @@ impl Server {
                 continue;
             };
             let you = self.sim.players()[player];
-            let others = everyone
-                .iter()
-                .filter(|o| usize::from(o.id) != player)
-                .copied()
-                .collect();
+            let others = nearest_others(&everyone, player, you.feet);
             let msg = ServerMsg::Snapshot {
                 tick,
                 last_input: client.last_processed,
@@ -328,5 +327,67 @@ impl Server {
             };
             client.conn.send_unreliable(msg.encode());
         }
+    }
+}
+
+/// Los jugadores más cercanos a `feet` (sin contar a `player`), como mucho
+/// [`MAX_REMOTES_PER_SNAPSHOT`] para que la instantánea quepa en un paquete.
+/// Los empates se deshacen por id, así que el resultado es determinista.
+fn nearest_others(everyone: &[RemotePlayer], player: usize, feet: [i64; 3]) -> Vec<RemotePlayer> {
+    let mut others: Vec<RemotePlayer> = everyone
+        .iter()
+        .filter(|o| usize::from(o.id) != player)
+        .copied()
+        .collect();
+    if others.len() > MAX_REMOTES_PER_SNAPSHOT {
+        // Distancia en bloques enteros: cabe en i64 en todo el mundo grande.
+        let block = |c: i64| c >> grisu_voxel::FIXED_SHIFT;
+        let distance2 = |o: &RemotePlayer| -> i64 {
+            (0..3)
+                .map(|i| (block(o.feet[i]) - block(feet[i])).pow(2))
+                .sum()
+        };
+        others.sort_by_key(|o| (distance2(o), o.id));
+        others.truncate(MAX_REMOTES_PER_SNAPSHOT);
+    }
+    others
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use grisu_voxel::FIXED_ONE;
+
+    fn at(id: u16, x: i64) -> RemotePlayer {
+        RemotePlayer {
+            id,
+            feet: [x * FIXED_ONE, 0, 0],
+        }
+    }
+
+    #[test]
+    fn few_players_are_all_sent_except_yourself() {
+        let everyone = [at(0, 0), at(1, 5), at(2, -3)];
+        let others = nearest_others(&everyone, 0, [0; 3]);
+        assert_eq!(others, vec![at(1, 5), at(2, -3)]);
+    }
+
+    #[test]
+    fn crowds_are_cut_to_the_nearest_that_fit() {
+        // El jugador 0 en x = 0 y 100 más repartidos a ambos lados.
+        let everyone: Vec<RemotePlayer> = (0..=100u16)
+            .map(|id| at(id, (i64::from(id) - 50) * 3))
+            .collect();
+        let me = everyone[0];
+        let others = nearest_others(&everyone, 0, me.feet);
+        assert_eq!(others.len(), MAX_REMOTES_PER_SNAPSHOT);
+        assert!(others.iter().all(|o| o.id != 0));
+        let farthest = others.iter().map(|o| (o.feet[0] - me.feet[0]).abs()).max();
+        let left_out = everyone
+            .iter()
+            .filter(|o| o.id != 0 && !others.contains(o))
+            .map(|o| (o.feet[0] - me.feet[0]).abs())
+            .min();
+        assert!(farthest <= left_out, "se dejó fuera a alguien más cerca");
     }
 }

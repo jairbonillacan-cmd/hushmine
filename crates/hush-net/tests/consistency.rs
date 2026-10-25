@@ -44,6 +44,23 @@ fn two_clients_and_six_bots_stay_consistent_at_150ms_and_2_percent_loss() {
 }
 
 #[test]
+fn crowded_servers_still_send_every_client_its_position() {
+    // Con 80 bots, una instantánea con todos los jugadores no cabría en un
+    // paquete; el servidor envía solo los más cercanos.
+    let report = run_net_test(&NetTestConfig {
+        clients: 1,
+        bots: 80,
+        conditions: LinkConditions::PERFECT,
+        play_ms: 3_000,
+        settle_ms: 1_000,
+        ..NetTestConfig::default()
+    })
+    .unwrap();
+    assert!(report.consistent(), "{:#?}", report.clients);
+    assert!(report.clients[0].prediction.snapshots > 60);
+}
+
+#[test]
 fn perfect_local_network_needs_no_corrections() {
     let report = run_net_test(&NetTestConfig {
         clients: 1,

@@ -10,6 +10,8 @@ mod connection;
 mod sim;
 mod socket;
 
-pub use connection::{Connection, ConnectionStats, Message, PROTOCOL_MAGIC, seq_newer};
+pub use connection::{
+    Connection, ConnectionStats, MAX_UNRELIABLE, Message, PROTOCOL_MAGIC, seq_newer,
+};
 pub use sim::{LinkConditions, NetStats, SimNetwork, SimSocket};
 pub use socket::{MAX_PACKET, PeerAddr, Socket, UdpTransport};
