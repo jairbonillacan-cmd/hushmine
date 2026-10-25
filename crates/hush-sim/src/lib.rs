@@ -1,13 +1,15 @@
 //! Simulación determinista de HUSHMINE.
 //!
-//! Reglas en enteros y punto fijo (`Q16.16` y unidades de 1/1024 de bloque),
-//! sin gráficos ni dependencias de plataforma: el mismo código corre en el
-//! servidor, en el cliente y en `hush-cli sim`. Incluye el catálogo de
-//! bloques (Convención A), el terreno (con los tipos de `grisu-voxel`), el
-//! movimiento de los mineros, cavar y poner, el Sismógrafo y el ciclo del
-//! Despertar, la economía y bolsas de botín, el verificador de invariantes
-//! formales, el registro de eventos, el reloj de ticks, el generador
-//! aleatorio determinista y el informe de simulación.
+//! Reglas en enteros y punto fijo: posiciones de minero en `i64` Q47.16 (16
+//! bits de fracción, hasta ±7,5 millones de bloques) y velocidades y
+//! escalares en Q16.16 ([`Fixed`]). Sin gráficos ni dependencias de
+//! plataforma: el mismo código corre en el servidor, en el cliente y en
+//! `hush-cli sim`. Incluye el catálogo de bloques (Convención A), el terreno
+//! (con los tipos de `grisu-voxel`), el movimiento de los mineros, cavar y
+//! poner, el Sismógrafo y el ciclo del Despertar, la economía y bolsas de
+//! botín, el verificador de invariantes formales, el registro de eventos, el
+//! reloj de ticks, el generador aleatorio determinista y el informe de
+//! simulación.
 
 mod actions;
 pub mod altar;

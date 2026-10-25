@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use crate::{BlockKind, PlayerBody};
 
 /// Alcance máximo desde los ojos hasta el centro de la celda: 5 bloques.
-pub const REACH: i64 = 5 * FIXED_ONE as i64;
+pub const REACH: i64 = 5 * FIXED_ONE;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum EditError {
@@ -28,8 +28,8 @@ pub enum EditError {
 /// Comprueba que la celda está al alcance de los ojos del jugador.
 fn check_reach(body: &PlayerBody, cell: [i32; 3]) -> Result<(), EditError> {
     let eye = body.eye();
-    let center = cell.map(|c| i64::from(c) * i64::from(FIXED_ONE) + i64::from(FIXED_ONE) / 2);
-    let d2: i64 = (0..3).map(|i| (center[i] - i64::from(eye[i])).pow(2)).sum();
+    let center = cell.map(|c| i64::from(c) * FIXED_ONE + FIXED_ONE / 2);
+    let d2: i64 = (0..3).map(|i| (center[i] - eye[i]).pow(2)).sum();
     if d2 > REACH * REACH {
         Err(EditError::TooFar)
     } else {

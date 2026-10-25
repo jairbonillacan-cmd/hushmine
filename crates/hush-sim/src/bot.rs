@@ -3,7 +3,7 @@
 //! No juega bien; existe para que `hush-cli sim` ejercite el movimiento, la
 //! colisión y la edición del terreno. Los bots de verdad llegan en el hito 2.
 
-use grisu_voxel::FIXED_ONE;
+use grisu_voxel::cell_of;
 
 use crate::{Command, MoveInput, PlayerBody, Rng};
 
@@ -50,7 +50,7 @@ impl DiggerBot {
         }];
         if tick.is_multiple_of(DIG_EVERY) {
             // Celda delante de los pies, a veces la de abajo para bajar.
-            let feet = body.feet.map(|c| c.div_euclid(FIXED_ONE));
+            let feet = body.feet.map(cell_of);
             let ahead = [
                 feet[0] + i32::from(self.heading[0].signum()),
                 feet[1] + self.rng.below(2) as i32,
