@@ -188,6 +188,17 @@ fn bytes_corruptos_son_error_no_panico() {
         Err(RegionError::Corrupt(_))
     ));
 
+    // Dos entradas de la tabla con el mismo local_idx: la segunda (bytes
+    // 34..36, tras la cabecera de 24 y la primera entrada de 10) pasa a 0.
+    let mut repetido = validos.clone();
+    repetido[34..36].copy_from_slice(&0u16.to_le_bytes());
+    let path = dir.join("repetido.hreg");
+    std::fs::write(&path, repetido).expect("escribir el repetido");
+    assert!(matches!(
+        RegionFile::load(&path),
+        Err(RegionError::Corrupt(_))
+    ));
+
     // chunk_count imposible (u32::MAX en los bytes 20..24 de la cabecera).
     let mut mal_total = validos.clone();
     mal_total[20..24].copy_from_slice(&u32::MAX.to_le_bytes());

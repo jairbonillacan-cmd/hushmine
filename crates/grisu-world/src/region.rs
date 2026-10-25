@@ -11,7 +11,6 @@ use std::path::Path;
 
 use grisu_voxel::{CHUNK_VOLUME, Chunk, ChunkPos};
 
-// ---------------------------------------------------------------------------
 // Formato binario de un archivo `.hreg` (todo en little-endian):
 //
 //   magia:            b"HREG"                        (4 bytes)
@@ -29,8 +28,8 @@ use grisu_voxel::{CHUNK_VOLUME, Chunk, ChunkPos};
 //     exactamente `CHUNK_VOLUME` bloques en el orden lineal de `as_bytes`.
 //
 // La tabla se escribe en orden de `local_idx` (recorrido ordenado de un
-// `BTreeMap`): un mismo contenido produce siempre los mismos bytes.
-// ---------------------------------------------------------------------------
+// `BTreeMap`): un mismo contenido produce siempre los mismos bytes. Un
+// `local_idx` repetido en la tabla es un archivo corrupto.
 
 /// Bits de desplazamiento de chunk a región (32³ chunks por archivo).
 pub const REGION_SHIFT: u32 = 5;
@@ -211,7 +210,7 @@ impl RegionFile {
     }
 
     /// Lee y valida un archivo `.hreg` completo. Ante cualquier byte de
-    /// menos, una magia distinta, una tabla imposible o tramos que no sumen
+    /// menos, una magia distinta, una tabla imposible o repetida o tramos que no sumen
     /// 4096 devuelve `Err`; nunca entra en pánico.
     pub fn load(path: &Path) -> Result<RegionFile, RegionError> {
         let data = std::fs::read(path)?;
@@ -254,7 +253,9 @@ impl RegionFile {
             if used != encoded.len() {
                 return Err(corrupt("bytes sobrantes al final del chunk"));
             }
-            chunks.insert(local_idx, chunk);
+            if chunks.insert(local_idx, chunk).is_some() {
+                return Err(corrupt("índice local repetido en la tabla"));
+            }
         }
 
         Ok(RegionFile {
