@@ -7,7 +7,8 @@
 
 use grisu_voxel::{ChunkPos, SparseWorld, Voxels};
 use hush_worldgen::{
-    DIAMOND, DIRT, GOLD, HARD_ROCK, ORE, ROCK, generate_chunk, load_around, surface_height,
+    AMPLITUDE, DIAMOND, DIRT, GOLD, HARD_ROCK, ORE, ROCK, generate_chunk, load_around,
+    surface_height,
 };
 
 const SEED: u64 = 42;
@@ -25,14 +26,21 @@ fn no_overflow_at_extreme_and_negative_blocks() {
         (-1, -1),
     ];
     for &(bx, bz) in &corners {
-        // La altura sigue en rango y el chunk se genera sin pánico.
+        // La altura sigue en rango y el chunk se genera sin pánico. En el
+        // W1 la superficie va de −64 a +AMPLITUDE, no de −6 a 6.
         let h = surface_height(SEED, bx, bz);
-        assert!((-6..=6).contains(&h), "altura {h} en ({bx}, {bz})");
+        assert!(
+            (-AMPLITUDE..=AMPLITUDE).contains(&h),
+            "altura {h} en ({bx}, {bz})"
+        );
 
         let chunk = generate_chunk(SEED, ChunkPos::containing([bx, -1, bz]));
         // Debajo de la superficie hay sólido; un chunk más arriba, aire.
         assert!(!chunk.is_empty(), "chunk vacío bajo ({bx}, {bz})");
-        let sky = generate_chunk(SEED, ChunkPos::containing([bx, 16, bz]));
+        // Cielo puro: por encima de `surface + 8` (la banda del frente)
+        // jamás hay sólido, y con montañas hasta +AMPLITUDE el chunk de
+        // y = 16 ya no es cielo; AMPLITUDE + 40 está siempre sobre la cota.
+        let sky = generate_chunk(SEED, ChunkPos::containing([bx, AMPLITUDE + 40, bz]));
         assert!(sky.is_empty(), "bloques en el cielo de ({bx}, {bz})");
     }
 }
@@ -48,8 +56,9 @@ fn surface_height_survives_i32_extremes() {
         (i32::MIN, i32::MAX),
     ] {
         // `x + 1` desbordaría: se consultan tal cual, sin aritmética previa.
+        // La cota del W1 es ±AMPLITUDE, no ±6.
         let h = surface_height(SEED, x, z);
-        assert!((-6..=6).contains(&h));
+        assert!((-AMPLITUDE..=AMPLITUDE).contains(&h));
     }
 }
 
@@ -57,25 +66,42 @@ fn surface_height_survives_i32_extremes() {
 #[test]
 fn load_around_works_at_the_world_corner() {
     let mut world = SparseWorld::new();
-    let corner = ChunkPos::containing([-FAR, 0, FAR]);
+    // Esquina del mundo en X/Z; en Y la ventana sigue a la superficie real
+    // de esa columna (en el W1 esta esquina queda a h = 172 y cargar en
+    // `cy = 0` dejaría el terreno fuera de la ventana).
+    let (x, z) = (-FAR, FAR);
+    let h = surface_height(SEED, x, z);
+    let corner = ChunkPos::containing([x, h, z]);
     assert_eq!(load_around(&mut world, SEED, corner, 1, 1), 27);
-    // La superficie del rincón ronda y = 0: sólido 8 bloques abajo y aire
-    // 8 bloques arriba (la altura exacta depende de la columna).
-    let (x, z) = (corner.x * 16, corner.z * 16);
-    assert!(world.is_solid(x, -8, z));
-    assert!(!world.is_solid(x, 15, z));
+    // Sondas relativas a la superficie (la garantía del generador es
+    // sólido por debajo de `h − 8` y aire por encima de `h + 8`); ±16 cae
+    // siempre dentro de la ventana cargada de ±1 chunk vertical, sea cual
+    // sea `h`, de modo que ambas consultas leen chunks cargados de verdad.
+    assert!(
+        world.is_solid(x, h - 16, z),
+        "sólido esperado en h − 16 (h = {h})"
+    );
+    assert!(
+        !world.is_solid(x, h + 16, z),
+        "aire esperado en h + 16 (h = {h})"
+    );
     // Y coincide con la generación individual (otra vez `INV-W01` lejos).
     assert_eq!(world.chunk(corner), Some(&generate_chunk(SEED, corner)));
 }
 
-/// Proporciones de cada bloque sobre varias ventanas de chunks en las capas
-/// `cy = -2` y `cy = -1` (bajo la superficie, donde conviven tierra, roca,
-/// roca dura y las tres menas).
+/// Proporciones de cada bloque sobre varias ventanas de chunks: dos capas
+/// ancladas a la superficie de la columna central de la ventana (la que
+/// contiene `h − 64` y la siguiente), donde conviven roca, mena y oro. El
+/// anclaje relativo es lo que hace comparable el origen con las esquinas:
+/// en el W1 la superficie lejana puede estar a 180 bloques y muestrear
+/// capas fijas `cy = −2..0` compararía aire con roca.
 fn proportions(centers: &[ChunkPos], side: i32) -> Vec<(u8, f64)> {
     let mut counts = std::collections::BTreeMap::new();
     let mut total = 0usize;
     for &center in centers {
-        for cy in -2..0 {
+        let h = surface_height(SEED, center.x * 16, center.z * 16);
+        let base = ChunkPos::containing([center.x * 16, h - 64, center.z * 16]).y;
+        for cy in base..base + 2 {
             for dz in 0..side {
                 for dx in 0..side {
                     let pos = ChunkPos::new(center.x + dx, cy, center.z + dz);
