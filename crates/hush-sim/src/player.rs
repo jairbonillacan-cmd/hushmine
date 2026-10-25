@@ -15,6 +15,8 @@ pub const HEIGHT: i32 = 17 * ONE / 10;
 pub const EYE_HEIGHT: i32 = 155 * ONE / 100;
 /// Velocidad al andar: 4,3 bloques/s.
 const WALK_PER_TICK: i32 = 43 * ONE / 300;
+/// Velocidad al correr: 6,5 bloques/s.
+const SPRINT_PER_TICK: i32 = 65 * ONE / 300;
 /// Gravedad: 28 bloques/s².
 const GRAVITY_PER_TICK: i32 = 28 * ONE / 900;
 /// Velocidad inicial del salto (unos 1,25 bloques de altura).
@@ -30,6 +32,7 @@ pub struct MoveInput {
     pub wish_x: i8,
     pub wish_z: i8,
     pub jump: bool,
+    pub sprint: bool,
 }
 
 impl MoveInput {
@@ -47,7 +50,14 @@ impl MoveInput {
             wish_x: q(x),
             wish_z: q(z),
             jump,
+            sprint: false,
         }
+    }
+
+    /// Activa o desactiva la carrera para esta entrada.
+    pub fn with_sprint(mut self, sprint: bool) -> Self {
+        self.sprint = sprint;
+        self
     }
 }
 
@@ -80,8 +90,13 @@ impl PlayerBody {
     pub fn step(&mut self, world: &VoxelWorld, input: MoveInput) {
         // Sin inercia horizontal: el movimiento responde al instante, como en
         // Infiniminer. Se divide entre 127 con redondeo hacia cero.
-        self.velocity[0] = i32::from(input.wish_x) * WALK_PER_TICK / 127;
-        self.velocity[2] = i32::from(input.wish_z) * WALK_PER_TICK / 127;
+        let speed = if input.sprint {
+            SPRINT_PER_TICK
+        } else {
+            WALK_PER_TICK
+        };
+        self.velocity[0] = i32::from(input.wish_x) * speed / 127;
+        self.velocity[2] = i32::from(input.wish_z) * speed / 127;
         if input.jump && self.on_ground {
             self.velocity[1] = JUMP_PER_TICK;
         }
@@ -152,6 +167,20 @@ mod tests {
     }
 
     #[test]
+    fn sprints_about_six_point_five_blocks_per_second() {
+        let w = flat();
+        let mut body = PlayerBody::new(spawn_point(&w, 4, 8));
+        settle(&mut body, &w);
+        let start = body.feet[0];
+        let input = MoveInput::from_direction(1.0, 0.0, false).with_sprint(true);
+        for _ in 0..30 {
+            body.step(&w, input);
+        }
+        let blocks = f64::from(body.feet[0] - start) / f64::from(ONE);
+        assert!((6.2..6.8).contains(&blocks), "corrió {blocks} bloques");
+    }
+
+    #[test]
     fn jump_clears_one_block_but_not_two() {
         let w = flat();
         let mut body = PlayerBody::new(spawn_point(&w, 8, 8));
@@ -192,6 +221,7 @@ mod tests {
                     wish_x: ((t * 37) % 255) as i8,
                     wish_z: ((t * 91) % 255) as i8,
                     jump: t % 17 == 0,
+                    sprint: t % 5 == 0,
                 };
                 body.step(&w, input);
             }

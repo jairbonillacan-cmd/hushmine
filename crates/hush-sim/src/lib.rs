@@ -26,6 +26,7 @@ pub mod seismograph;
 mod sim;
 mod sim_seismo;
 mod sim_world;
+pub mod story;
 mod terrain;
 
 pub use altar::{Altar, AltarError};
@@ -41,6 +42,7 @@ pub use report::SimReport;
 pub use rng::Rng;
 pub use seismograph::{NoiseSource, SeismoEvent, SeismoThreshold, Seismograph};
 pub use sim::{BlockChange, Command, EditStats, MatchConfig, Rejection, Simulation, TICK_RATE};
+pub use story::{Expedition, ItemId, Milestone, STORY_TICK_RATE, StoryConfig, StoryOrder};
 pub use terrain::{TerrainConfig, generate as generate_terrain};
 
 /// Ejecuta una partida completa sin gráficos y devuelve el informe.

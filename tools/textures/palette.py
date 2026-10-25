@@ -14,6 +14,8 @@ MIN_LUMINANCE_DISTANCE: float = 15.0
 # Bandas objetivo de luminancia media (escala 0..255) para garantizar por diseño
 # que cualquier par entre {rock, ore, gold, diamond, lava} supere
 # MIN_LUMINANCE_DISTANCE con al menos 18 puntos de separación entre bandas.
+# Los bloques naturales del modo historia (grava, agua, obsidiana, carbón y
+# tronco) tienen banda propia pero no participan en la separación por pares.
 LUMINANCE_BANDS: dict[str, tuple[float, float]] = {
     "hard_rock": (22.0, 38.0),
     "dirt": (40.0, 54.0),
@@ -22,6 +24,11 @@ LUMINANCE_BANDS: dict[str, tuple[float, float]] = {
     "gold": (120.0, 136.0),
     "diamond": (154.0, 170.0),
     "lava": (188.0, 215.0),
+    "obsidian": (8.0, 24.0),
+    "log": (34.0, 52.0),
+    "water": (40.0, 60.0),
+    "coal_ore": (46.0, 62.0),
+    "gravel": (62.0, 82.0),
 }
 
 # Paleta cerrada de 48 colores únicos en formato #RRGGBB (mayúsculas).
@@ -181,30 +188,42 @@ def hash2d(x: int, y: int, seed: int = 0) -> int:
 
 
 def _build_layer_specs() -> list[dict[str, object]]:
-    """Construye la lista canónica de 25 capas del texture array (Convención A)."""
-    raw_blocks: list[tuple[int, str, bool, int]] = [
-        (1, "dirt", False, 1),
-        (2, "rock", False, 1),
-        (3, "hard_rock", False, 1),
-        (4, "ore", False, 1),
-        (5, "gold", False, 1),
-        (6, "diamond", False, 1),
-        (7, "lava", False, 4),
-        (8, "team_block", True, 1),
-        (9, "force_field", True, 1),
-        (10, "ladder", False, 1),
-        (11, "jump_pad", False, 1),
-        (12, "electric", False, 1),
-        (13, "rail", False, 1),
-        (14, "beacon", True, 1),
-        (15, "explosive", False, 1),
-        (16, "bucket_station", True, 1),
-        (17, "bucket_post", True, 1),
+    """Construye la lista canónica de 36 capas del texture array (Convención A ampliada)."""
+    # (block_id, block_name, tiene_equipo, fotogramas, categoría)
+    raw_blocks: list[tuple[int, str, bool, int, str]] = [
+        (1, "dirt", False, 1, "natural"),
+        (2, "rock", False, 1, "natural"),
+        (3, "hard_rock", False, 1, "natural"),
+        (4, "ore", False, 1, "natural"),
+        (5, "gold", False, 1, "natural"),
+        (6, "diamond", False, 1, "natural"),
+        (7, "lava", False, 4, "natural"),
+        (8, "team_block", True, 1, "built"),
+        (9, "force_field", True, 1, "built"),
+        (10, "ladder", False, 1, "built"),
+        (11, "jump_pad", False, 1, "built"),
+        (12, "electric", False, 1, "built"),
+        (13, "rail", False, 1, "built"),
+        (14, "beacon", True, 1, "built"),
+        (15, "explosive", False, 1, "built"),
+        (16, "bucket_station", True, 1, "built"),
+        (17, "bucket_post", True, 1, "built"),
+        # Modo historia (18..28): materiales de terreno y mobiliario minero.
+        (18, "plank", False, 1, "built"),
+        (19, "prop_beam", False, 1, "built"),
+        (20, "torch", False, 1, "built"),
+        (21, "workbench", False, 1, "built"),
+        (22, "furnace", False, 1, "built"),
+        (23, "chest", False, 1, "built"),
+        (24, "gravel", False, 1, "natural"),
+        (25, "water", False, 1, "natural"),
+        (26, "obsidian", False, 1, "natural"),
+        (27, "coal_ore", False, 1, "natural"),
+        (28, "log", False, 1, "natural"),
     ]
     specs: list[dict[str, object]] = []
     layer_idx = 0
-    for block_id, block_name, has_teams, frames in raw_blocks:
-        category = "natural" if block_id <= 7 else "built"
+    for block_id, block_name, has_teams, frames, category in raw_blocks:
         if has_teams:
             for variant in ("copper", "cobalt"):
                 specs.append(

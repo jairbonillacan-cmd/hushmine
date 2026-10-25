@@ -3,7 +3,9 @@
 //! Cada bloque sólido (1-17) ocupa una capa del texture array: la capa `i`
 //! es el bloque `i + 1`. La correspondencia con `manifest.ron` es el
 //! fotograma 0 de la lava y la variante `copper` en los bloques con equipo
-//! (el motor aún no guarda el equipo de cada celda).
+//! (el motor aún no guarda el equipo de cada celda). Los bloques del modo
+//! historia (18-28) también son PNG reales, pero van como capas extra al
+//! final del array (ver [`crate::STORY_LAYER_BASE`]).
 
 use std::fmt;
 
@@ -135,6 +137,65 @@ static LAVA_EXTRA_FRAMES: [(&str, &[u8]); 3] = [
     ),
 ];
 
+/// Un PNG por bloque del modo historia (18-28), en orden de identificador.
+static STORY_TEXTURES: [EmbeddedTexture; 11] = [
+    EmbeddedTexture {
+        block: BlockKind::Plank,
+        file: "plank.png",
+        bytes: include_bytes!("../../../assets/textures/blocks/plank.png"),
+    },
+    EmbeddedTexture {
+        block: BlockKind::PropBeam,
+        file: "prop_beam.png",
+        bytes: include_bytes!("../../../assets/textures/blocks/prop_beam.png"),
+    },
+    EmbeddedTexture {
+        block: BlockKind::Torch,
+        file: "torch.png",
+        bytes: include_bytes!("../../../assets/textures/blocks/torch.png"),
+    },
+    EmbeddedTexture {
+        block: BlockKind::Workbench,
+        file: "workbench.png",
+        bytes: include_bytes!("../../../assets/textures/blocks/workbench.png"),
+    },
+    EmbeddedTexture {
+        block: BlockKind::Furnace,
+        file: "furnace.png",
+        bytes: include_bytes!("../../../assets/textures/blocks/furnace.png"),
+    },
+    EmbeddedTexture {
+        block: BlockKind::Chest,
+        file: "chest.png",
+        bytes: include_bytes!("../../../assets/textures/blocks/chest.png"),
+    },
+    EmbeddedTexture {
+        block: BlockKind::Gravel,
+        file: "gravel.png",
+        bytes: include_bytes!("../../../assets/textures/blocks/gravel.png"),
+    },
+    EmbeddedTexture {
+        block: BlockKind::Water,
+        file: "water.png",
+        bytes: include_bytes!("../../../assets/textures/blocks/water.png"),
+    },
+    EmbeddedTexture {
+        block: BlockKind::Obsidian,
+        file: "obsidian.png",
+        bytes: include_bytes!("../../../assets/textures/blocks/obsidian.png"),
+    },
+    EmbeddedTexture {
+        block: BlockKind::CoalOre,
+        file: "coal_ore.png",
+        bytes: include_bytes!("../../../assets/textures/blocks/coal_ore.png"),
+    },
+    EmbeddedTexture {
+        block: BlockKind::Log,
+        file: "log.png",
+        bytes: include_bytes!("../../../assets/textures/blocks/log.png"),
+    },
+];
+
 /// Error al decodificar una textura de bloque incrustada.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BlockTextureError {
@@ -196,10 +257,23 @@ pub fn block_textures() -> Result<Vec<TextureData>, BlockTextureError> {
     Ok(layers)
 }
 
+/// Texturas de los bloques del modo historia (18-28), en orden de
+/// identificador, decodificadas de los PNG incrustados.
+pub fn story_block_textures() -> Result<Vec<TextureData>, BlockTextureError> {
+    STORY_TEXTURES
+        .iter()
+        .map(|t| decode(t.file, t.bytes))
+        .collect()
+}
+
 /// Archivo PNG de `assets/textures/blocks` que usa cada bloque (`None` para
 /// el aire, que no se dibuja).
 pub fn texture_file(block: BlockKind) -> Option<&'static str> {
-    TEXTURES.iter().find(|t| t.block == block).map(|t| t.file)
+    TEXTURES
+        .iter()
+        .chain(STORY_TEXTURES.iter())
+        .find(|t| t.block == block)
+        .map(|t| t.file)
 }
 
 /// Decodifica un PNG incrustado a [`TextureData`] RGBA de 16×16.
@@ -225,7 +299,7 @@ fn decode(file: &'static str, bytes: &'static [u8]) -> Result<TextureData, Block
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::textured_blocks;
+    use crate::embedded_blocks;
     use std::fs;
     use std::path::{Path, PathBuf};
 
@@ -303,7 +377,7 @@ mod tests {
     fn one_16x16_layer_per_block_plus_lava_frames() {
         let textures = block_textures().expect("decodificar los PNG incrustados");
         // Una capa por bloque sólido (17) y los fotogramas extra de la lava.
-        assert_eq!(textured_blocks().len(), 17);
+        assert_eq!(embedded_blocks().len(), 17);
         assert_eq!(textures.len(), 17 + LAVA_EXTRA_FRAMES.len());
         for t in &textures {
             assert_eq!((t.width, t.height), (16, 16));
@@ -332,10 +406,19 @@ mod tests {
 
     #[test]
     fn layers_follow_block_identifiers() {
-        assert_eq!(TEXTURES.len(), textured_blocks().len());
+        assert_eq!(TEXTURES.len(), embedded_blocks().len());
         for (index, texture) in TEXTURES.iter().enumerate() {
-            assert_eq!(texture.block, textured_blocks()[index]);
+            assert_eq!(texture.block, embedded_blocks()[index]);
             assert_eq!(usize::from(texture.block.id()), index + 1);
+        }
+    }
+
+    #[test]
+    fn story_layers_follow_block_identifiers() {
+        assert_eq!(STORY_TEXTURES.len(), crate::story_blocks().len());
+        for (index, texture) in STORY_TEXTURES.iter().enumerate() {
+            assert_eq!(texture.block, crate::story_blocks()[index]);
+            assert_eq!(usize::from(texture.block.id()), 18 + index);
         }
     }
 
@@ -344,7 +427,7 @@ mod tests {
     #[test]
     fn chosen_files_match_manifest() {
         let entries = parse_manifest();
-        for &block in textured_blocks() {
+        for &block in crate::textured_blocks() {
             let id = block.id();
             let of_block: Vec<_> = entries.iter().filter(|e| e.block_id == id).collect();
             assert!(

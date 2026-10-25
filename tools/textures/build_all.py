@@ -1,6 +1,6 @@
 """Integrador y CLI de construcción determinista del atlas de texturas de HUSHMINE.
 
-Genera y verifica de forma reproducible las 25 texturas 16×16 RGBA8 de bloques
+Genera y verifica de forma reproducible las 36 texturas 16×16 RGBA8 de bloques
 (`assets/textures/blocks/*.png`), el manifiesto ordenado de capas
 (`assets/textures/blocks/manifest.ron`) y la hoja de contacto de inspección
 (`out/textures_contact.png`) usando únicamente la biblioteca estándar de Python.
@@ -17,7 +17,7 @@ REPO_ROOT: Path = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from tools.textures import built, natural, palette, png  # noqa: E402
+from tools.textures import built, natural, palette, png, story  # noqa: E402
 
 TEXTURE_SIZE: int = 16
 BLOCKS_DIR: Path = REPO_ROOT / "assets" / "textures" / "blocks"
@@ -41,21 +41,24 @@ _MANIFEST_ENTRY_RE: re.Pattern[str] = re.compile(
 
 
 def generate_all_textures() -> dict[str, bytes]:
-    """Combina y valida las 25 texturas 16×16 RGBA8 en el orden de `LAYER_SPECS`."""
+    """Combina y valida las 36 texturas 16×16 RGBA8 en el orden de `LAYER_SPECS`."""
     natural_textures = natural.generate_natural_textures()
     built_textures = built.generate_built_textures()
+    story_textures = story.generate_story_textures()
 
-    overlap = set(natural_textures.keys()) & set(built_textures.keys())
+    overlap = (set(natural_textures) & set(built_textures)) | (
+        set(natural_textures) & set(story_textures)
+    ) | (set(built_textures) & set(story_textures))
     if overlap:
         raise ValueError(
-            f"Claves duplicadas entre generadores natural y built: {sorted(overlap)}"
+            f"Claves duplicadas entre generadores natural, built y story: {sorted(overlap)}"
         )
 
-    combined = {**natural_textures, **built_textures}
+    combined = {**natural_textures, **built_textures, **story_textures}
     expected_stems = [str(spec["stem"]) for spec in palette.LAYER_SPECS]
-    if len(expected_stems) != 25:
+    if len(expected_stems) != 36:
         raise ValueError(
-            f"Se esperaban exactamente 25 capas en LAYER_SPECS, encontradas: {len(expected_stems)}"
+            f"Se esperaban exactamente 36 capas en LAYER_SPECS, encontradas: {len(expected_stems)}"
         )
 
     expected_set = set(expected_stems)
@@ -135,7 +138,7 @@ def parse_manifest_ron(content: str) -> list[dict[str, object]]:
 
 
 def build_all(write_contact_sheet: bool = True) -> None:
-    """Escribe las 25 texturas PNG, `manifest.ron` y opcionalmente la hoja de contacto."""
+    """Escribe las 36 texturas PNG, `manifest.ron` y opcionalmente la hoja de contacto."""
     textures = generate_all_textures()
     BLOCKS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -217,7 +220,7 @@ def check_all() -> tuple[bool, list[str]]:
 def main(argv: list[str] | None = None) -> int:
     """Punto de entrada de línea de comandos para generar o verificar las texturas."""
     parser = argparse.ArgumentParser(
-        description="Genera o verifica las 25 texturas 16×16 RGBA8 y el manifest.ron de HUSHMINE."
+        description="Genera o verifica las 36 texturas 16×16 RGBA8 y el manifest.ron de HUSHMINE."
     )
     parser.add_argument(
         "--check",
@@ -230,7 +233,7 @@ def main(argv: list[str] | None = None) -> int:
         ok, errors = check_all()
         if ok:
             print(
-                "Verificación completada con éxito: las 25 texturas PNG y manifest.ron coinciden byte a byte."
+                "Verificación completada con éxito: las 36 texturas PNG y manifest.ron coinciden byte a byte."
             )
             return 0
         for err in errors:
@@ -239,7 +242,7 @@ def main(argv: list[str] | None = None) -> int:
 
     build_all(write_contact_sheet=True)
     print(
-        f"Generadas 25 texturas en {BLOCKS_DIR}, manifiesto en {MANIFEST_PATH} "
+        f"Generadas 36 texturas en {BLOCKS_DIR}, manifiesto en {MANIFEST_PATH} "
         f"y hoja de contacto en {CONTACT_SHEET_PATH}."
     )
     return 0

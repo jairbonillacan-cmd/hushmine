@@ -1,4 +1,4 @@
-// Catálogo maestro de los 18 bloques de HUSHMINE (Convención A: ids 0 a 17).
+// Catálogo maestro de los 29 bloques de HUSHMINE (Convención A: ids 0 a 28).
 // Todas las durezas están expresadas en ticks de simulación a 30 Hz.
 // Un valor de 0 en dureza indica que el bloque no se puede picar.
 // El equipo propietario (Copper o Cobalt) no forma parte del id: se almacena
@@ -311,5 +311,192 @@ BlockCatalog(
             team_owned: true,
             ore_cost: 3,
         ),
+        // 18: Tablon de soporte (madera procesada; modo historia)
+        BlockDef(
+            id: 18,
+            name: "plank",
+            hardness: HardnessByClass(
+                prospector: 8,
+                miner: 6,
+                engineer: 8,
+                sapper: 6,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: false,
+            team_owned: false,
+            ore_cost: 0,
+        ),
+
+        // 19: Puntal de contencion (consolida la roca circundante)
+        BlockDef(
+            id: 19,
+            name: "prop_beam",
+            hardness: HardnessByClass(
+                prospector: 10,
+                miner: 8,
+                engineer: 6,
+                sapper: 8,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: false,
+            team_owned: false,
+            ore_cost: 0,
+        ),
+
+        // 20: Antorcha de prospeccion (fuente de luz de bloque 14)
+        BlockDef(
+            id: 20,
+            name: "torch",
+            hardness: HardnessByClass(
+                prospector: 1,
+                miner: 1,
+                engineer: 1,
+                sapper: 1,
+            ),
+            solid: true,
+            transmits_noise: false,
+            conducts_electricity: false,
+            team_owned: false,
+            ore_cost: 0,
+        ),
+
+        // 21: Banco de trabajo y maestria (matriz de fabricacion 3x3)
+        BlockDef(
+            id: 21,
+            name: "workbench",
+            hardness: HardnessByClass(
+                prospector: 10,
+                miner: 8,
+                engineer: 6,
+                sapper: 6,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: false,
+            team_owned: false,
+            ore_cost: 0,
+        ),
+
+        // 22: Horno de piedra (fundicion y calcinacion termica)
+        BlockDef(
+            id: 22,
+            name: "furnace",
+            hardness: HardnessByClass(
+                prospector: 15,
+                miner: 12,
+                engineer: 10,
+                sapper: 10,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: false,
+            team_owned: false,
+            ore_cost: 0,
+        ),
+
+        // 23: Arcon de madera (27 casillas; en pares, 54)
+        BlockDef(
+            id: 23,
+            name: "chest",
+            hardness: HardnessByClass(
+                prospector: 10,
+                miner: 8,
+                engineer: 8,
+                sapper: 6,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: false,
+            team_owned: false,
+            ore_cost: 0,
+        ),
+
+        // 24: Grava (bloque granular sujeto a derrumbes)
+        BlockDef(
+            id: 24,
+            name: "gravel",
+            hardness: HardnessByClass(
+                prospector: 6,
+                miner: 4,
+                engineer: 6,
+                sapper: 4,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: false,
+            team_owned: false,
+            ore_cost: 0,
+        ),
+
+        // 25: Agua (fluido; sin colision ni pico)
+        BlockDef(
+            id: 25,
+            name: "water",
+            hardness: HardnessByClass(
+                prospector: 0,
+                miner: 0,
+                engineer: 0,
+                sapper: 0,
+            ),
+            solid: false,
+            transmits_noise: false,
+            conducts_electricity: false,
+            team_owned: false,
+            ore_cost: 0,
+        ),
+
+        // 26: Obsidiana abisal (agua + manantial de magma)
+        BlockDef(
+            id: 26,
+            name: "obsidian",
+            hardness: HardnessByClass(
+                prospector: 60,
+                miner: 60,
+                engineer: 55,
+                sapper: 50,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: false,
+            team_owned: false,
+            ore_cost: 0,
+        ),
+
+        // 27: Mena de carbon bituminoso
+        BlockDef(
+            id: 27,
+            name: "coal_ore",
+            hardness: HardnessByClass(
+                prospector: 14,
+                miner: 12,
+                engineer: 14,
+                sapper: 12,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: false,
+            team_owned: false,
+            ore_cost: 0,
+        ),
+
+        // 28: Tronco de madera fosil (coniferas de la superficie)
+        BlockDef(
+            id: 28,
+            name: "log",
+            hardness: HardnessByClass(
+                prospector: 10,
+                miner: 10,
+                engineer: 10,
+                sapper: 8,
+            ),
+            solid: true,
+            transmits_noise: true,
+            conducts_electricity: false,
+            team_owned: false,
+            ore_cost: 0,
+        ),
     ],
 )
+

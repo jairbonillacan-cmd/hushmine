@@ -39,6 +39,17 @@ CONVENTION_A_BLOCKS: dict[int, str] = {
     15: "explosive",
     16: "bucket_station",
     17: "bucket_post",
+    18: "plank",
+    19: "prop_beam",
+    20: "torch",
+    21: "workbench",
+    22: "furnace",
+    23: "chest",
+    24: "gravel",
+    25: "water",
+    26: "obsidian",
+    27: "coal_ore",
+    28: "log",
 }
 
 TEAM_BLOCKS: frozenset[str] = frozenset(
@@ -85,13 +96,13 @@ class TestBlockTextures(unittest.TestCase):
     """Pruebas de regresión y validación técnica del atlas de bloques 16×16."""
 
     def test_all_png_dimensions_and_rgba8(self) -> None:
-        """Verifica que los 25 PNG existan, midan 16×16 RGBA8 (1024 B) y el códec PNG funcione."""
+        """Verifica que los 36 PNG existan, midan 16×16 RGBA8 (1024 B) y el códec PNG funcione."""
         self.assertTrue(
             build_all.BLOCKS_DIR.is_dir(),
             f"No existe el directorio de texturas: {build_all.BLOCKS_DIR}",
         )
         png_files = sorted(build_all.BLOCKS_DIR.glob("*.png"))
-        self.assertEqual(len(png_files), 25, f"Se esperaban 25 archivos PNG, hay {len(png_files)}")
+        self.assertEqual(len(png_files), 36, f"Se esperaban 36 archivos PNG, hay {len(png_files)}")
 
         for spec in palette.LAYER_SPECS:
             stem = str(spec["stem"])
@@ -158,16 +169,16 @@ class TestBlockTextures(unittest.TestCase):
                 )
 
     def test_convention_a_coverage_and_variants(self) -> None:
-        """Verifica la cobertura exacta de los IDs 1..17 de la Convención A y sus variantes."""
+        """Verifica la cobertura exacta de los IDs 1..28 de la Convención A ampliada y sus variantes."""
         specs = palette.LAYER_SPECS
-        self.assertEqual(len(specs), 25, f"Se esperaban 25 capas en LAYER_SPECS, hay {len(specs)}")
+        self.assertEqual(len(specs), 36, f"Se esperaban 36 capas en LAYER_SPECS, hay {len(specs)}")
 
         block_ids_in_specs = {int(s["block_id"]) for s in specs}  # type: ignore[arg-type]
         self.assertNotIn(0, block_ids_in_specs, "El bloque 0 (air) no debe tener textura asignada")
         self.assertEqual(
             block_ids_in_specs,
             set(CONVENTION_A_BLOCKS.keys()),
-            "Los IDs de bloque en LAYER_SPECS no cubren exactamente los IDs 1..17 de Convención A",
+            "Los IDs de bloque en LAYER_SPECS no cubren exactamente los IDs 1..28 de Convención A",
         )
         self.assertFalse(
             (build_all.BLOCKS_DIR / "air.png").exists(),
@@ -286,7 +297,7 @@ class TestBlockTextures(unittest.TestCase):
                 )
 
     def test_manifest_ron_integrity(self) -> None:
-        """Verifica que `manifest.ron` exista, tenga las capas 0..24 sin huecos y coincida con LAYER_SPECS."""
+        """Verifica que `manifest.ron` exista, tenga las capas 0..35 sin huecos y coincida con LAYER_SPECS."""
         self.assertTrue(
             build_all.MANIFEST_PATH.is_file(),
             f"No existe el archivo de manifiesto: {build_all.MANIFEST_PATH}",
@@ -299,9 +310,9 @@ class TestBlockTextures(unittest.TestCase):
         )
 
         entries = build_all.parse_manifest_ron(content)
-        self.assertEqual(len(entries), 25, f"Se esperaban 25 capas en manifest.ron, hay {len(entries)}")
+        self.assertEqual(len(entries), 36, f"Se esperaban 36 capas en manifest.ron, hay {len(entries)}")
         layers = [int(entry["layer"]) for entry in entries]  # type: ignore[arg-type]
-        self.assertEqual(layers, list(range(25)), f"Capas no correlativas de 0 a 24: {layers}")
+        self.assertEqual(layers, list(range(36)), f"Capas no correlativas de 0 a 35: {layers}")
 
         for entry, spec in zip(entries, palette.LAYER_SPECS):
             for key in ("layer", "block_id", "block_name", "variant", "frame"):
