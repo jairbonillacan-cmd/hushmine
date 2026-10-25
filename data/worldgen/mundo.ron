@@ -1,0 +1,51 @@
+// Cotas del mundo de HUSHMINE: extensión horizontal, rango vertical y capas.
+// Fuente: docs/mundo/01-escala-y-motor.md §1 (escala del mundo y capas).
+// Este archivo es dato, no código: el motor lee las cotas desde aquí.
+//
+// INV-W04: ninguna estructura cruza el borde; hay columna indestructible en
+// |x| o |z| = 7 500 000 y la niebla de borde avisa desde 64 bloques antes.
+
+WorldGen(
+    worldgen_version: 1,
+    // X/Z: mundo de 15 millones de bloques de lado (±7,5 M).
+    x_min: -7_500_000,
+    x_max: 7_499_999,
+    z_min: -7_500_000,
+    z_max: 7_499_999,
+    // Y: de las raíces al cielo; el nivel del mar (0) cae dentro de "surface".
+    y_min: -4_096,
+    y_max: 1_023,
+    // INV-W04: la niebla de borde empieza a advertir 64 bloques antes del muro.
+    border_fog_warning_blocks: 64,
+    // Partición vertical de [-4_096, 1_023] sin huecos ni solapes: cada capa
+    // empieza en y_min = y_max de la capa anterior + 1.
+    //
+    // La tabla del doc §1 deja una banda ambigua: Superficie ~-40..600 y
+    // Corteza 0..-256 se solapan en -40..0 (ambas la reclaman). Esta partición
+    // lo resuelve asignando esa banda a "surface": la corteza queda delimitada
+    // por -256..-41 y la superficie por -40..599.
+    layers: [
+        // Solo los picos más altos; por encima, la piedra del Párpado no se genera.
+        (name: "sky", y_min: 600, y_max: 1_023, description: "Only the tallest peaks reach it; Eyelid stone is never generated above"),
+        // Biomas, pueblos, castilletes y bocaminas; el macizo del Durmiente llega a ~900.
+        (name: "surface", y_min: -40, y_max: 599, description: "Biomes, towns, headframes and mine mouths; the massif peaks near 900"),
+        // Cuevas de caliza, acuíferos, minas de los Antiguos; carbón, cobre y hierro.
+        (name: "crust", y_min: -256, y_max: -41, description: "Limestone caves, aquifers, Ancient mines, coal, copper and iron"),
+        // Basalto, geodas, ríos de lava y bolsas de grisú; el Corazón, hacia -600.
+        (name: "mantle", y_min: -640, y_max: -257, description: "Basalt caverns, geodes, lava rivers, firedamp pockets; the Heart near -600"),
+        // Vacío hueco de kilómetros bajo el Corazón: pilares, islas de roca y cristal.
+        (name: "vault", y_min: -3_072, y_max: -641, description: "Kilometers of hollow void: pillars, rock islands and crystal"),
+        // Las raíces de los Durmientes: contenido final.
+        (name: "roots", y_min: -4_095, y_max: -3_073, description: "The roots of the Sleepers; endgame content"),
+        // Roca indestructible que cierra el mundo por abajo.
+        (name: "bedrock", y_min: -4_096, y_max: -4_096, description: "Indestructible rock closing the world from below"),
+    ],
+    // Macizo del Durmiente Mayor: radio ~3 km, pico ~900 m, centro a 2-5 km del
+    // inicio (docs/mundo/02-generacion.md §3).
+    sleeper_massif: (
+        radius_blocks: 3_000,
+        peak_y: 900,
+        spawn_dist_min: 2_000,
+        spawn_dist_max: 5_000,
+    ),
+)

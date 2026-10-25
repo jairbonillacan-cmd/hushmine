@@ -1,0 +1,107 @@
+// Parámetros de los excavadores de cuevas de HUSHMINE.
+// Cita: docs/mundo/02-generacion.md §6 (Cuevas) y §7 (Acuíferos, ríos y lava).
+//
+// Reglas del doc que estos datos reflejan:
+// - Las cuevas no cortan el lecho ni el borde del mundo, y dejan al menos
+//   river_roof_min bloques de techo bajo el lecho de los ríos (§6).
+// - Ningún excavador baja de y_min = -4_096 + bedrock_margin = -4_092.
+// - Los lagos de lava viven en las cámaras gigantes del manto por debajo de
+//   -450 (§7); por eso giant_chambers queda confinado a -640..-450.
+//
+// Umbral en punto fijo Q16 sobre ruido en [0, 1]: 65_536 equivale a 1.0.
+// scale_shift K hace que la celda del ruido mida 2^K bloques por eje.
+// y_min/y_max acotan la cota donde actúa cada excavador.
+
+Caves(
+    // Margen sólido sobre el lecho del mundo: ningún excavador alcanza el fondo.
+    bedrock_margin: 4,
+    // Techo mínimo bajo el lecho de los ríos para que no se vacíen al excavar (§6).
+    river_roof_min: 2,
+    carvers: [
+        // Queso (§6): umbral 0.4 (26_214/65_536) sobre fBm 3D; cavernas amplias
+        // con pilares pero sin devorar la corteza.
+        (
+            name: "cheese",
+            method: "fbm3d_threshold",
+            y_min: -3_000,
+            y_max: 300,
+            scale_shift: 4,
+            threshold_q16: 26_214,
+            description: "Large caverns with pillars carved by a 3D fBm threshold.",
+        ),
+
+        // Espagueti (§6): |ruido1|+|ruido2| < 0.224; túneles largos y sinuosos
+        // que se cruzan. Umbral moderado para que abunduen sin vaciar el mapa.
+        (
+            name: "spaghetti",
+            method: "dual_noise_ridge",
+            y_min: -3_000,
+            y_max: 300,
+            scale_shift: 3,
+            threshold_q16: 14_681,
+            description: "Long winding intersecting tunnels from two noise surfaces.",
+        ),
+
+        // Fideos (§6): misma intersección dual con umbral fino de 0.1;
+        // pasadizos estrechos y gateras.
+        (
+            name: "noodles",
+            method: "dual_noise_ridge_fine",
+            y_min: -3_000,
+            y_max: 300,
+            scale_shift: 2,
+            threshold_q16: 6_554,
+            description: "Same dual-noise ridge with a fine threshold: tight crawlways.",
+        ),
+
+        // Gusanos acotados (§6): un gusano por celda de 128³ (scale_shift 7),
+        // origen, dirección y longitud por hash, longitud máxima 128; galerías
+        // en tubo con cámaras en los cruces. Umbral ~0.32: densidad moderada.
+        (
+            name: "bounded_worms",
+            method: "hashed_worm_cells",
+            y_min: -3_000,
+            y_max: 300,
+            scale_shift: 7,
+            threshold_q16: 21_000,
+            description: "One hashed worm per 128^3 cell, max length 128; tube galleries.",
+        ),
+
+        // Simas (§6): gusano casi vertical y muy infrecuente (umbral 0.875);
+        // pozos naturales de 50-300 m que pueden cortar la superficie.
+        (
+            name: "sinkholes",
+            method: "vertical_worm_rare",
+            y_min: -300,
+            y_max: 300,
+            scale_shift: 7,
+            threshold_q16: 57_344,
+            description: "Rare near-vertical worm shafts of 50-300 m; shortcuts down.",
+        ),
+
+        // Cañones (§6): elipse alargada en planta con perfil en V, umbral 0.75;
+        // grietas que cortan el subsuelo y llegan a la superficie (hasta 599).
+        (
+            name: "canyons",
+            method: "ellipse_v_profile",
+            y_min: -256,
+            y_max: 599,
+            scale_shift: 5,
+            threshold_q16: 49_152,
+            description: "Plan ellipse with V profile; cracks cutting ground and surface.",
+        ),
+
+        // Cámaras gigantes (§6, §7): celular 3D en el manto con umbral 0.5 y
+        // celda de 256 bloques (scale_shift 8); salas de 100-300 m. Confinado a
+        // -640..-450 porque los lagos de lava viven por debajo de -450 (§7).
+        (
+            name: "giant_chambers",
+            method: "cellular3d",
+            y_min: -640,
+            y_max: -450,
+            scale_shift: 8,
+            threshold_q16: 32_768,
+            description: "3D cellular halls of 100-300 m in the mantle; lava lakes below -450.",
+        ),
+    ],
+)
