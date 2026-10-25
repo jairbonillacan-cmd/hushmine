@@ -7,19 +7,22 @@
 //! `hush-cli sim`. Incluye el catálogo de bloques (Convención A), el terreno
 //! (con los tipos de `grisu-voxel`), el movimiento de los mineros, cavar y
 //! poner, el Sismógrafo y el ciclo del Despertar, la economía y bolsas de
-//! botín, el verificador de invariantes formales, el registro de eventos, el
-//! reloj de ticks, el generador aleatorio determinista y el informe de
-//! simulación.
+//! botín, el inventario y las herramientas con durabilidad, la fabricación en
+//! estaciones con su coste de ruido, la propagación del sonido por el mundo,
+//! el verificador de invariantes formales, el registro de eventos, el reloj
+//! de ticks, el generador aleatorio determinista y el informe de simulación.
 
 mod actions;
 pub mod altar;
 pub mod block;
 mod bot;
+pub mod crafting;
 pub mod economy;
 mod edit;
 pub mod events;
 pub mod fixed;
 pub mod invariants;
+pub mod inventory;
 pub mod loot;
 mod player;
 mod report;
@@ -28,21 +31,27 @@ pub mod seismograph;
 mod sim;
 mod sim_seismo;
 mod sim_world;
+pub mod sound_grid;
 mod terrain;
 
 pub use altar::{Altar, AltarError};
 pub use block::{BlockKind, InvalidBlockId};
 pub use bot::DiggerBot;
+pub use crafting::{CraftError, Recipe, StationKind, builtin_recipes, can_craft, craft};
 pub use economy::{DepositOutcome, Economy, EconomyError, EconomyResult, PlayerLoad};
 pub use edit::{EditError, REACH, dig as try_dig, place as try_place};
 pub use events::{EventLog, MatchEvent, MatchEventKind, Team};
 pub use fixed::{Fixed, FixedError};
+pub use inventory::{
+    Inventory, InventoryError, ItemId, ItemSpec, ItemStack, ToolState, builtin_items, item_spec,
+};
 pub use loot::{GridPos, LootBag, LootContents, LootError, LootPickup, LootStore};
 pub use player::{EYE_HEIGHT, HALF_WIDTH, HEIGHT, MoveInput, PlayerBody, spawn_point};
 pub use report::SimReport;
 pub use rng::Rng;
 pub use seismograph::{NoiseSource, SeismoEvent, SeismoThreshold, Seismograph};
 pub use sim::{BlockChange, Command, EditStats, MatchConfig, Rejection, Simulation, TICK_RATE};
+pub use sound_grid::{HeardSound, MAX_INTENSITY, SoundEvent, block_sound_cost, propagate_sound};
 pub use terrain::{TerrainConfig, generate as generate_terrain};
 
 /// Ejecuta una partida completa sin gráficos y devuelve el informe.
