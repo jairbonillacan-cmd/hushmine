@@ -1,0 +1,85 @@
+// Herramientas acoplables a los enganches del minero: cinco de trabajo
+// (slot "tool") y la lampara del casco (slot "lamp").
+// Espacio local de cada modelo: origen en el punto de agarre y mira
+// hacia -Z. Longitud total de 20 px como maximo y todo cuboid dentro de
+// z en (-22, 6) para no atravesar paredes al acoplarse.
+// Hoja de textura 128x128 compartida por las seis: regiones UV en
+// multiplos de 4 y sin solape entre todas las piezas del archivo.
+ModelSet(
+    models: [
+        // Pico: mango con la cabeza en T al fondo; 20 px en z en total.
+        Model(
+            name: "pickaxe",
+            texture: "characters/tools",
+            slot: Some("tool"),
+            parts: [
+                Part(id: "handle", parent: None, pivot: (0, 0, 0), cuboid: (min: (-1, -1, -14), max: (1, 1, 2)), uv: (0, 0)), // region 40x20
+                Part(id: "head", parent: Some("handle"), pivot: (0, 0, -16), cuboid: (min: (-7, -1, -18), max: (7, 1, -14)), uv: (0, 20)), // region 40x8
+            ],
+            attachments: [],
+            team_tint_mask: None,
+        ),
+        // Pala: mango largo y hoja ancha al fondo; 20 px en z en total.
+        Model(
+            name: "shovel",
+            texture: "characters/tools",
+            slot: Some("tool"),
+            parts: [
+                Part(id: "handle", parent: None, pivot: (0, 0, 0), cuboid: (min: (-1, -1, -12), max: (1, 1, 4)), uv: (40, 0)), // region 40x20
+                Part(id: "blade", parent: Some("handle"), pivot: (0, 0, -12), cuboid: (min: (-3, -2, -16), max: (3, 2, -12)), uv: (40, 20)), // region 16x12
+            ],
+            attachments: [],
+            team_tint_mask: None,
+        ),
+        // Cizalla: dos brazos que se abren desde el punto de agarre.
+        Model(
+            name: "shears",
+            texture: "characters/tools",
+            slot: Some("tool"),
+            parts: [
+                Part(id: "arm_lower", parent: None, pivot: (0, -1, 2), cuboid: (min: (-1, -4, -12), max: (1, -1, 4)), uv: (80, 0)), // region 32x16
+                Part(id: "arm_upper", parent: Some("arm_lower"), pivot: (0, 1, 2), cuboid: (min: (-1, 1, -12), max: (1, 4, 4)), uv: (112, 0)), // region 16x16
+            ],
+            attachments: [],
+            team_tint_mask: None,
+        ),
+        // Geofono: caja con esfera arriba y sonda hacia adelante para
+        // clavarla en el suelo; 16 px en z en total.
+        Model(
+            name: "geophone",
+            texture: "characters/tools",
+            slot: Some("tool"),
+            parts: [
+                Part(id: "body", parent: None, pivot: (0, 0, 0), cuboid: (min: (-3, -2, -5), max: (3, 2, 3)), uv: (0, 40)), // region 24x8
+                Part(id: "probe", parent: Some("body"), pivot: (0, 0, -5), cuboid: (min: (-1, -1, -13), max: (1, 1, -5)), uv: (0, 48)), // region 24x12
+                Part(id: "dial", parent: Some("body"), pivot: (0, 2, 0), cuboid: (min: (-1, 2, -2), max: (1, 4, 2)), uv: (24, 40)), // region 12x8
+            ],
+            attachments: [],
+            team_tint_mask: None,
+        ),
+        // Carga de petardo: saco con la mecha asomando arriba.
+        Model(
+            name: "satchel_charge",
+            texture: "characters/tools",
+            slot: Some("tool"),
+            parts: [
+                Part(id: "bag", parent: None, pivot: (0, 0, 0), cuboid: (min: (-4, -3, -2), max: (4, 3, 4)), uv: (40, 40)), // region 24x12
+                Part(id: "fuse", parent: Some("bag"), pivot: (0, 3, 0), cuboid: (min: (0, 3, 0), max: (1, 6, 1)), uv: (64, 40)), // region 8x8
+            ],
+            attachments: [],
+            team_tint_mask: None,
+        ),
+        // Lampara de casco: carcasa con cristal emisivo delante (-Z).
+        Model(
+            name: "helmet_lamp",
+            texture: "characters/tools",
+            slot: Some("lamp"),
+            parts: [
+                Part(id: "shell", parent: None, pivot: (0, 0, 0), cuboid: (min: (-3, -2, -2), max: (3, 2, 3)), uv: (80, 40)), // region 24x8
+                Part(id: "lens", parent: Some("shell"), pivot: (0, 0, -2), cuboid: (min: (-2, -1, -4), max: (2, 1, -2)), uv: (104, 40)), // region 12x8
+            ],
+            attachments: [],
+            team_tint_mask: None,
+        ),
+    ],
+)
