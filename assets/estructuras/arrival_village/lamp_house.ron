@@ -1,0 +1,26 @@
+// Lampistería del Pueblo de Llegados: pieza raíz del pueblo, con la baliza
+// (id 14) en el caballete y el banco de trabajo del lampista (id 16).
+// Puerta al sur y calles hacia el este y el oeste.
+Piece(
+    id: "lamp_house",
+    family: "arrival_village",
+    is_cap: false,
+    size: [9, 6, 7],
+    fills: [
+        // Muros de piedra con cubierta
+        [0, 0, 0, 9, 5, 7, 2],
+        // Interior hueco
+        [1, 1, 1, 8, 4, 6, 0],
+        // Hueco de la puerta sur
+        [3, 1, 6, 5, 3, 7, 0],
+        // Baliza en el caballete
+        [4, 4, 3, 5, 5, 4, 14],
+        // Banco de trabajo del lampista
+        [6, 1, 1, 7, 2, 2, 16],
+    ],
+    connectors: [
+        (pos: [4, 1, 7], dir: "south", kind: "door"),
+        (pos: [9, 1, 3], dir: "east", kind: "street"),
+        (pos: [0, 1, 3], dir: "west", kind: "street"),
+    ],
+)

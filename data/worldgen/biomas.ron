@@ -1,0 +1,294 @@
+// Biomas de HUSHMINE: centros de clima, paleta provisional y luz de fondo.
+// Fuente de diseño: docs/mundo/02-generacion.md §4 (superficie) y §5 (subterráneos).
+// Las cotas exactas de cada capa viven en data/worldgen/mundo.ron; aquí solo se
+// referencia la capa por nombre ("crust", "mantle", "vault").
+//
+// Selección en superficie: se elige el bioma más cercano por distancia entera
+// al cuadrado en el espacio de 5 ejes (continentality, erosion, temperature,
+// humidity, weirdness), todos en Q16 dentro de [-65_536, 65_536]. Los centros
+// están razonablemente separados para que cada bioma tenga región propia; dos
+// biomas vecinos comparten parámetros parecidos y la frontera no tiene
+// escalones (la altura depende de los parámetros, no del bioma).
+//
+// Selección en subsuelo: dentro de una capa, el bioma se reparte con ruido
+// celular 3D de gran escala, así que todos los biomas de una capa cubren su
+// rango completo de cota.
+//
+// Convención A (data/blocks.ron): el catálogo solo tiene ids 0..=17 y NO
+// existen bloques de arena, nieve, grava, arcilla ni agua. surface_block y
+// subsurface_block son marcadores provisionales con dirt/rock/hard_rock; el
+// material real de cada bioma se indica en su comentario y el arte final
+// decidirá los ids definitivos cuando el catálogo crezca.
+//
+// base_light: luz de bloque de fondo en 4 bits (0..=15), según
+// docs/mundo/01-escala-y-motor.md §5. 0 = oscuridad total.
+
+Biomes(
+    // ---- Superficie (docs/mundo/02-generacion.md §4) --------------------------
+    surface_biomes: [
+        // 0: Cordillera. Fría, continentalidad alta, erosión muy negativa
+        // (picos escarpados). Vistas y bocaminas altas.
+        (
+            biome_id: 0,
+            name: "cordillera",
+            center: (
+                continentality_q16: 45_000,
+                erosion_q16: -50_000,
+                temperature_q16: -25_000,
+                humidity_q16: 0,
+                weirdness_q16: 0,
+            ),
+            // Roca y pedreras; provisional: rock sobre hard_rock (la nieve
+            // no existe todavía en la Convención A).
+            surface_block: 2,
+            subsurface_block: 3,
+            description: "Cold high ranges of bare rock and scree, with natural adits for deep mines.",
+        ),
+
+        // 1: Bosque de agujas. Frío y húmedo; madera para entibar.
+        (
+            biome_id: 1,
+            name: "needle_forest",
+            center: (
+                continentality_q16: 10_000,
+                erosion_q16: 0,
+                temperature_q16: -30_000,
+                humidity_q16: 45_000,
+                weirdness_q16: -10_000,
+            ),
+            // Tierra con hojarasca de agujas; provisional: dirt sobre dirt.
+            surface_block: 1,
+            subsurface_block: 1,
+            description: "Cold, damp forest of needle trees; the source of timber props.",
+        ),
+
+        // 2: Altiplano. Frío y seco, meseta de erosión moderada.
+        // Cobre y estaño someros.
+        (
+            biome_id: 2,
+            name: "highland",
+            center: (
+                continentality_q16: 25_000,
+                erosion_q16: 20_000,
+                temperature_q16: -35_000,
+                humidity_q16: -40_000,
+                weirdness_q16: 0,
+            ),
+            // Pasto ralo sobre roca; provisional: dirt sobre rock.
+            surface_block: 1,
+            subsurface_block: 2,
+            description: "Cold, dry plateau with sparse grass and exposed rock; shallow copper and tin.",
+        ),
+
+        // 3: Desierto rojo. Cálido y seco; oro en superficie, poca agua.
+        (
+            biome_id: 3,
+            name: "red_desert",
+            center: (
+                continentality_q16: 0,
+                erosion_q16: 15_000,
+                temperature_q16: 50_000,
+                humidity_q16: -50_000,
+                weirdness_q16: -20_000,
+            ),
+            // Arena roja y costras; provisional: dirt sobre dirt.
+            surface_block: 1,
+            subsurface_block: 1,
+            description: "Hot dry desert of red sand and cracked crusts; surface gold, little water.",
+        ),
+
+        // 4: Badlands con mesas. Cálido, seco y rareza alta (weirdness):
+        // estratos visibles que leen la geología desde fuera.
+        (
+            biome_id: 4,
+            name: "badlands",
+            center: (
+                continentality_q16: 5_000,
+                erosion_q16: 10_000,
+                temperature_q16: 45_000,
+                humidity_q16: -35_000,
+                weirdness_q16: 45_000,
+            ),
+            // Capas de arcilla de colores; provisional: dirt sobre dirt.
+            surface_block: 1,
+            subsurface_block: 1,
+            description: "Hot, dry and strange; banded mesas that read like an open geology book.",
+        ),
+
+        // 5: Valle fluvial. Templado y húmedo, erosión muy negativa (valles)
+        // y baja continentalidad. Oro de placer y pueblos.
+        (
+            biome_id: 5,
+            name: "river_valley",
+            center: (
+                continentality_q16: -25_000,
+                erosion_q16: -30_000,
+                temperature_q16: 5_000,
+                humidity_q16: 40_000,
+                weirdness_q16: -5_000,
+            ),
+            // Grava y limo de río; provisional: dirt sobre dirt.
+            surface_block: 1,
+            subsurface_block: 1,
+            description: "Temperate, humid low valleys with gravel and silt; placer gold and towns.",
+        ),
+
+        // 6: Tundra y turberas. La temperatura más baja de la tabla.
+        // Carbón somero (turba).
+        (
+            biome_id: 6,
+            name: "tundra",
+            center: (
+                continentality_q16: -10_000,
+                erosion_q16: 10_000,
+                temperature_q16: -60_000,
+                humidity_q16: 10_000,
+                weirdness_q16: 10_000,
+            ),
+            // Musgo y charcas; provisional: dirt sobre dirt.
+            surface_block: 1,
+            subsurface_block: 1,
+            description: "Very cold moss flats and pools; shallow coal and peat.",
+        ),
+
+        // 7: Lagos y mares interiores. Continentalidad muy negativa:
+        // límite natural de expansión y rutas.
+        (
+            biome_id: 7,
+            name: "inland_sea",
+            center: (
+                continentality_q16: -55_000,
+                erosion_q16: -5_000,
+                temperature_q16: 15_000,
+                humidity_q16: 50_000,
+                weirdness_q16: 0,
+            ),
+            // Playas de grava; provisional: dirt sobre dirt (el agua es un
+            // fluido de la simulación, no un bloque del catálogo).
+            surface_block: 1,
+            subsurface_block: 1,
+            description: "Far inland waters with gravel shores; a natural travel barrier.",
+        ),
+    ],
+
+    // ---- Subsuelo (docs/mundo/02-generacion.md §5) ----------------------------
+    underground_biomes: [
+        // 0: Cuevas de caliza. Estalactitas, columnas, coladas y lagos;
+        // goteo constante. Entradas frecuentes desde la superficie.
+        (
+            biome_id: 0,
+            name: "limestone_caves",
+            layer: "crust",
+            y_min: -256,
+            y_max: -41,
+            dominant_block: 2,
+            base_light: 0,
+            description: "Dripstone halls with columns, flowstone and lakes; the drip never stops.",
+        ),
+
+        // 1: Cuevas húmedas. Acuíferos y galerías inundadas con barro;
+        // hay que bombear para bajar.
+        (
+            biome_id: 1,
+            name: "wet_caves",
+            layer: "crust",
+            y_min: -256,
+            y_max: -41,
+            dominant_block: 2,
+            base_light: 0,
+            description: "Aquifer galleries and flooded tunnels floored with mud.",
+        ),
+
+        // 2: Galerías de arcilla. Paredes blandas y derrumbes fáciles;
+        // crujidos de la roca.
+        (
+            biome_id: 2,
+            name: "clay_galleries",
+            layer: "crust",
+            y_min: -256,
+            y_max: -41,
+            // Arcilla provisional con dirt hasta que el catálogo la tenga.
+            dominant_block: 1,
+            base_light: 0,
+            description: "Soft-walled passages that cave in easily; the walls creak.",
+        ),
+
+        // 3: Cavernas de basalto. Prismas, ríos de lava y azufre;
+        // rumor grave y resplandor naranja de fondo.
+        (
+            biome_id: 3,
+            name: "basalt_caverns",
+            layer: "mantle",
+            y_min: -640,
+            y_max: -257,
+            dominant_block: 3,
+            base_light: 3,
+            description: "Basalt columns, lava rivers and sulfur; a deep orange glow.",
+        ),
+
+        // 4: Geodas y cuarzo. Cámaras esféricas de cristal;
+        // resonancia y luz que se refracta.
+        (
+            biome_id: 4,
+            name: "geodes_quartz",
+            layer: "mantle",
+            y_min: -640,
+            y_max: -257,
+            dominant_block: 3,
+            base_light: 2,
+            description: "Spherical crystal chambers that bend the light.",
+        ),
+
+        // 5: Grutas de grisú. Bolsas de gas invisibles (metadatos de volumen);
+        // silbidos lejanos de los Silbadores. Oscuridad total.
+        (
+            biome_id: 5,
+            name: "firedamp_grottos",
+            layer: "mantle",
+            y_min: -640,
+            y_max: -257,
+            dominant_block: 2,
+            base_light: 0,
+            description: "Pockets of invisible firedamp; distant whistling.",
+        ),
+
+        // 6: Hongos luminiscentes. La única luz natural del subsuelo;
+        // silencio.
+        (
+            biome_id: 6,
+            name: "glow_fungi",
+            layer: "mantle",
+            y_min: -640,
+            y_max: -257,
+            dominant_block: 2,
+            base_light: 6,
+            description: "Luminous fungi, the only natural light down here.",
+        ),
+
+        // 7: La Bóveda. Vacío de kilómetros bajo el Corazón: pilares de roca
+        // e islas suspendidas; eco enorme.
+        (
+            biome_id: 7,
+            name: "the_vault",
+            layer: "vault",
+            y_min: -3072,
+            y_max: -641,
+            dominant_block: 2,
+            base_light: 0,
+            description: "Kilometres of hollow dark on rock pillars and hanging islands; vast echo.",
+        ),
+
+        // 8: Vetas soñadas. Oro que vuelve a crecer mientras el Durmiente
+        // sueña; su latido se oye y su luz tiñe la roca.
+        (
+            biome_id: 8,
+            name: "dreamed_veins",
+            layer: "vault",
+            y_min: -3072,
+            y_max: -641,
+            dominant_block: 2,
+            base_light: 2,
+            description: "Gold that grows back while the Sleeper dreams.",
+        ),
+    ],
+)

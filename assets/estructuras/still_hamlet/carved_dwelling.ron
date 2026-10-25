@@ -1,0 +1,20 @@
+// Vivienda excavada de los Quedos: hueco sencillo con suelo repisado y un
+// nodulo de mena (id 4) en la pared. Puertas al norte y al sur.
+Piece(
+    id: "carved_dwelling",
+    family: "still_hamlet",
+    is_cap: false,
+    size: [7, 4, 7],
+    fills: [
+        // Hueco excavado
+        [0, 1, 0, 7, 4, 7, 0],
+        // Suelo repisado
+        [1, 0, 1, 6, 1, 6, 2],
+        // Nodulo de mena en la pared
+        [1, 1, 5, 2, 2, 6, 4],
+    ],
+    connectors: [
+        (pos: [3, 1, 0], dir: "north", kind: "door"),
+        (pos: [3, 1, 7], dir: "south", kind: "door"),
+    ],
+)

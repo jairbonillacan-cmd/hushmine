@@ -789,6 +789,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "grisu-world"
+version = "0.0.1"
+dependencies = [
+ "grisu-voxel",
+]
+
+[[package]]
 name = "half"
 version = "2.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -858,6 +865,7 @@ dependencies = [
  "hush-launcher",
  "hush-net",
  "hush-sim",
+ "hush-worldgen",
  "image",
  "pollster",
  "serde_json",
@@ -933,6 +941,7 @@ dependencies = [
 name = "hush-worldgen"
 version = "0.0.1"
 dependencies = [
+ "grisu-noise",
  "grisu-voxel",
 ]
 

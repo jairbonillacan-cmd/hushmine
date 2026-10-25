@@ -1,0 +1,53 @@
+// Encargos del modo Historia (supervivencia): plantillas del tablero de los pueblos.
+// Los pueblos las generan con sus necesidades y la semilla de la jornada; las de la historia son
+// fijas (docs/supervivencia/03-pueblos-y-comercio.md §5). reward_gold en granos de oro ensayado;
+// reward_reputation es el avance con la facción del encargo (-100..100).
+// Nota para hush-sim: en los encargos kind: "contract" el pago se entrega en vales de la
+// Consolidada (company_scrip), no en granos; el resto paga en granos.
+// Coste moral de los contratos: la Consolidada paga mucho y en vales, pero al completarlos
+// hush-sim resta reputación con the_still y watchers; aquí solo se asienta el pequeño avance
+// con la propia facción. Ayudar a la Consolidada cierra puertas con los Quedos, y al revés.
+
+Orders(
+    orders: [
+        // Entrega: 40 puntales al pueblo de la meseta, el ejemplo del documento de comercio.
+        ( id: "delivery_plateau_props", name: "Deliver Props to the Plateau Village", kind: "delivery", faction: "arrivals", target_item_id: "shoring_prop", target_qty: 40, reward_gold: 80, reward_reputation: 10 ),
+        // Entrega: combustible para la lampistería del campamento profundo antes del cierre.
+        ( id: "delivery_deep_camp_oil", name: "Deliver Lamp Oil to the Deep Camp", kind: "delivery", faction: "arrivals", target_item_id: "lamp_oil", target_qty: 10, reward_gold: 45, reward_reputation: 8 ),
+        // Topografía: levanta el plano de la mina de los Antiguos del valle norte; los Vigías
+        // archivan la copia y dan pistas de la historia.
+        ( id: "survey_north_valley_old_mine", name: "Survey the Old Ones' Mine of the North Valley", kind: "survey", faction: "watchers", target_item_id: "survey_map", target_qty: 1, reward_gold: 90, reward_reputation: 12 ),
+        // Topografía: cartografía de las galerías bajo la boca del Hervor; se exigen dos planos.
+        ( id: "survey_seethe_mouth_galleries", name: "Chart the Galleries under the Seethe Mouth", kind: "survey", faction: "arrivals", target_item_id: "survey_map", target_qty: 2, reward_gold: 140, reward_reputation: 15 ),
+        // Desagüe: bombea el nivel inundado; el pistón queda instalado en la bomba del pueblo.
+        ( id: "drain_flooded_third_gallery", name: "Pump the Flooded Third Gallery", kind: "drain", faction: "arrivals", target_item_id: "piston", target_qty: 1, reward_gold: 80, reward_reputation: 10 ),
+        // Reapertura: despeja y entiba el pozo hundido con veinte puntales.
+        ( id: "reopen_collapsed_winze", name: "Reopen the Collapsed Winze", kind: "reopen", faction: "arrivals", target_item_id: "shoring_prop", target_qty: 20, reward_gold: 70, reward_reputation: 12 ),
+        // Rescate: una ficha lleva dos jornadas sin volver; trae su ficha perdida (o avisa a la
+        // cuadrilla pagando). La carga del caído queda en una bolsa donde cayó.
+        ( id: "rescue_lost_pair_tally", name: "Recover the Tally of the Lost Pair", kind: "rescue", faction: "arrivals", target_item_id: "lost_brass_tally", target_qty: 1, reward_gold: 120, reward_reputation: 20 ),
+        // Escolta: acompaña a la Medidora a medir una sima; la luz fría no prende el gas de fondo.
+        ( id: "escort_measurer_abyss", name: "Escort the Measurer to the Abyss", kind: "escort", faction: "watchers", target_item_id: "cold_light_lamp", target_qty: 1, reward_gold: 100, reward_reputation: 15 ),
+        // Ofrenda de la Escuela del Cobre: lleva oro soñado a la grieta del este. La escuela
+        // agradece menos de lo que pagaría el ensayador: calmar al Durmiente no se hace por granos.
+        ( id: "offering_eastern_fissure", name: "Offer Dreamed Gold at the Eastern Fissure", kind: "offering", faction: "arrivals", target_item_id: "dreamed_gold", target_qty: 10, reward_gold: 40, reward_reputation: 18 ),
+        // Ofrenda Queda: deja oro soñado en la gruta de los Quedos; no pagan en granos, su
+        // gratitud abre el trueque y la lengua de golpes.
+        ( id: "offering_still_grotto", name: "Lay Dreamed Gold in the Still Grotto", kind: "offering", faction: "the_still", target_item_id: "dreamed_gold", target_qty: 5, reward_gold: 0, reward_reputation: 25 ),
+        // Contrato de la Consolidada: vuela el noveno pilar de seguridad, y no preguntes.
+        // Paga mucho en vales; al completarse baja la reputación con the_still y watchers.
+        ( id: "contract_ninth_pillar", name: "Blast the Ninth Safety Pillar", kind: "contract", faction: "consolidated", target_item_id: "directed_charge", target_qty: 3, reward_gold: 320, reward_reputation: 5 ),
+        // Contrato de la Consolidada: despeja la veta para el pozo de la Compañía a polvo negro.
+        // Mismo coste moral que el noveno pilar, pagado a cuenta menor.
+        ( id: "contract_company_seam", name: "Clear the Seam for the Company Shaft", kind: "contract", faction: "consolidated", target_item_id: "black_powder", target_qty: 10, reward_gold: 240, reward_reputation: 4 ),
+        // Contrato de la Consolidada: lo paga completo, en vales (130 por 10 unidades; el ensayador
+        // daría 80). ¿Para qué lo quiere? Pista del arco III.
+        ( id: "contract_dreamed_gold_store", name: "Sell Dreamed Gold to the Company Store", kind: "contract", faction: "consolidated", target_item_id: "dreamed_gold", target_qty: 10, reward_gold: 130, reward_reputation: 3 ),
+        // Escucha: graba con el geófono el silbido de la gruta del llanto; la nota atrapada da
+        // pistas de la historia a los Vigías.
+        ( id: "listen_weeping_grotto", name: "Record the Whistle of the Weeping Grotto", kind: "listen", faction: "watchers", target_item_id: "trapped_note", target_qty: 1, reward_gold: 70, reward_reputation: 15 ),
+        // Mensaje a los Quedos: lleva una frase en lengua de golpes a la aldea; solo con buena
+        // reputación te dejarán entregarla en silencio.
+        ( id: "message_knock_tongue", name: "Carry a Knock-Tongue Message to the Still", kind: "message", faction: "the_still", target_item_id: "sealed_message", target_qty: 1, reward_gold: 50, reward_reputation: 20 ),
+    ],
+)

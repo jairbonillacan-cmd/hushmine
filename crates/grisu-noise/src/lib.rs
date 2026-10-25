@@ -14,22 +14,34 @@
 //!   de dominio.
 //! - [`Coarse3`]: muestreo grueso 4×8×4 por chunk con interpolación
 //!   trilineal en punto fijo.
+//! - [`Cellular2`] y [`Cellular3`]: ruido celular (Voronoi) entero, con
+//!   `edge_q16` para trazar fallas y grietas.
+//! - [`rotate2_pythagorean`] y [`rotate3_orthogonal`]: rotación entera por
+//!   ternas pitagóricas, con los wrappers [`SampleRotated2`] y
+//!   [`SampleRotated3`].
 //!
 //! Todo son funciones puras de (semilla, coordenadas): sin reloj, sin estado
 //! global y sin desbordamientos (aritmética `wrapping` o rangos acotados).
 
+mod cellular;
 mod coarse;
 mod fbm;
 mod fixed;
 mod gradient;
 mod hash;
 mod ridge;
+mod rotate;
 mod warp;
 
+pub use cellular::{Cellular2, Cellular3, CellularSample};
 pub use coarse::Coarse3;
 pub use fbm::{Fbm2, Fbm3};
 pub use fixed::{ONE, lerp, quintic};
 pub use gradient::{Noise2, Noise3};
 pub use hash::{hash2d, hash3d, layer_seed, splitmix64_step};
 pub use ridge::ridge;
+pub use rotate::{
+    NoiseSample2, NoiseSample3, SampleRotated2, SampleRotated3, rotate2_pythagorean,
+    rotate3_orthogonal,
+};
 pub use warp::{warp2, warp3};

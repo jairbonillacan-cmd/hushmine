@@ -1,0 +1,22 @@
+// Plaza silenciosa de los Quedos: pieza raiz excavada en la roca de la cueva,
+// con losa central y monolito de roca dura (id 3). Abre puertas al norte, sur
+// y este hacia las viviendas.
+Piece(
+    id: "quiet_plaza",
+    family: "still_hamlet",
+    is_cap: false,
+    size: [11, 5, 11],
+    fills: [
+        // Hueco excavado en la roca
+        [0, 1, 0, 11, 5, 11, 0],
+        // Losa central de la plaza
+        [2, 0, 2, 9, 1, 9, 2],
+        // Monolito de roca dura
+        [5, 1, 5, 7, 4, 7, 3],
+    ],
+    connectors: [
+        (pos: [5, 1, 0], dir: "north", kind: "door"),
+        (pos: [5, 1, 11], dir: "south", kind: "door"),
+        (pos: [11, 1, 5], dir: "east", kind: "door"),
+    ],
+)

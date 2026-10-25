@@ -1,0 +1,20 @@
+// Cierre de calle (is_cap): explanada final que sella cualquier street abierta
+// en las cuatro direcciones horizontales.
+Piece(
+    id: "street_end",
+    family: "arrival_village",
+    is_cap: true,
+    size: [5, 2, 5],
+    fills: [
+        // Suelo de piedra
+        [0, 0, 0, 5, 1, 5, 2],
+        // Aire despejado
+        [0, 1, 0, 5, 2, 5, 0],
+    ],
+    connectors: [
+        (pos: [2, 1, 0], dir: "north", kind: "street"),
+        (pos: [2, 1, 5], dir: "south", kind: "street"),
+        (pos: [5, 1, 2], dir: "east", kind: "street"),
+        (pos: [0, 1, 2], dir: "west", kind: "street"),
+    ],
+)

@@ -1,0 +1,59 @@
+// Criaturas del yacimiento, animadas por piezas como el minero
+// (docs/graficos/02-animacion.md, apartado 2).
+// Origen en el suelo bajo el centro de cada modelo, +Y arriba y la
+// criatura mira hacia -Z. Cada modelo usa su propia textura, asi que
+// sus regiones UV (multiplos de 4) no solapan solo dentro del modelo.
+ModelSet(
+    models: [
+        // Lanudo: fauna cuadrupeda y lanuda, cuerpo redondo, cuello corto.
+        Model(
+            name: "whistler",
+            texture: "characters/whistler",
+            slot: None,
+            parts: [
+                Part(id: "body", parent: None, pivot: (0, 7, 0), cuboid: (min: (-5, 4, -7), max: (5, 11, 7)), uv: (0, 0)), // region 48x24
+                Part(id: "head", parent: Some("body"), pivot: (0, 11, -6), cuboid: (min: (-3, 8, -12), max: (3, 14, -6)), uv: (48, 0)), // region 24x12
+                Part(id: "tail", parent: Some("body"), pivot: (0, 11, 7), cuboid: (min: (-1, 9, 7), max: (1, 13, 12)), uv: (72, 0)), // region 16x12
+                Part(id: "leg_fl", parent: Some("body"), pivot: (-4, 5, -5), cuboid: (min: (-5, 0, -6), max: (-2, 5, -3)), uv: (88, 0)), // region 12x8
+                Part(id: "leg_fr", parent: Some("body"), pivot: (4, 5, -5), cuboid: (min: (2, 0, -6), max: (5, 5, -3)), uv: (100, 0)),
+                Part(id: "leg_bl", parent: Some("body"), pivot: (-4, 5, 5), cuboid: (min: (-5, 0, 3), max: (-2, 5, 6)), uv: (112, 0)),
+                Part(id: "leg_br", parent: Some("body"), pivot: (4, 5, 5), cuboid: (min: (2, 0, 3), max: (5, 5, 6)), uv: (88, 8)),
+            ],
+            attachments: [],
+            team_tint_mask: None,
+        ),
+        // Escarabajo de mena: caparazon alto, cuerno al frente y dos
+        // bandas laterales de patas.
+        Model(
+            name: "ore_beetle",
+            texture: "characters/ore_beetle",
+            slot: None,
+            parts: [
+                Part(id: "shell", parent: None, pivot: (0, 5, 0), cuboid: (min: (-5, 2, -6), max: (5, 9, 6)), uv: (0, 0)), // region 44x20
+                Part(id: "head", parent: Some("shell"), pivot: (0, 4, -5), cuboid: (min: (-3, 2, -10), max: (3, 6, -5)), uv: (44, 0)), // region 24x12
+                Part(id: "horn", parent: Some("head"), pivot: (0, 7, -6), cuboid: (min: (-1, 6, -12), max: (1, 8, -6)), uv: (68, 0)), // region 16x8
+                Part(id: "legs_l", parent: Some("shell"), pivot: (-6, 4, 0), cuboid: (min: (-7, 0, -4), max: (-5, 4, 4)), uv: (84, 0)), // region 20x12
+                Part(id: "legs_r", parent: Some("shell"), pivot: (6, 4, 0), cuboid: (min: (5, 0, -4), max: (7, 4, 4)), uv: (104, 0)),
+            ],
+            attachments: [],
+            team_tint_mask: None,
+        ),
+        // Acechador: bipedo encorvado y quieto, con cola de muelle.
+        Model(
+            name: "stone_stalker",
+            texture: "characters/stone_stalker",
+            slot: None,
+            parts: [
+                Part(id: "torso", parent: None, pivot: (0, 17, 0), cuboid: (min: (-3, 12, -2), max: (3, 22, 2)), uv: (0, 0)), // region 20x16
+                Part(id: "head", parent: Some("torso"), pivot: (0, 22, 0), cuboid: (min: (-2, 22, -4), max: (2, 27, 2)), uv: (20, 0)), // region 20x12
+                Part(id: "arm_l", parent: Some("torso"), pivot: (-4, 20, 0), cuboid: (min: (-6, 12, -2), max: (-3, 20, 1)), uv: (40, 0)), // region 12x12
+                Part(id: "arm_r", parent: Some("torso"), pivot: (4, 20, 0), cuboid: (min: (3, 12, -2), max: (6, 20, 1)), uv: (52, 0)),
+                Part(id: "leg_l", parent: Some("torso"), pivot: (-2, 12, 0), cuboid: (min: (-3, 0, -2), max: (0, 12, 2)), uv: (64, 0)), // region 16x16
+                Part(id: "leg_r", parent: Some("torso"), pivot: (2, 12, 0), cuboid: (min: (0, 0, -2), max: (3, 12, 2)), uv: (80, 0)),
+                Part(id: "tail", parent: Some("torso"), pivot: (0, 14, 2), cuboid: (min: (-1, 10, 2), max: (1, 18, 10)), uv: (96, 0)), // region 20x16
+            ],
+            attachments: [],
+            team_tint_mask: None,
+        ),
+    ],
+)

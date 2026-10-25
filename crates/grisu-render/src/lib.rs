@@ -8,9 +8,11 @@ mod camera;
 mod chunk_origins;
 mod crosshair;
 mod cube;
+mod debug_view;
 mod depth;
 mod gpu;
 mod offscreen;
+mod shader_prep;
 mod texture;
 mod texture_array;
 mod ui;
@@ -23,9 +25,13 @@ pub use boxes::{BoxRenderer, ColorBox};
 pub use camera::{CameraMode, FlyCamera, OrbitCamera, View};
 pub use crosshair::CrosshairRenderer;
 pub use cube::CubeRenderer;
+pub use debug_view::DebugView;
 pub use depth::DepthTarget;
 pub use gpu::{Gpu, default_backends};
 pub use offscreen::{OFFSCREEN_FORMAT, capture, render_to_image};
+pub use shader_prep::{
+    QualityPreset, ShaderConfig, ShaderPrepError, preprocess_wgsl, validate_all_shader_variants,
+};
 pub use texture::TextureData;
 pub use texture_array::upload_texture_array;
 pub use ui::{UiBatch, UiRect, UiRenderer};

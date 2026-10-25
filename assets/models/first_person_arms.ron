@@ -1,0 +1,22 @@
+// Brazos de la vista en primera persona: el modelo que animan los clips de
+// assets/anim/first_person_clips.ron (pistas arm_l y arm_r).
+// Espacio de cámara: origen en el ojo, mira hacia -Z, +X a la derecha, +Y
+// arriba; 32 px = 1 bloque. La raíz es una barra de hombros detrás del ojo
+// (z > 0), que nunca se ve; de ella cuelgan los dos antebrazos hacia -Z.
+// Hoja de textura propia de 128x128: regiones UV en múltiplos de 4 y sin
+// solapar.
+Model(
+    name: "first_person_arms",
+    texture: "characters/first_person_arms",
+    slot: None,
+    parts: [
+        Part(id: "shoulders", parent: None, pivot: (0, -7, 5), cuboid: (min: (-9, -8, 4), max: (9, -6, 6)), uv: (0, 0)), // region 40x8
+        // Antebrazo derecho con la mano al fondo; la herramienta se engancha en la mano.
+        Part(id: "arm_r", parent: Some("shoulders"), pivot: (7, -7, 4), cuboid: (min: (5, -9, -10), max: (9, -5, 4)), uv: (0, 8)), // region 32x20
+        Part(id: "arm_l", parent: Some("shoulders"), pivot: (-7, -7, 4), cuboid: (min: (-9, -9, -10), max: (-5, -5, 4)), uv: (32, 8)),
+    ],
+    attachments: [
+        Attachment(id: "tool", part: "arm_r", offset: (0, 0, -10)),
+    ],
+    team_tint_mask: Some("team_mask"),
+)

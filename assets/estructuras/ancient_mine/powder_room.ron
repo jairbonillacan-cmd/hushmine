@@ -1,0 +1,21 @@
+// Polvorín: almacén de explosivos (id 15) apartado al final de una galería,
+// con un solo acceso por el norte.
+Piece(
+    id: "powder_room",
+    family: "ancient_mine",
+    is_cap: false,
+    size: [7, 5, 7],
+    fills: [
+        // Suelo interior
+        [1, 0, 1, 6, 1, 6, 2],
+        // Cámara del polvorín
+        [1, 1, 1, 6, 4, 6, 0],
+        // Cajones de explosivos
+        [2, 1, 2, 5, 2, 5, 15],
+        // Accesso por el muro norte
+        [3, 1, 0, 4, 3, 1, 0],
+    ],
+    connectors: [
+        (pos: [3, 1, 0], dir: "north", kind: "gallery"),
+    ],
+)

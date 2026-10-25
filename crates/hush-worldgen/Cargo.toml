@@ -1,6 +1,6 @@
 [package]
 name = "hush-worldgen"
-description = "HUSHMINE: generación determinista del mundo de prueba del hito W0"
+description = "HUSHMINE: generación determinista del mundo grande (columna, densidad y litología)"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -8,6 +8,7 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
+grisu-noise.workspace = true
 grisu-voxel.workspace = true
 
 [lints]

@@ -1,0 +1,27 @@
+// Pieza final de cierre por derrumbe (is_cap): tapa cualquier conector abierto
+// de la mina. Lleva parejas de gallery y track en las cuatro horizontales y de
+// shaft arriba y abajo; los pozos y galerías mueren en el derrumbe.
+Piece(
+    id: "collapse_cap",
+    family: "ancient_mine",
+    is_cap: true,
+    size: [3, 4, 3],
+    fills: [
+        // Derrumbe de roca en la base
+        [0, 0, 0, 3, 2, 3, 2],
+        // Escombros y tierra asentada arriba
+        [0, 2, 0, 3, 4, 3, 1],
+    ],
+    connectors: [
+        (pos: [1, 1, 0], dir: "north", kind: "gallery"),
+        (pos: [1, 1, 3], dir: "south", kind: "gallery"),
+        (pos: [0, 1, 1], dir: "west", kind: "gallery"),
+        (pos: [3, 1, 1], dir: "east", kind: "gallery"),
+        (pos: [1, 1, 0], dir: "north", kind: "track"),
+        (pos: [1, 1, 3], dir: "south", kind: "track"),
+        (pos: [0, 1, 1], dir: "west", kind: "track"),
+        (pos: [3, 1, 1], dir: "east", kind: "track"),
+        (pos: [1, 4, 1], dir: "up", kind: "shaft"),
+        (pos: [1, 0, 1], dir: "down", kind: "shaft"),
+    ],
+)

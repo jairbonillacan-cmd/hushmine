@@ -1,0 +1,18 @@
+// Tramo del pozo maestro: hueco vertical de 3x3 con la escalera de emergencia
+// (id 10) en el centro. Se apila hacia abajo entre niveles.
+Piece(
+    id: "main_shaft",
+    family: "ancient_mine",
+    is_cap: false,
+    size: [5, 12, 5],
+    fills: [
+        // Hueco del pozo
+        [1, 0, 1, 4, 12, 4, 0],
+        // Escalera de emergencia, bloque a bloque hasta arriba
+        [2, 0, 2, 3, 12, 3, 10],
+    ],
+    connectors: [
+        (pos: [2, 12, 2], dir: "up", kind: "shaft"),
+        (pos: [2, 0, 2], dir: "down", kind: "shaft"),
+    ],
+)

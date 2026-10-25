@@ -7,6 +7,8 @@ use grisu_voxel::{ChunkPos, ChunkedVoxels, LightMap, PackedFace, mesh_chunk};
 use wgpu::util::DeviceExt;
 
 use crate::chunk_origins::ChunkOrigins;
+use crate::debug_view::DebugView;
+use crate::shader_prep::{ShaderConfig, preprocess_wgsl};
 use crate::texture_array::upload_texture_array;
 use crate::{CLEAR_COLOR, DepthTarget, TextureData, View};
 
@@ -19,8 +21,10 @@ struct Globals {
     selected: [i32; 4],
     /// Segundos desde el arranque, para animar la lava.
     time: f32,
-    /// Relleno hasta el tamaño del uniforme (múltiplo de 16).
-    pad: [f32; 3],
+    /// Vista de depuración del terreno ([`DebugView`]); 0 = dibujo normal.
+    debug_view: u32,
+    /// Relleno hasta el tamaño del uniforme (múltiplo de 16: 128 bytes).
+    pad: [u32; 2],
 }
 
 /// Ajustes de dibujo del terreno que cambian cada fotograma.
@@ -75,6 +79,8 @@ pub struct VoxelRenderer {
     origins: ChunkOrigins,
     /// Mallas por chunk; el orden del mapa fija el orden de dibujo.
     chunks: BTreeMap<ChunkPos, ChunkMesh>,
+    /// Vista de depuración activa; el shader ramifica sobre ese uniforme.
+    debug_view: DebugView,
 }
 
 impl VoxelRenderer {
@@ -85,7 +91,14 @@ impl VoxelRenderer {
         color_format: wgpu::TextureFormat,
         textures: &[TextureData],
     ) -> Result<Self> {
-        let shader = device.create_shader_module(wgpu::include_wgsl!("voxel.wgsl"));
+        // Preprocesamos el shader con la configuración por defecto (calidad
+        // alta, nativo); voxel.wgsl aún no usa directivas condicionales.
+        let defines = ShaderConfig::default().defines();
+        let source = preprocess_wgsl(include_str!("voxel.wgsl"), &[], &defines)?;
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("voxel-shader"),
+            source: wgpu::ShaderSource::Wgsl(source.into()),
+        });
         let globals = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("voxel-globals"),
             size: size_of::<Globals>() as u64,
@@ -205,7 +218,19 @@ impl VoxelRenderer {
             bind_group,
             origins,
             chunks: BTreeMap::new(),
+            debug_view: DebugView::None,
         })
+    }
+
+    /// Elige la vista de depuración del terreno; `None` devuelve el dibujo
+    /// normal. Surte efecto en el `render` siguiente.
+    pub fn set_debug_view(&mut self, view: DebugView) {
+        self.debug_view = view;
+    }
+
+    /// Vista de depuración activa.
+    pub fn debug_view(&self) -> DebugView {
+        self.debug_view
     }
 
     /// Regenera las mallas de los chunks sucios y las sube a la GPU. `light`
@@ -287,7 +312,8 @@ impl VoxelRenderer {
             fog,
             selected,
             time: style.time_seconds,
-            pad: [0.0; 3],
+            debug_view: self.debug_view as u32,
+            pad: [0, 0],
         };
         queue.write_buffer(&self.globals, 0, bytemuck::bytes_of(&globals));
 
