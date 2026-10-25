@@ -4,7 +4,7 @@
 //! expande en dos triángulos («vertex pulling» por instancias, que también
 //! funciona en WebGL2). La oclusión ambiental se calcula por vértice.
 
-use crate::{AIR, CHUNK_SIZE, ChunkPos, LightMap, MAX_LIGHT, Voxels};
+use crate::{AIR, CHUNK_SIZE, ChunkPos, DualLightMap, LightMap, MAX_LIGHT, Voxels};
 
 /// Dirección de una cara. El orden coincide con la tabla del shader.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -65,7 +65,8 @@ pub const CORNERS: [(i32, i32); 4] = [(-1, -1), (1, -1), (1, 1), (-1, 1)];
 /// mundo pueden ser enormes o negativas sin perder precisión.
 ///
 /// - `a`: x (4 bits) · y (4) · z (4) · dirección (3) · oclusión (4 × 2 bits).
-/// - `b`: tipo de bloque (8 bits) · luz de la celda de delante (4 bits).
+/// - `b`: tipo de bloque (8 bits) · luz de bloque (4) · luz de cielo (4) de la
+///   celda de delante. Sin mapa dual las dos luces van iguales.
 ///
 /// La oclusión de cada esquina va de 0 (muy ocluida) a 3 (libre).
 #[repr(C)]
@@ -76,10 +77,17 @@ pub struct PackedFace {
 }
 
 impl PackedFace {
-    pub fn new(local: [u32; 3], dir: Direction, ao: [u8; 4], block: u8, light: u8) -> Self {
+    pub fn new(
+        local: [u32; 3],
+        dir: Direction,
+        ao: [u8; 4],
+        block: u8,
+        light: u8,
+        sky_light: u8,
+    ) -> Self {
         debug_assert!(local.iter().all(|&c| c < CHUNK_SIZE as u32));
         debug_assert!(ao.iter().all(|&o| o <= 3));
-        debug_assert!(light <= MAX_LIGHT);
+        debug_assert!(light <= MAX_LIGHT && sky_light <= MAX_LIGHT);
         let ao_bits = ao
             .iter()
             .enumerate()
@@ -90,7 +98,9 @@ impl PackedFace {
                 | (local[2] << 8)
                 | ((dir as u32) << 12)
                 | (ao_bits << 15),
-            b: u32::from(block) | (u32::from(light & 0xF) << 8),
+            b: u32::from(block)
+                | (u32::from(light & 0xF) << 8)
+                | (u32::from(sky_light & 0xF) << 12),
         }
     }
 
@@ -112,8 +122,14 @@ impl PackedFace {
         (self.b & 0xFF) as u8
     }
 
+    /// Luz de bloque de la celda de delante.
     pub fn light(self) -> u8 {
         ((self.b >> 8) & 0xF) as u8
+    }
+
+    /// Luz de cielo de la celda de delante.
+    pub fn sky_light(self) -> u8 {
+        ((self.b >> 12) & 0xF) as u8
     }
 }
 
@@ -124,6 +140,34 @@ pub fn mesh_chunk<W: Voxels + ?Sized>(
     world: &W,
     light: Option<&LightMap>,
     chunk: ChunkPos,
+) -> Vec<PackedFace> {
+    mesh_with(world, chunk, |p| {
+        let level = light.map_or(MAX_LIGHT, |l| l.get(p[0], p[1], p[2]));
+        (level, level)
+    })
+}
+
+/// Como [`mesh_chunk`], pero con el mapa de luz doble: cada cara guarda por
+/// separado la luz de bloque y la de cielo de la celda de delante, y el
+/// shader las combina con la hora del día.
+pub fn mesh_chunk_dual<W: Voxels + ?Sized>(
+    world: &W,
+    light: Option<&DualLightMap>,
+    chunk: ChunkPos,
+) -> Vec<PackedFace> {
+    mesh_with(world, chunk, |p| {
+        light.map_or((MAX_LIGHT, MAX_LIGHT), |l| {
+            (l.block(p[0], p[1], p[2]), l.sky(p[0], p[1], p[2]))
+        })
+    })
+}
+
+/// Recorre el chunk y empaqueta cada cara visible con la luz `(bloque,
+/// cielo)` que da `light_at` para la celda de delante.
+fn mesh_with<W: Voxels + ?Sized>(
+    world: &W,
+    chunk: ChunkPos,
+    light_at: impl Fn([i32; 3]) -> (u8, u8),
 ) -> Vec<PackedFace> {
     let mut faces = Vec::new();
     if world.chunk_is_empty(chunk) {
@@ -146,8 +190,15 @@ pub fn mesh_chunk<W: Voxels + ?Sized>(
                     }
                     let ao = face_ao(world, front, dir);
                     let local = [lx, ly, lz].map(|c| c as u32);
-                    let level = light.map_or(MAX_LIGHT, |l| l.get(front[0], front[1], front[2]));
-                    faces.push(PackedFace::new(local, dir, ao, block, level));
+                    let (block_light, sky_light) = light_at(front);
+                    faces.push(PackedFace::new(
+                        local,
+                        dir,
+                        ao,
+                        block,
+                        block_light,
+                        sky_light,
+                    ));
                 }
             }
         }
@@ -208,13 +259,34 @@ mod tests {
 
     #[test]
     fn packing_round_trips() {
-        let face = PackedFace::new([15, 5, 0], Direction::NegZ, [0, 1, 2, 3], 200, 9);
+        let face = PackedFace::new([15, 5, 0], Direction::NegZ, [0, 1, 2, 3], 200, 9, 12);
         assert_eq!(face.local(), [15, 5, 0]);
         assert_eq!(face.direction(), Direction::NegZ);
         assert_eq!(face.ao(), [0, 1, 2, 3]);
         assert_eq!(face.block(), 200);
         assert_eq!(face.light(), 9);
+        assert_eq!(face.sky_light(), 12);
         assert_eq!(size_of::<PackedFace>(), 8);
+    }
+
+    #[test]
+    fn dual_mesh_separates_sky_and_block_light() {
+        let mut w = VoxelWorld::new([16, 16, 16]).unwrap();
+        w.fill([0, 0, 0], [15, 4, 15], 1);
+        // Cielo abierto sobre la superficie y una antorcha (bloque 7, nivel
+        // 12) en el suelo que ilumina el canal de bloque.
+        w.set(8, 5, 8, 7);
+        let light = DualLightMap::new(&w, crate::emission_of(7, 12));
+        let faces = mesh_chunk_dual(&w, Some(&light), ChunkPos::default());
+        let top = faces
+            .iter()
+            .find(|f| f.local() == [8, 5, 8] && f.direction() == Direction::PosY)
+            .unwrap();
+        // El aire sobre la antorcha recibe 11 de bloque (12 - 1) y 15 de cielo.
+        assert_eq!((top.light(), top.sky_light()), (11, MAX_LIGHT));
+        // Sin mapa dual las dos luces van iguales.
+        let plain = mesh_chunk(&w, None, ChunkPos::default());
+        assert!(plain.iter().all(|f| f.light() == f.sky_light()));
     }
 
     #[test]

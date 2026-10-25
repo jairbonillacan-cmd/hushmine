@@ -25,7 +25,7 @@ El plan completo está en `PLAN_v4.md`; las decisiones de arquitectura, en `docs
 | `hush-server` | Binario `hush-server` (servidor dedicado UDP) |
 | `hush-client` | Binario `hushmine` (el juego; servidor local en memoria o `--connect`) |
 | `hush-launcher` | Panel del lanzador (`hush-launcher.exe`): estado, geometría y dibujo del panel en biblioteca, más el binario con ventana |
-| `hush-cli` | Binario `hush-cli` (sim, netsim, shot, bench, gpu, noise) |
+| `hush-cli` | Binario `hush-cli` (sim, netsim, shot, bench, gpu, noise, story, region) |
 
 **Regla de dependencias:** ningún crate `grisu-*` depende de un crate `hush-*`.
 
@@ -58,6 +58,10 @@ Qué hace cada uno, en orden:
 8. Muestra la GPU y el backend en uso.
 9. Abre el juego con ventana (controles abajo).
 10. Revisa las licencias de las dependencias.
+
+**Modo historia:** `cargo run -p hush-client -- --story [--seed N]` abre la expedición local (supervivencia a 20 Hz: hitos, fisiología, enemigos, fabricación y clímax del Pozo Ancestral). En `hush-cli`, `story --seed N --ticks T [--peaceful] [--report out/story.json]` corre una expedición con un minero automático y `region --seed N` guarda y recarga una región `.hush` verificando la huella. La captura `shot --scene story` muestra una galería con antorchas al atardecer (luz dual). Las reglas viven en `hush_sim::story` (ver `docs/adr/0006-modo-historia.md`); el diseño original está en `HUSHMINE_Modo_Historia_Diseno.md`.
+
+**Controles del modo historia:** igual que el competitivo, más MAYÚS (agacharse), F (fabricación), E (usar banco/horno/arcón/válvulas/engranajes/motor), R (comer), F3 (telemetría).
 
 **Multijugador por LAN:** `cargo run --release -p hush-server -- --bots 4` en una máquina y `cargo run --release -p hush-client -- --connect IP` en las demás (puerto UDP 47400 por defecto). Sin `--connect`, el cliente juega en local con un servidor en memoria (`--bots N` añade bots).
 

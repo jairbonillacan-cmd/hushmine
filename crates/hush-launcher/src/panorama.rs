@@ -51,9 +51,8 @@ impl PanoramaRenderer {
         let view = panorama_camera(self.angle).view(aspect);
         let style = TerrainStyle {
             fog_distance: 320.0,
-            selected: None,
-            lamp_radius: 0.0,
             time_seconds: self.time,
+            ..TerrainStyle::default()
         };
         self.voxel
             .render(queue, encoder, color, depth, &view, &style);

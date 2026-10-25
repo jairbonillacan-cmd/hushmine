@@ -48,6 +48,7 @@ pub(super) fn frontier_scene() -> TerrainScene {
             selected: Some(at(0, 10, 0)),
             lamp_radius: 0.0,
             time_seconds: 0.0,
+            ..TerrainStyle::default()
         },
     }
 }

@@ -39,12 +39,16 @@ pub enum Scene {
     Type,
     /// Lanzador completo (el mismo dibujo que la ventana real).
     Launcher,
+    /// Mundo del modo historia al atardecer: estratos, antorcha y pozo.
+    Story,
 }
 
 /// Mundo de una escena: finito (el mapa del Turno) o abierto ([`SparseWorld`]).
 pub enum SceneWorld {
     Finite(VoxelWorld),
     Sparse(SparseWorld),
+    /// Mundo finito del modo Historia, que se dibuja con luz doble.
+    Story(VoxelWorld),
 }
 
 impl SceneWorld {
@@ -52,16 +56,24 @@ impl SceneWorld {
     /// Mutable: el renderer consume los chunks sucios.
     pub fn as_chunked_mut(&mut self) -> &mut dyn ChunkedVoxels {
         match self {
-            Self::Finite(world) => world,
+            Self::Finite(world) | Self::Story(world) => world,
             Self::Sparse(world) => world,
         }
     }
 
-    /// El mundo finito, si lo hay: solo él tiene mapa de luz.
+    /// El mundo finito con luz de un canal, si lo hay.
     pub fn as_finite(&self) -> Option<&VoxelWorld> {
         match self {
             Self::Finite(world) => Some(world),
-            Self::Sparse(_) => None,
+            Self::Sparse(_) | Self::Story(_) => None,
+        }
+    }
+
+    /// El mundo del modo Historia, que lleva luz doble.
+    pub fn as_story(&self) -> Option<&VoxelWorld> {
+        match self {
+            Self::Story(world) => Some(world),
+            _ => None,
         }
     }
 }
@@ -121,6 +133,7 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
                 selected: None,
                 lamp_radius: 0.0,
                 time_seconds: 0.0,
+                ..TerrainStyle::default()
             },
         },
         Scene::Tunnel => {
@@ -141,6 +154,7 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
                     selected: Some([14, 29, 33]),
                     lamp_radius: 14.0,
                     time_seconds: 0.0,
+                    ..TerrainStyle::default()
                 },
             }
         }
@@ -150,6 +164,7 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
         Scene::Menu => menu_scene(world, seed),
         Scene::Launcher => launcher_scene(world, seed),
         Scene::Type => type_scene(world),
+        Scene::Story => return story_scene(seed),
         Scene::Shaft => {
             carve_shaft(&mut world);
             TerrainScene {
@@ -167,6 +182,7 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
                     selected: None,
                     lamp_radius: 14.0,
                     time_seconds: 0.0,
+                    ..TerrainStyle::default()
                 },
             }
         }
@@ -262,8 +278,7 @@ fn dig_scene(seed: u64) -> Result<TerrainScene> {
         style: TerrainStyle {
             fog_distance: 40.0,
             selected,
-            lamp_radius: 14.0,
-            time_seconds: 0.0,
+            ..TerrainStyle::default()
         },
     })
 }
@@ -303,9 +318,7 @@ fn players_scene(world: VoxelWorld) -> TerrainScene {
         ui: UiBatch::new(),
         style: TerrainStyle {
             fog_distance: 56.0,
-            selected: None,
-            lamp_radius: 14.0,
-            time_seconds: 0.0,
+            ..TerrainStyle::default()
         },
     }
 }
@@ -343,3 +356,6 @@ use ui::{launcher_scene, menu_scene, type_scene};
 #[path = "scenes_frontier.rs"]
 mod frontier;
 use frontier::frontier_scene;
+#[path = "scenes_story.rs"]
+mod story;
+use story::story_scene;

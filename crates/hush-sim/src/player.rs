@@ -20,9 +20,9 @@ pub const HEIGHT: i64 = 17 * ONE / 10;
 /// Altura de los ojos sobre los pies (1,55 bloques).
 pub const EYE_HEIGHT: i64 = 155 * ONE / 100;
 /// Velocidad al andar: 4,3 bloques/s.
-const WALK_PER_TICK: i32 = 43 * ONE_PER_TICK / 300;
+pub const WALK_PER_TICK: i32 = 43 * ONE_PER_TICK / 300;
 /// Velocidad al correr: 6,5 bloques/s.
-const SPRINT_PER_TICK: i32 = 65 * ONE_PER_TICK / 300;
+pub const SPRINT_PER_TICK: i32 = 65 * ONE_PER_TICK / 300;
 /// Gravedad: 28 bloques/s².
 const GRAVITY_PER_TICK: i32 = 28 * ONE_PER_TICK / 900;
 /// Velocidad inicial del salto (unos 1,25 bloques de altura): 0,278

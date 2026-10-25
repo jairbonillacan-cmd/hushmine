@@ -407,6 +407,7 @@ impl App for Game {
             selected: self.target.map(|hit| hit.block),
             lamp_radius: 14.0,
             time_seconds: self.elapsed,
+            ..TerrainStyle::default()
         };
         terrain.render(&gpu.queue, encoder, color, depth, &view, &style);
         let entities = self.entity_boxes();

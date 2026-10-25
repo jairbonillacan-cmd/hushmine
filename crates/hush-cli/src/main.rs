@@ -21,7 +21,7 @@ use grisu_render::{
     BoxRenderer, Gpu, OFFSCREEN_FORMAT, OrbitCamera, TextureData, UiRenderer, VoxelRenderer,
     capture, render_to_image,
 };
-use grisu_voxel::LightMap;
+use grisu_voxel::{DualLightMap, LightMap};
 use hush_sim::MatchConfig;
 use scenes::Scene;
 use world_args::WorldAction;
@@ -131,6 +131,30 @@ enum Command {
         #[command(subcommand)]
         action: WorldAction,
     },
+    /// Corre una expedición del modo historia sin gráficos y escribe un
+    /// informe JSON (hitos, fisiología, enemigos, eventos).
+    Story {
+        #[arg(long, default_value_t = 42)]
+        seed: u64,
+        /// Ticks a simular (20 por segundo).
+        #[arg(long, default_value_t = 6_000)]
+        ticks: u32,
+        /// Sin enemigos (modo tranquilo).
+        #[arg(long, default_value_t = false)]
+        peaceful: bool,
+        /// Ruta del informe JSON. Si se omite, se imprime en pantalla.
+        #[arg(long)]
+        report: Option<PathBuf>,
+    },
+    /// Guarda el mundo de historia en una región `.hush` y la recarga para
+    /// verificar que la huella no cambia.
+    Region {
+        #[arg(long, default_value_t = 42)]
+        seed: u64,
+        /// Ruta del archivo `.hush`.
+        #[arg(long, default_value = "out/region.hush")]
+        out: PathBuf,
+    },
 }
 
 fn main() -> Result<()> {
@@ -190,6 +214,13 @@ fn main() -> Result<()> {
         ),
         Command::Gpu => gpu_info(),
         Command::World { action } => world_args::run(action),
+        Command::Story {
+            seed,
+            ticks,
+            peaceful,
+            report,
+        } => story(seed, ticks, peaceful, report.as_deref()),
+        Command::Region { seed, out } => region(seed, &out),
     }
 }
 
@@ -211,7 +242,8 @@ fn shot(scene: Scene, seed: u64, out: &Path, size: [u32; 2], yaw: f32, pitch: f3
         }
         Some(mut scene) => {
             scene.style.time_seconds = SHOT_TIME_SECONDS;
-            let textures = hush_art::block_textures()?;
+            // Con las capas de los bloques del modo Historia al final.
+            let textures = hush_art::all_block_textures()?;
             let mut terrain =
                 VoxelRenderer::new(&gpu.device, &gpu.queue, OFFSCREEN_FORMAT, &textures)?;
             // La luz se calcula fuera del renderer; los mundos abiertos
@@ -220,7 +252,16 @@ fn shot(scene: Scene, seed: u64, out: &Path, size: [u32; 2], yaw: f32, pitch: f3
                 .world
                 .as_finite()
                 .map(|world| LightMap::new(world, hush_art::emission_table()));
-            let stats = terrain.update(&gpu.device, scene.world.as_chunked_mut(), light.as_ref());
+            let dual = scene
+                .world
+                .as_story()
+                .map(|world| DualLightMap::new(world, hush_art::emission_table()));
+            let stats = match dual.as_ref() {
+                Some(dual) => {
+                    terrain.update_dual(&gpu.device, scene.world.as_chunked_mut(), Some(dual))
+                }
+                None => terrain.update(&gpu.device, scene.world.as_chunked_mut(), light.as_ref()),
+            };
             println!(
                 "{} chunks, {} caras, mallas en {:.1} ms",
                 stats.chunks_meshed, stats.faces, stats.millis
@@ -284,6 +325,123 @@ fn sim(seed: u64, ticks: Option<u32>, bots: u32, report_path: Option<&Path>) -> 
         report.broken_invariants.is_empty(),
         "invariantes rotas: {:?}",
         report.broken_invariants
+    );
+    Ok(())
+}
+
+/// Corre una expedición del modo historia con un minero automático simple
+/// (camina, salta y pica hacia abajo cada cierto tiempo) y recopila el
+/// informe en JSON.
+fn story(seed: u64, ticks: u32, peaceful: bool, report_path: Option<&Path>) -> Result<()> {
+    use hush_sim::MoveInput;
+    use hush_sim::story::{Expedition, StoryConfig, StoryEventKind, StoryOrder};
+
+    let config = StoryConfig {
+        seed,
+        peaceful,
+        ..StoryConfig::default()
+    };
+    let mut expedition = Expedition::new(config)?;
+    let mut milestones = Vec::new();
+    let mut mined = 0u32;
+    let mut damaged = 0u32;
+    for t in 0..ticks {
+        // Minero automático: avanza girando cada 300 ticks y pictea la
+        // celda de sus pies cada 40 para abrir pozos de sondeo.
+        let turn = (t / 300) % 4;
+        let (wx, wz) = match turn {
+            0 => (30, 0),
+            1 => (0, 30),
+            2 => (-30, 0),
+            _ => (0, -30),
+        };
+        let input = MoveInput {
+            wish_x: wx.clamp(-127, 127) as i8,
+            wish_z: wz.clamp(-127, 127) as i8,
+            jump: t % 90 == 0,
+            sprint: false,
+        };
+        // Pica el bloque bajo los pies en tandas continuas: el progreso se
+        // reinicia si la orden se alterna con `Mine(None)`.
+        let mut orders = vec![StoryOrder::Move(input)];
+        if t % 80 < 40 {
+            let feet = expedition.feet_cell();
+            orders.push(StoryOrder::Mine(Some([feet[0], feet[1] - 1, feet[2]])));
+        }
+        for event in expedition.step(&orders) {
+            match event.kind {
+                StoryEventKind::Mined(_) | StoryEventKind::CrushedToDust(_) => mined += 1,
+                StoryEventKind::Damaged { amount, .. } => damaged += u32::from(amount),
+                StoryEventKind::MilestoneReached(m) => milestones.push(m),
+                _ => {}
+            }
+        }
+        if expedition.is_dead() {
+            break;
+        }
+    }
+    let summary = serde_json::json!({
+        "seed": seed,
+        "peaceful": peaceful,
+        "ticks": expedition.tick(),
+        "dead": expedition.is_dead(),
+        "state_hash": expedition.state_hash().to_string(),
+        "position": expedition.feet_cell(),
+        "stratum": expedition.bands().at(expedition.feet_cell()[1]).label(),
+        "clock_tick": expedition.clock().tick(),
+        "phase": format!("{:?}", expedition.clock().phase()),
+        "health": expedition.vitals().health,
+        "food": expedition.vitals().food,
+        "air": expedition.vitals().air,
+        "milestones": milestones,
+        "mined_or_crushed": mined,
+        "damage_taken": damaged,
+        "mobs_alive": expedition.mobs().list.len(),
+        "world_hash": expedition.world().content_hash().to_string(),
+    });
+    let json = serde_json::to_string_pretty(&summary)?;
+    match report_path {
+        Some(path) => {
+            create_parent_dir(path)?;
+            fs::write(path, &json)
+                .with_context(|| format!("no se pudo escribir {}", path.display()))?;
+            println!("informe guardado en {}", path.display());
+        }
+        None => println!("{json}"),
+    }
+    Ok(())
+}
+
+/// Guarda y recarga una región `.hush`, verificando la huella del mundo.
+fn region(seed: u64, out: &Path) -> Result<()> {
+    use hush_sim::story::generate_terrain as generate_story;
+
+    let generated = generate_story(seed, &Default::default())?;
+    let bytes = hush_sim::story::region::encode_world(&generated.world);
+    create_parent_dir(out)?;
+    hush_sim::story::region::save_world(&generated.world, out)
+        .with_context(|| format!("no se pudo guardar {}", out.display()))?;
+    let loaded = hush_sim::story::region::load_world(out)
+        .with_context(|| format!("no se pudo recargar {}", out.display()))?;
+    anyhow::ensure!(
+        loaded.content_hash() == generated.world.content_hash(),
+        "la huella del mundo cambió al recargar la región"
+    );
+    let solid = (0..loaded.chunk_count())
+        .map(|i| {
+            loaded
+                .chunk(i)
+                .as_bytes()
+                .iter()
+                .filter(|&&b| b != 0)
+                .count()
+        })
+        .sum::<usize>();
+    println!(
+        "región {} ({} bytes, {} bloques sólidos): huella conservada",
+        out.display(),
+        bytes.len(),
+        solid
     );
     Ok(())
 }

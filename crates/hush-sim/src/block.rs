@@ -16,7 +16,8 @@ impl fmt::Display for InvalidBlockId {
 
 impl std::error::Error for InvalidBlockId {}
 
-/// Tipo de bloque del mundo de vóxeles (Convención A).
+/// Tipo de bloque del mundo de vóxeles (Convención A ampliada con los
+/// bloques del modo historia, `18..=27`).
 ///
 /// El equipo propietario (`Copper`/`Cobalt`) no forma parte del identificador
 /// del bloque, sino de los metadatos asociados a su celda.
@@ -41,11 +42,33 @@ pub enum BlockKind {
     Explosive = 15,
     BucketStation = 16,
     BucketPost = 17,
+    /// Tablón de soporte (madera procesada).
+    Plank = 18,
+    /// Puntal de contención: consolida la roca circundante.
+    PropBeam = 19,
+    /// Antorcha de prospección (fuente de luz).
+    Torch = 20,
+    /// Banco de trabajo y maestría (matriz de fabricación 3×3).
+    Workbench = 21,
+    /// Horno de piedra (fundición y calcinación).
+    Furnace = 22,
+    /// Arcón de madera (27 casillas; en pares, 54).
+    Chest = 23,
+    /// Grava: bloque granular sujeto a derrumbes.
+    Gravel = 24,
+    /// Agua (fluido; sin colisión).
+    Water = 25,
+    /// Obsidiana abisal (agua + manantial de magma).
+    Obsidian = 26,
+    /// Mena de carbón bituminoso.
+    CoalOre = 27,
+    /// Tronco de madera fósil (troncos de coníferas de la superficie).
+    Log = 28,
 }
 
 impl BlockKind {
     /// Número total de tipos de bloque definidos en la Convención A.
-    pub const COUNT: usize = 18;
+    pub const COUNT: usize = 29;
 
     /// Todos los tipos de bloque en orden de identificador (`0..=17`).
     pub const ALL: [Self; Self::COUNT] = [
@@ -67,6 +90,17 @@ impl BlockKind {
         Self::Explosive,
         Self::BucketStation,
         Self::BucketPost,
+        Self::Plank,
+        Self::PropBeam,
+        Self::Torch,
+        Self::Workbench,
+        Self::Furnace,
+        Self::Chest,
+        Self::Gravel,
+        Self::Water,
+        Self::Obsidian,
+        Self::CoalOre,
+        Self::Log,
     ];
 
     /// Devuelve el identificador numérico estable (`0..=17`) del bloque.
@@ -95,6 +129,17 @@ impl BlockKind {
             15 => Ok(Self::Explosive),
             16 => Ok(Self::BucketStation),
             17 => Ok(Self::BucketPost),
+            18 => Ok(Self::Plank),
+            19 => Ok(Self::PropBeam),
+            20 => Ok(Self::Torch),
+            21 => Ok(Self::Workbench),
+            22 => Ok(Self::Furnace),
+            23 => Ok(Self::Chest),
+            24 => Ok(Self::Gravel),
+            25 => Ok(Self::Water),
+            26 => Ok(Self::Obsidian),
+            27 => Ok(Self::CoalOre),
+            28 => Ok(Self::Log),
             _ => Err(InvalidBlockId(id)),
         }
     }
@@ -121,13 +166,25 @@ impl BlockKind {
             Self::Explosive => "explosive",
             Self::BucketStation => "bucket_station",
             Self::BucketPost => "bucket_post",
+            Self::Plank => "plank",
+            Self::PropBeam => "prop_beam",
+            Self::Torch => "torch",
+            Self::Workbench => "workbench",
+            Self::Furnace => "furnace",
+            Self::Chest => "chest",
+            Self::Gravel => "gravel",
+            Self::Water => "water",
+            Self::Obsidian => "obsidian",
+            Self::CoalOre => "coal_ore",
+            Self::Log => "log",
         }
     }
 
-    /// Indica si el bloque presenta colisión sólida (todos salvo `Air` y `Lava`).
+    /// Indica si el bloque presenta colisión sólida (todos salvo aire y
+    /// fluidos).
     // Se moverá a data/*.ron
     pub const fn is_solid(self) -> bool {
-        !matches!(self, Self::Air | Self::Lava)
+        !matches!(self, Self::Air | Self::Lava | Self::Water)
     }
 
     /// Indica si el bloque forma parte natural del terreno generado (`1..=7`).
@@ -163,9 +220,27 @@ impl BlockKind {
         )
     }
 
-    /// ¿Se puede picar? Todo salvo el aire y la lava.
+    /// Indica si el bloque es exclusivo del modo historia (`18..=27`).
+    pub const fn is_story_block(self) -> bool {
+        matches!(
+            self,
+            Self::Plank
+                | Self::PropBeam
+                | Self::Torch
+                | Self::Workbench
+                | Self::Furnace
+                | Self::Chest
+                | Self::Gravel
+                | Self::Water
+                | Self::Obsidian
+                | Self::CoalOre
+                | Self::Log
+        )
+    }
+
+    /// ¿Se puede picar? Todo salvo el aire y los fluidos.
     pub const fn is_diggable(self) -> bool {
-        !matches!(self, Self::Air | Self::Lava)
+        !matches!(self, Self::Air | Self::Lava | Self::Water)
     }
 
     /// Ticks de pico necesarios para romperlo (a 30 Hz). Se aplicará con las
@@ -173,11 +248,23 @@ impl BlockKind {
     // Se moverá a data/*.ron
     pub const fn dig_ticks(self) -> u32 {
         match self {
-            Self::Air | Self::Lava => 0,
-            Self::Dirt | Self::Ladder | Self::Rail | Self::Beacon => 6,
-            Self::Rock | Self::Ore | Self::TeamBlock | Self::JumpPad | Self::Explosive => 12,
-            Self::Gold | Self::Diamond | Self::Electric | Self::BucketPost => 15,
+            Self::Air | Self::Lava | Self::Water => 0,
+            Self::Torch => 1,
+            Self::Dirt | Self::Ladder | Self::Rail | Self::Beacon | Self::Gravel => 6,
+            Self::Rock
+            | Self::Ore
+            | Self::TeamBlock
+            | Self::JumpPad
+            | Self::Explosive
+            | Self::Plank
+            | Self::PropBeam
+            | Self::Workbench
+            | Self::Chest
+            | Self::CoalOre => 12,
+            Self::Gold | Self::Diamond | Self::Electric | Self::BucketPost | Self::Furnace => 15,
             Self::HardRock | Self::ForceField | Self::BucketStation => 30,
+            Self::Obsidian => 60,
+            Self::Log => 10,
         }
     }
 
@@ -220,7 +307,7 @@ mod tests {
 
     #[test]
     fn invalid_ids_return_error() {
-        for id in 18..=u8::MAX {
+        for id in 29..=u8::MAX {
             let err = BlockKind::try_from(id).unwrap_err();
             assert_eq!(err, InvalidBlockId(id));
             assert_eq!(BlockKind::from_id(id), Err(InvalidBlockId(id)));
@@ -249,6 +336,17 @@ mod tests {
             "explosive",
             "bucket_station",
             "bucket_post",
+            "plank",
+            "prop_beam",
+            "torch",
+            "workbench",
+            "furnace",
+            "chest",
+            "gravel",
+            "water",
+            "obsidian",
+            "coal_ore",
+            "log",
         ];
         assert_eq!(BlockKind::ALL.len(), expected.len());
         for (kind, expected_name) in BlockKind::ALL.into_iter().zip(expected) {
@@ -260,15 +358,17 @@ mod tests {
     fn block_properties_are_consistent() {
         for kind in BlockKind::ALL {
             let id = kind.id();
-            assert_eq!(kind.is_solid(), id != 0 && id != 7);
+            assert_eq!(kind.is_solid(), id != 0 && id != 7 && id != 25);
             assert_eq!(kind.is_natural(), (1..=7).contains(&id));
             assert_eq!(kind.is_team_block(), (8..=17).contains(&id));
+            assert_eq!(kind.is_story_block(), (18..=28).contains(&id));
             assert_eq!(kind.is_valuable(), (4..=6).contains(&id));
 
-            // Partición estricta entre aire, bloques naturales y bloques de equipo.
+            // Partición estricta entre aire, naturales, de equipo e historia.
             let categories = usize::from(kind == BlockKind::Air)
                 + usize::from(kind.is_natural())
-                + usize::from(kind.is_team_block());
+                + usize::from(kind.is_team_block())
+                + usize::from(kind.is_story_block());
             assert_eq!(categories, 1);
 
             if kind.is_valuable() {

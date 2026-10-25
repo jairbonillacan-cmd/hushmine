@@ -8,6 +8,9 @@
 
 mod game;
 mod session;
+mod story;
+mod story_hud;
+mod story_orders;
 
 use std::net::{SocketAddr, ToSocketAddrs};
 
@@ -20,10 +23,11 @@ struct Args {
     connect: Option<String>,
     name: String,
     launcher: bool,
+    /// Modo historia: expedición local de supervivencia.
+    story: bool,
 }
 
-const USAGE: &str =
-    "uso: hushmine [--seed N] [--bots N] [--connect HOST:PUERTO] [--name NOMBRE] [--launcher]";
+const USAGE: &str = "uso: hushmine [--seed N] [--bots N] [--connect HOST:PUERTO]                      [--name NOMBRE] [--launcher] [--story]";
 
 fn main() -> Result<()> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
@@ -44,6 +48,14 @@ fn main() -> Result<()> {
             session::Session::local(args.seed, args.bots, &args.name)?
         }
     };
+    if args.story {
+        log::info!("modo historia: expedición local con semilla {}", args.seed);
+        let config = hush_sim::story::StoryConfig {
+            seed: args.seed,
+            ..hush_sim::story::StoryConfig::default()
+        };
+        return grisu_platform::run("HUSHMINE", story::story_app(config)?);
+    }
     let cfg = game::GameConfig {
         seed: args.seed,
         bots: args.bots,
@@ -79,6 +91,7 @@ fn parse_args(args: impl Iterator<Item = String>) -> Result<Args> {
         connect: None,
         name: "minero".into(),
         launcher: no_args,
+        story: false,
     };
     let mut iter = raw.into_iter();
     while let Some(arg) = iter.next() {
@@ -92,6 +105,7 @@ fn parse_args(args: impl Iterator<Item = String>) -> Result<Args> {
             "--connect" => parsed.connect = Some(value()?),
             "--name" => parsed.name = value()?,
             "--launcher" => parsed.launcher = true,
+            "--story" => parsed.story = true,
             other => bail!("argumento desconocido: {other}\n{USAGE}"),
         }
     }
@@ -127,6 +141,8 @@ mod tests {
         assert_eq!(a.name, "Ana");
         assert!(!a.launcher);
         assert!(parse(&["--launcher"]).unwrap().launcher);
+        assert!(parse(&["--story", "--seed", "9"]).unwrap().story);
+        assert!(!parse(&["--seed", "9"]).unwrap().story);
         assert!(parse(&["--seed", "x"]).is_err());
         assert!(parse(&["--seed"]).is_err());
         assert!(parse(&["--fast"]).is_err());

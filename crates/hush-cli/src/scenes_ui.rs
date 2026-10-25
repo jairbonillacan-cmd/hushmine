@@ -41,6 +41,7 @@ pub(super) fn launcher_scene(world: VoxelWorld, seed: u64) -> TerrainScene {
             selected: None,
             lamp_radius: 0.0,
             time_seconds: 0.0,
+            ..TerrainStyle::default()
         },
     }
 }

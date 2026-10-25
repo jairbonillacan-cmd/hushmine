@@ -17,10 +17,12 @@ struct Globals {
     time: f32,
     // Vista de depuración (DebugView en Rust); 0 = dibujo normal.
     debug_view: u32,
+    // Multiplicador de la luz de cielo (0..1) según la hora del día.
+    daylight: f32,
     // Relleno hasta el tamaño del uniforme (múltiplo de 16). Los offsets de
     // Rust y WGSL coinciden: view_proj 0..64, eye 64..80, fog 80..96,
-    // selected 96..112, time 112..116, debug_view 116..120, pad 120..128.
-    _pad0: u32,
+    // selected 96..112, time 112..116, debug_view 116..120, daylight
+    // 120..124, pad 124..128.
     _pad1: u32,
 };
 
@@ -31,6 +33,10 @@ const LAVA_ID: u32 = 7u;
 const LAVA_LAYER: u32 = 6u;
 const LAVA_EXTRA_LAYER: u32 = 17u;
 const LAVA_FRAMES: u32 = 4u;
+// Bloques del modo Historia: sus texturas van después de los PNG (17 capas)
+// y los fotogramas extra de la lava (3). Ver hush_art::STORY_LAYER_BASE.
+const STORY_ID_MIN: u32 = 18u;
+const STORY_LAYER_BASE: u32 = 20u;
 
 // Origen del chunk que se dibuja, elegido con desplazamiento dinámico.
 struct ChunkOrigin {
@@ -67,6 +73,9 @@ struct VertexOut {
     // Tinte damero del chunk; el grupo 1 solo es visible en el vertex
     // shader, así que el color de la vista `chunks` se calcula aquí.
     @location(8) @interpolate(flat) chunk_tint: vec3<f32>,
+    // Luz de cielo de la celda de delante de la cara, de 0 a 1 (igual que
+    // block_light en las mallas sin luz doble).
+    @location(9) @interpolate(flat) sky_light: f32,
 };
 
 @vertex
@@ -128,9 +137,12 @@ fn vs_main(@builtin(vertex_index) vertex: u32, face: FaceIn) -> VertexOut {
     let block_id = face.b & 0xFFu;
     let frame = u32(max(globals.time, 0.0) * 4.0) % LAVA_FRAMES;
     let lava = select(LAVA_LAYER, LAVA_EXTRA_LAYER + frame - 1u, frame > 0u);
-    out.layer = select(block_id - 1u, lava, block_id == LAVA_ID);
+    let story = STORY_LAYER_BASE + block_id - STORY_ID_MIN;
+    let plain = select(block_id - 1u, story, block_id >= STORY_ID_MIN);
+    out.layer = select(plain, lava, block_id == LAVA_ID);
     out.light = shades[dir] * ao_curve[ao[corner]];
     out.block_light = f32((face.b >> 8u) & 0xFu) / 15.0;
+    out.sky_light = f32((face.b >> 12u) & 0xFu) / 15.0;
     out.world = world;
     let sel = globals.selected;
     out.highlight = select(
@@ -198,7 +210,7 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
         if globals.debug_view == 1u {
             color = debug_light(in.block_light);
         } else if globals.debug_view == 2u {
-            color = debug_sky(in.block_light);
+            color = debug_sky(in.sky_light);
         } else if globals.debug_view == 3u {
             color = debug_ao(in.ao);
         } else if globals.debug_view == 4u {
@@ -209,7 +221,9 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     let dist = distance(in.world, globals.eye.xyz);
     // Luz del mundo (cielo y emisores) con un mínimo para no ver negro puro,
     // y la lámpara del casco, que alumbra alrededor del jugador.
-    let ambient = 0.04 + 0.96 * pow(in.block_light, 1.6);
+    // Con luz doble, el cielo se atenúa con la hora; los emisores, no.
+    let world_light = max(in.block_light, in.sky_light * globals.daylight);
+    let ambient = 0.04 + 0.96 * pow(world_light, 1.6);
     let lamp_radius = globals.eye.w;
     var lamp = 0.0;
     if lamp_radius > 0.0 {
