@@ -1,0 +1,15 @@
+[package]
+name = "grisu-anim"
+description = "Grisú: animación por piezas rígidas (clips, capas, IK de pies), solo CPU"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# Solo glam: la animación es matemática de transformaciones, sin gráficos ni E/S.
+[dependencies]
+glam.workspace = true
+
+[lints]
+workspace = true
