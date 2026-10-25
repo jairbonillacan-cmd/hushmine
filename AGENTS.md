@@ -19,6 +19,7 @@ El plan completo está en `PLAN_v4.md`; las decisiones de arquitectura, en `docs
 | `grisu-net` | Trait `Socket` (UDP y red simulada en memoria), `Connection` con canal fiable y ordenado y canal no fiable |
 | `hush-sim` | Reglas y simulación determinista, sin gráficos: bloques, terreno, movimiento, cavar y poner |
 | `hush-net` | Protocolo, servidor autoritativo y cliente con predicción, sin E/S; arnés de partidas en red simulada |
+| `hush-worldgen` | Generación pura del mundo de prueba W0: `(semilla, ChunkPos) → Chunk` con ruido entero, sin `f32` |
 | `hush-art` | Texturas provisionales de los bloques y su emisión de luz |
 | `hush-server` | Binario `hush-server` (servidor dedicado UDP) |
 | `hush-client` | Binario `hushmine` (el juego; servidor local en memoria o `--connect`) |
