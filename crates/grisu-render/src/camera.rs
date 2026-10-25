@@ -12,6 +12,41 @@ pub struct View {
     pub eye: Vec3,
 }
 
+/// Modo de cámara del jugador (ver `docs/graficos/01-camaras.md`).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum CameraMode {
+    /// Desde los ojos del minero (por defecto).
+    #[default]
+    FirstPerson,
+    /// Detrás del hombro, mirando hacia donde apunta el minero.
+    ThirdPersonBack,
+    /// Delante del minero, mirándolo de frente.
+    ThirdPersonFront,
+}
+
+impl CameraMode {
+    /// Pasa al siguiente modo de cámara en ciclo.
+    pub fn next(self) -> Self {
+        match self {
+            Self::FirstPerson => Self::ThirdPersonBack,
+            Self::ThirdPersonBack => Self::ThirdPersonFront,
+            Self::ThirdPersonFront => Self::FirstPerson,
+        }
+    }
+
+    pub fn is_third_person(self) -> bool {
+        !matches!(self, Self::FirstPerson)
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::FirstPerson => "1A PERSONA",
+            Self::ThirdPersonBack => "3A PERSONA (DETRAS)",
+            Self::ThirdPersonFront => "3A PERSONA (FRENTE)",
+        }
+    }
+}
+
 /// Cámara que orbita alrededor de un punto. Sirve para las capturas desde
 /// fuera del mapa.
 #[derive(Clone, Copy, Debug)]
@@ -120,6 +155,36 @@ impl FlyCamera {
             eye: self.position,
         }
     }
+
+    /// Dirección unitaria desde los ojos del jugador hacia el brazo de cámara
+    /// en tercera persona (`front = false` detrás, `front = true` delante).
+    pub fn third_person_arm_dir(&self, front: bool) -> Vec3 {
+        let base = if front {
+            self.forward()
+        } else {
+            -self.forward()
+        };
+        (base + Vec3::Y * 0.14).normalize_or_zero()
+    }
+
+    /// Vista en tercera persona a una distancia `distance` ya recortada contra
+    /// el terreno. Si `distance < 0.45`, cae a primera persona.
+    pub fn third_person_view(&self, aspect: f32, distance: f32, front: bool) -> View {
+        if distance < 0.45 {
+            return self.view(aspect);
+        }
+        let eye = self.position + self.third_person_arm_dir(front) * distance;
+        let target = if front {
+            self.position - Vec3::Y * 0.35
+        } else {
+            self.position + self.forward() * 8.0
+        };
+        let view = rh::view::look_at_mat4(eye, target, Vec3::Y);
+        View {
+            view_proj: perspective(self.fov_y, aspect) * view,
+            eye,
+        }
+    }
 }
 
 fn perspective(fov_y: f32, aspect: f32) -> Mat4 {
@@ -155,5 +220,27 @@ mod tests {
         let ndc = clip.truncate() / clip.w;
         assert!(ndc.x.abs() < 1e-4 && ndc.y.abs() < 1e-4);
         assert!((0.0..1.0).contains(&ndc.z));
+    }
+
+    #[test]
+    fn third_person_camera_cycles_and_offsets_eye() {
+        let mode = CameraMode::default();
+        assert_eq!(mode, CameraMode::FirstPerson);
+        assert_eq!(mode.next(), CameraMode::ThirdPersonBack);
+        assert_eq!(mode.next().next(), CameraMode::ThirdPersonFront);
+        assert_eq!(mode.next().next().next(), CameraMode::FirstPerson);
+
+        let cam = FlyCamera {
+            position: Vec3::new(10.0, 20.0, 10.0),
+            yaw: 0.0,
+            pitch: 0.0,
+            ..FlyCamera::default()
+        };
+        let back = cam.third_person_view(16.0 / 9.0, 3.5, false);
+        assert!(back.eye.z > cam.position.z);
+        let front = cam.third_person_view(16.0 / 9.0, 3.5, true);
+        assert!(front.eye.z < cam.position.z);
+        let cramped = cam.third_person_view(16.0 / 9.0, 0.2, false);
+        assert_eq!(cramped.eye, cam.position);
     }
 }

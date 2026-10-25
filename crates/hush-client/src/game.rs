@@ -257,6 +257,8 @@ impl App for Game {
             selected: self.target.map(|hit| hit.block),
             lamp_radius: 14.0,
             time_seconds: self.elapsed,
+            fog_color: [0.02, 0.03, 0.05],
+            daylight: 1.0,
         };
         terrain.render(&gpu.queue, encoder, color, depth, &view, &style);
         let remotes = self.remote_boxes();

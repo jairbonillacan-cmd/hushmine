@@ -8,6 +8,7 @@
 mod chunk;
 mod collide;
 mod light;
+mod light_dual;
 mod mesh;
 mod raycast;
 mod world;
@@ -15,7 +16,8 @@ mod world;
 pub use chunk::{CHUNK_SIZE, CHUNK_VOLUME, Chunk, ChunkDecodeError};
 pub use collide::{Aabb, FIXED_ONE, MoveResult, move_aabb};
 pub use light::{LightMap, MAX_LIGHT, emission_of};
-pub use mesh::{Direction, PackedFace, mesh_chunk};
+pub use light_dual::DualLightMap;
+pub use mesh::{Direction, PackedFace, mesh_chunk, mesh_chunk_dual};
 pub use raycast::{RayHit, raycast};
 pub use world::{MAX_WORLD_SIZE, VoxelWorld, WorldError};
 

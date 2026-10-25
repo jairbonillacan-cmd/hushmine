@@ -69,6 +69,8 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
                 selected: None,
                 lamp_radius: 0.0,
                 time_seconds: 0.0,
+                fog_color: [0.02, 0.03, 0.05],
+                daylight: 1.0,
             },
         },
         Scene::Tunnel => {
@@ -88,6 +90,8 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
                     selected: Some([14, 29, 33]),
                     lamp_radius: 14.0,
                     time_seconds: 0.0,
+                    fog_color: [0.02, 0.03, 0.05],
+                    daylight: 1.0,
                 },
             }
         }
@@ -109,6 +113,8 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
                     selected: None,
                     lamp_radius: 14.0,
                     time_seconds: 0.0,
+                    fog_color: [0.02, 0.03, 0.05],
+                    daylight: 1.0,
                 },
             }
         }
@@ -204,6 +210,8 @@ fn dig_scene(seed: u64) -> Result<TerrainScene> {
             selected,
             lamp_radius: 14.0,
             time_seconds: 0.0,
+            fog_color: [0.02, 0.03, 0.05],
+            daylight: 1.0,
         },
     })
 }
@@ -245,6 +253,8 @@ fn players_scene(world: VoxelWorld) -> TerrainScene {
             selected: None,
             lamp_radius: 14.0,
             time_seconds: 0.0,
+            fog_color: [0.02, 0.03, 0.05],
+            daylight: 1.0,
         },
     }
 }

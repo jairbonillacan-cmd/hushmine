@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use anyhow::Result;
 use bytemuck::{Pod, Zeroable};
-use grisu_voxel::{LightMap, PackedFace, VoxelWorld, mesh_chunk};
+use grisu_voxel::{DualLightMap, LightMap, PackedFace, VoxelWorld, mesh_chunk, mesh_chunk_dual};
 use wgpu::util::DeviceExt;
 
 use crate::texture_array::upload_texture_array;
@@ -17,8 +17,10 @@ struct Globals {
     selected: [i32; 4],
     /// Segundos desde el arranque, para animar la lava.
     time: f32,
+    /// Multiplicador de la luz de cielo (0..1) según la hora del día.
+    daylight: f32,
     /// Relleno hasta el tamaño del uniforme (múltiplo de 16).
-    pad: [f32; 3],
+    pad: [f32; 2],
 }
 
 /// Ajustes de dibujo del terreno que cambian cada fotograma.
@@ -26,21 +28,31 @@ struct Globals {
 pub struct TerrainStyle {
     /// Distancia, en bloques, a la que la niebla tapa todo.
     pub fog_distance: f32,
+    /// Color de la niebla (rgb); de noche conviene oscurecerlo.
+    pub fog_color: [f32; 3],
     /// Bloque señalado por el jugador, que se resalta.
     pub selected: Option<[i32; 3]>,
     /// Alcance de la lámpara del casco, en bloques (0 = apagada).
     pub lamp_radius: f32,
     /// Segundos desde el arranque; anima los bloques con fotogramas (lava).
     pub time_seconds: f32,
+    /// Multiplicador de la luz de cielo (0..1) según la hora del día.
+    pub daylight: f32,
 }
 
 impl Default for TerrainStyle {
     fn default() -> Self {
         Self {
             fog_distance: 48.0,
+            fog_color: [
+                crate::CLEAR_COLOR.r as f32,
+                crate::CLEAR_COLOR.g as f32,
+                crate::CLEAR_COLOR.b as f32,
+            ],
             selected: None,
             lamp_radius: 14.0,
             time_seconds: 0.0,
+            daylight: 1.0,
         }
     }
 }
@@ -61,6 +73,25 @@ pub struct MeshStats {
     pub millis: f64,
 }
 
+/// Cómo se calcula la luz del terreno.
+#[derive(Clone, Debug)]
+enum Lighting {
+    /// Un solo canal combinado (cielo y emisores juntos).
+    Combined(LightMap),
+    /// Canales separados de cielo y bloque para modular con el ciclo diurno.
+    Dual(DualLightMap),
+}
+
+impl Lighting {
+    /// Recalcula la luz y devuelve cuántas celdas cambiaron.
+    fn update(&mut self, world: &mut VoxelWorld) -> usize {
+        match self {
+            Self::Combined(map) => map.update(world),
+            Self::Dual(map) => map.update(world),
+        }
+    }
+}
+
 /// Dibuja un [`VoxelWorld`]: una malla por chunk, regenerada solo cuando el
 /// chunk está sucio.
 pub struct VoxelRenderer {
@@ -70,7 +101,9 @@ pub struct VoxelRenderer {
     chunks: Vec<Option<ChunkMesh>>,
     /// Emisión por tipo de bloque; con `None` no se calcula luz.
     emission: Option<[u8; 256]>,
-    light: Option<LightMap>,
+    light: Option<Lighting>,
+    /// Luz dual (modo historia) en vez de canal único.
+    dual: bool,
 }
 
 impl VoxelRenderer {
@@ -200,6 +233,7 @@ impl VoxelRenderer {
             chunks: Vec::new(),
             emission: None,
             light: None,
+            dual: false,
         })
     }
 
@@ -208,6 +242,15 @@ impl VoxelRenderer {
     pub fn enable_lighting(&mut self, emission: [u8; 256]) {
         self.emission = Some(emission);
         self.light = None;
+        self.dual = false;
+    }
+
+    /// Activa la luz dual (cielo y bloque por separado), que el shader
+    /// combina con el multiplicador de día de [`TerrainStyle`].
+    pub fn enable_dual_lighting(&mut self, emission: [u8; 256]) {
+        self.emission = Some(emission);
+        self.light = None;
+        self.dual = true;
     }
 
     /// Regenera las mallas de los chunks sucios y las sube a la GPU.
@@ -223,7 +266,11 @@ impl VoxelRenderer {
                 Some(light) if world.has_dirty() => light_changed = light.update(world),
                 Some(_) => {}
                 None => {
-                    self.light = Some(LightMap::new(world, emission));
+                    self.light = Some(if self.dual {
+                        Lighting::Dual(DualLightMap::new(world, emission))
+                    } else {
+                        Lighting::Combined(LightMap::new(world, emission))
+                    });
                     world.mark_all_dirty();
                 }
             }
@@ -235,7 +282,11 @@ impl VoxelRenderer {
             ..MeshStats::default()
         };
         for index in dirty {
-            let faces = mesh_chunk(world, self.light.as_ref(), index);
+            let faces = match self.light.as_ref() {
+                Some(Lighting::Dual(map)) => mesh_chunk_dual(world, Some(map), index),
+                Some(Lighting::Combined(map)) => mesh_chunk(world, Some(map), index),
+                None => mesh_chunk(world, None, index),
+            };
             stats.faces += faces.len();
             self.chunks[index] = (!faces.is_empty()).then(|| ChunkMesh {
                 faces: device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -255,6 +306,11 @@ impl VoxelRenderer {
         self.chunks.iter().flatten().map(|c| c.count as usize).sum()
     }
 
+    /// `(chunks con malla, chunks totales)` para la telemetría de F3.
+    pub fn chunk_stats(&self) -> (usize, usize) {
+        (self.chunks.iter().flatten().count(), self.chunks.len())
+    }
+
     /// Graba el dibujo del terreno sobre `color`, borrándolo antes.
     pub fn render(
         &self,
@@ -266,9 +322,9 @@ impl VoxelRenderer {
         style: &TerrainStyle,
     ) {
         let fog = [
-            CLEAR_COLOR.r as f32,
-            CLEAR_COLOR.g as f32,
-            CLEAR_COLOR.b as f32,
+            style.fog_color[0],
+            style.fog_color[1],
+            style.fog_color[2],
             style.fog_distance.max(1.0),
         ];
         let selected = style
@@ -280,7 +336,8 @@ impl VoxelRenderer {
             fog,
             selected,
             time: style.time_seconds,
-            pad: [0.0; 3],
+            daylight: style.daylight.clamp(0.0, 1.0),
+            pad: [0.0; 2],
         };
         queue.write_buffer(&self.globals, 0, bytemuck::bytes_of(&globals));
 
