@@ -156,7 +156,7 @@ fn shot(scene: Scene, seed: u64, out: &Path, size: [u32; 2], yaw: f32, pitch: f3
             render_to_image(&gpu, width, height, &camera, &TextureData::test_ore())?
         }
         Some(mut scene) => {
-            let textures = hush_art::block_textures();
+            let textures = hush_art::block_textures()?;
             let mut terrain =
                 VoxelRenderer::new(&gpu.device, &gpu.queue, OFFSCREEN_FORMAT, &textures)?;
             terrain.enable_lighting(hush_art::emission_table());

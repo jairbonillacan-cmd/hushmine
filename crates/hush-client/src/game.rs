@@ -190,17 +190,19 @@ impl Game {
 
 impl App for Game {
     fn init(&mut self, gpu: &Gpu, surface_format: wgpu::TextureFormat) {
-        match VoxelRenderer::new(
-            &gpu.device,
-            &gpu.queue,
-            surface_format,
-            &hush_art::block_textures(),
-        ) {
+        let terrain = hush_art::block_textures()
+            .map_err(anyhow::Error::from)
+            .and_then(|textures| {
+                VoxelRenderer::new(&gpu.device, &gpu.queue, surface_format, &textures)
+            });
+        match terrain {
             Ok(mut terrain) => {
                 terrain.enable_lighting(hush_art::emission_table());
                 self.terrain = Some(terrain);
             }
-            Err(err) => log::error!("no se pudo crear el renderizador del terreno: {err:#}"),
+            Err(err) => {
+                log::error!("no se pudieron cargar las texturas o crear el renderizador: {err:#}")
+            }
         }
         self.boxes = Some(BoxRenderer::new(&gpu.device, surface_format));
         self.crosshair = Some(CrosshairRenderer::new(&gpu.device, surface_format));

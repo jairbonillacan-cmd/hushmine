@@ -834,6 +834,7 @@ version = "0.0.1"
 dependencies = [
  "grisu-render",
  "hush-sim",
+ "image",
 ]
 
 [[package]]
