@@ -37,7 +37,7 @@
 
 ## Pendiente o mejorable
 
-- **W0 (mundo grande) no está hecho:** el plan pedía preparar el motor para coordenadas `i64` y negativas dentro de este hito. Ver la nota de pendiente en `PLAN_v4.md` (sección 5) y `docs/mundo/04-verificacion-e-hitos.md`. Conviene hacerlo antes del hito 3.
+- **W0 (mundo grande) no está hecho:** el plan pedía preparar el motor para coordenadas `i64` y negativas dentro de este hito. Ver la nota de pendiente en `PLAN_v4.md` (sección 5) y `docs/mundo/04-verificacion-e-hitos.md`. Es lo siguiente: el modo Historia es ahora la prioridad y W0 es su primer paso (rama `w0/base`).
 - **Probar el cliente a mano:** ratón, cavar, poner, saltar. Las pruebas automáticas cubren la simulación y las capturas, pero no la sensación de control.
 - El tiempo de pico por bloque (`BlockKind::dig_ticks`) existe pero no se aplica: hoy se cava con un clic. Llegará con las clases (hito 3).
 - La lava no fluye ni hace daño (hito 4).

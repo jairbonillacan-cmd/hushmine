@@ -2,13 +2,16 @@
 
 Prefijo de los crates del juego: `hush-*`. Motor: `grisu-*`.
 
-Revisión del 22 de octubre de 2026. Sustituye a las versiones anteriores (`PLAN.md`, `PLAN_v2.md`, `PLAN_v3.md`).
+Revisión del 22 de octubre de 2026, con el cambio de prioridad del 24 de octubre. Sustituye a las versiones anteriores (`PLAN.md`, `PLAN_v2.md`, `PLAN_v3.md`).
+
+> **Prioridad actual (24 de octubre de 2026): el modo Historia (supervivencia) va primero.** Se desarrolla antes que el resto del modo Turno: primero W0 y después los hitos W1–W7 del mundo grande (sección 5 y `docs/mundo/`), con el diseño de `docs/supervivencia/`. El modo Turno queda **en pausa tras el hito 2** (red), sin borrar nada: su código sigue compilando y sus pruebas siguen en la CI, y se retoma en el hito 3 cuando el modo Historia sea jugable. **Pendiente de decidir:** qué modo sale primero en acceso anticipado.
 
 **Decisiones fijadas:**
 
 - **Motor propio** con tecnologías modernas y librerías de código abierto.
 - **Desarrollo individual con IA.**
 - **Prioridades:** rendimiento y multiplataforma.
+- **Orden de trabajo:** primero el modo Historia (supervivencia en el mundo grande); después, el resto del modo Turno.
 - **Modelo de estudio independiente:** publicar pronto, crecer con la comunidad y decidir después si el proyecto da para algo más grande.
 
 Cifras y plazos son objetivos por validar.
@@ -329,12 +332,12 @@ Incluye títulos para los jugadores: **Despertador** (más ruido), **Guardián d
 
 | Modo | Versión | Descripción |
 |---|---|---|
-| **Turno** (*Shift*) | 1.0 | El modo competitivo descrito arriba |
+| **Historia (supervivencia)** | **Prioridad actual** (W0–W7) | Supervivencia y construcción en un mundo abierto y único por semilla, de 15 M × 15 M bloques, que se genera al explorar. Todo se pica y todo se construye. Ocurre en el Silencio, un lugar sin fechas que no es la Tierra, con historia opcional, pueblos con comercio, criaturas, jefes, tecnologías propias y cuatro dimensiones. Ver `docs/mundo/` y `docs/supervivencia/` |
+| **Turno** (*Shift*) | 1.0 · en pausa tras el hito 2 | El modo competitivo descrito arriba. Se retoma cuando el modo Historia sea jugable |
 | **Taller** | 1.0 | Modo creativo libre: construir sin límites, que además sirve de **editor de mapas y plantillas**. Cuesta poco hacerlo y es la semilla de comunidad de Minecraft |
 | **Práctica** | 1.0 | Contra bots |
 | **Asedio** | Después de la 1.0 | Cavar bajo el banco enemigo y volarlo con una carga mayor (guerra de zapadores clásica) |
-| **La Mina Eterna** | Si hay tracción | Servidor persistente en un cerro grande con temporadas: el «camino de Minecraft» |
-| **Historia (supervivencia)** | Si hay tracción (hitos W1–W7) | Supervivencia y construcción en un mundo abierto y único por semilla, de 15 M × 15 M bloques, que se genera al explorar. Todo se pica y todo se construye. Ocurre en el Silencio, un lugar sin fechas que no es la Tierra, con historia opcional, pueblos con comercio, criaturas, jefes, tecnologías propias y cuatro dimensiones. Ver `docs/mundo/` y `docs/supervivencia/` |
+| **La Mina Eterna** | Dentro del modo Historia | El servidor persistente en un cerro grande se convierte en los servidores del modo Historia (`docs/supervivencia/README.md`) |
 
 ---
 
@@ -383,12 +386,21 @@ Incluye títulos para los jugadores: **Despertador** (más ruido), **Guardián d
 
 Los plazos son aspiracionales. El motor propio añade unas 6–8 semanas respecto a usar un framework, pero ese tiempo se queda en el proyecto para siempre.
 
+**Orden de trabajo actual (24 de octubre de 2026):**
+
+1. Hitos 0, 1 y 2: **hechos** (`docs/hito-1.md`, `docs/hito-2.md`).
+2. **W0. Puertas abiertas** del mundo grande: **en curso** (rama `w0/base`). Lo que falta está en la nota de pendiente de más abajo.
+3. **W1–W7** del mundo grande y el modo Historia (`docs/mundo/04-verificacion-e-hitos.md`, `docs/supervivencia/`), en ese orden.
+4. Después se retoma el modo Turno en el hito 3. Lo que el modo Historia construya y sirva al Turno (economía, clases, bloques de construcción, criaturas, interfaz, audio) se reutiliza.
+
+Los hitos 3–7 de la tabla siguen siendo el plan del modo Turno; solo cambia cuándo se hacen.
+
 | Hito | Contenido | Condición de salida | Aprox. |
 |---|---|---|---|
-| **0. Fundaciones** | Workspace, ventana wgpu en Windows, Linux y macOS (CI), captura sin ventana, `hush-cli` vacío, `cargo-deny`, `AGENTS.md` | Claude genera y lee una captura de un cubo texturizado; CI en verde en las tres plataformas | 2–3 sem |
-| **1. Vóxel** | Chunks, mallas, luz, cámara, colisión, cavar y poner | Escenas de captura de túneles correctas; 64³ se regenera completo en menos de 50 ms | 3–4 sem |
-| **2. Red** | Servidor, UDP y memoria, predicción, unión, deltas, bots básicos | Dos clientes y seis bots consistentes con 150 ms de latencia y 2 % de pérdida | 3–4 sem |
-| **3. Turno Cero** | Equipos, oro, banco, meta, cuatro clases, bloques clásicos, muerte | **Primera partida tipo Infiniminer completa con amigos por LAN** | 3–4 sem |
+| **0. Fundaciones** (hecho) | Workspace, ventana wgpu en Windows, Linux y macOS (CI), captura sin ventana, `hush-cli` vacío, `cargo-deny`, `AGENTS.md` | Claude genera y lee una captura de un cubo texturizado; CI en verde en las tres plataformas | 2–3 sem |
+| **1. Vóxel** (hecho) | Chunks, mallas, luz, cámara, colisión, cavar y poner | Escenas de captura de túneles correctas; 64³ se regenera completo en menos de 50 ms | 3–4 sem |
+| **2. Red** (hecho) | Servidor, UDP y memoria, predicción, unión, deltas, bots básicos | Dos clientes y seis bots consistentes con 150 ms de latencia y 2 % de pérdida | 3–4 sem |
+| **3. Turno Cero** (en pausa: después de W1–W7) | Equipos, oro, banco, meta, cuatro clases, bloques clásicos, muerte | **Primera partida tipo Infiniminer completa con amigos por LAN** | 3–4 sem |
 | **4. El Durmiente** | Sismógrafo, umbrales, lava, cangilones, geófono, niebla, ofrendas, chapas, crónica | **Prueba decisiva** con grupos externos (ver abajo) | 5–6 sem |
 | **5. Web y en línea** | Versión WebGPU + WebTransport, relé de Steam, servidor dedicado, Steam Deck | Alguien entra a una partida desde un enlace del navegador; 8 contra 8 por Internet | 4–5 sem |
 | **6. Alfa pública** | Arte de 32×32, audio, Vigía, interfaz, español e inglés, modo Taller | Demo web en itch.io y Steam Playtest; la gente vuelve a jugar | 6–8 sem |
@@ -403,11 +415,11 @@ Los plazos son aspiracionales. El motor propio añade unas 6–8 semanas respect
 
 Si no aparecen esas decisiones, **se rediseña antes de pasar al hito 5**.
 
-**Mundo grande (W0–W7):** el plan está en `docs/mundo/` y las decisiones, en `docs/adr/0002-mundo-grande.md`. Antes de la 1.0 solo entra **W0**, dentro del hito 1 (2–4 días): posiciones de entidad en `i64` Q47.16, chunks detrás de una interfaz, coordenadas negativas probadas y render relativo a la cámara. Los hitos W1–W7 llegan después del acceso anticipado y solo si el modo Turno tiene tracción.
+**Mundo grande y modo Historia (W0–W7): es la prioridad actual.** El plan está en `docs/mundo/`, el diseño del juego en `docs/supervivencia/` y las decisiones, en `docs/adr/0002-mundo-grande.md`. **W0** (2–4 días) prepara el motor: posiciones de entidad en `i64` Q47.16, chunks detrás de una interfaz, coordenadas negativas probadas y render relativo a la cámara. Después vienen **W1–W7**, uno detrás de otro, antes de volver al modo Turno.
 
-> **Pendiente (24 de octubre de 2026): W0 no se hizo dentro del hito 1.** Los hitos 1 y 2 se programaron en paralelo a este plan y usan un mundo finito: coordenadas de bloque `i32` positivas, un máximo de 128 bloques por eje (`grisu_voxel::MAX_WORLD_SIZE`), posiciones en punto fijo `i32` con 1024 unidades por bloque (`FIXED_ONE`), chunks guardados directamente en `VoxelWorld` y cámara en coordenadas absolutas `f32`. Basta para el modo Turno (64³–96×96×64), pero no para el mundo grande.
+> **Pendiente (24 de octubre de 2026): W0 no se hizo dentro del hito 1. Es lo siguiente y está en curso en la rama `w0/base`**, que ya tiene `grisu-voxel` (interfaces, `ChunkPos`, `SparseWorld`, mallas locales, raycast en `f64`, colisión en Q47.16, con pruebas en coordenadas negativas y extremas) y la cámara relativa. Faltan el render, la simulación, la red y los binarios. Los hitos 1 y 2 se programaron en paralelo a este plan y usan un mundo finito: coordenadas de bloque `i32` positivas, un máximo de 128 bloques por eje (`grisu_voxel::MAX_WORLD_SIZE`), posiciones en punto fijo `i32` con 1024 unidades por bloque (`FIXED_ONE`), chunks guardados directamente en `VoxelWorld` y cámara en coordenadas absolutas `f32`. Basta para el modo Turno (64³–96×96×64), pero no para el mundo grande.
 >
-> **Qué cambiaría al hacer W0** (2–4 días, mejor **antes del hito 3**, cuando aún hay poco código encima):
+> **Qué cambia con W0** (2–4 días; es lo primero del modo Historia):
 >
 > - `PlayerBody`, `Aabb` y `move_aabb` pasan de `i32` con `FIXED_ONE` a `i64` Q47.16, y el protocolo de `hush-net` envía posiciones de 64 bits.
 > - `VoxelWorld` queda detrás de una interfaz (`get`/`set`/`fill`) con `ChunkPos` que admite negativos; el mapa del Turno es una implementación finita de esa interfaz.
@@ -432,9 +444,13 @@ Si no aparecen esas decisiones, **se rediseña antes de pasar al hito 5**.
 | Pocos jugadores | Bots, partidas desde 1 contra 1, demo de un clic en el navegador, relé de Steam |
 | Trampas | Servidor autoritativo, niebla de mineral por equipo, simulación solo en el servidor |
 | Consolas o móviles con presupuesto | Solo entonces se evalúa un port; el diseño de `hush-sim` es la especificación que se reutiliza |
+| El modo Historia es mucho más grande que el Turno (W1–W7 suman unos 6–9 meses) y retrasa tener algo que probar con jugadores | Cada hito W termina en algo que se puede recorrer o jugar y en capturas; partidas de prueba del modo Historia desde W2 (mundo recorrible); el modo Turno sigue compilando y con sus pruebas en la CI para retomarlo sin sorpresas |
+| El modo Turno se rompe mientras está en pausa | Sus pruebas (`netsim`, capturas, invariantes) siguen en la CI; los cambios del motor se hacen detrás de interfaces que el mapa finito también implementa |
 
 ---
 
 ## 7. Fuera de la 1.0
 
-Consolas, móviles, mundo grande y supervivencia (planificados en `docs/mundo/`; solo W0 entra antes), fabricación, progresión que dé ventaja, mods en WebAssembly (llegan después), modo Asedio, La Mina Eterna y criaturas (los Silbadores).
+Consolas, móviles, progresión que dé ventaja en el modo Turno, mods en WebAssembly (llegan después) y modo Asedio.
+
+**Ya no está en esta lista:** el mundo grande y la supervivencia, con su fabricación y sus criaturas, que ahora son la prioridad (modo Historia). La Mina Eterna pasa a ser parte del modo Historia.

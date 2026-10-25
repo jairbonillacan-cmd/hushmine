@@ -2,7 +2,7 @@
 
 Diseño y lore del modo abierto de HUSHMINE. El mundo técnico (generación de 15 M × 15 M bloques, chunks, estructuras) está en [`docs/mundo/`](../mundo/README.md).
 
-Revisión del 24 de octubre de 2026. **Todo es propuesta:** las cifras se ajustan cuando haya algo jugable. Llega después del acceso anticipado del modo Turno, en los hitos W1–W7.
+Revisión del 24 de octubre de 2026. **Todo es propuesta:** las cifras se ajustan cuando haya algo jugable. **Es la prioridad actual del proyecto (24 de octubre de 2026):** se desarrolla antes que el resto del modo Turno, en los hitos W0–W7 de [`docs/mundo/04-verificacion-e-hitos.md`](../mundo/04-verificacion-e-hitos.md).
 
 ---
 
