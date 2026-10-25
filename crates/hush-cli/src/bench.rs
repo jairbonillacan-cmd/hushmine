@@ -23,7 +23,7 @@ pub fn run(seed: u64, runs: u32, out: Option<&Path>) -> Result<()> {
     let mut faces = 0;
     let full_mesh = median(runs, || {
         faces = (0..world.chunk_count())
-            .map(|i| mesh_chunk(&world, None, i).len())
+            .map(|i| mesh_chunk(&world, None, world.chunk_pos(i)).len())
             .sum();
         Ok(())
     })?;
@@ -36,7 +36,7 @@ pub fn run(seed: u64, runs: u32, out: Option<&Path>) -> Result<()> {
     let light = LightMap::new(&world, emission);
     let lit_mesh = median(runs, || {
         for i in 0..world.chunk_count() {
-            std::hint::black_box(mesh_chunk(&world, Some(&light), i));
+            std::hint::black_box(mesh_chunk(&world, Some(&light), world.chunk_pos(i)));
         }
         Ok(())
     })?;
@@ -52,7 +52,7 @@ pub fn run(seed: u64, runs: u32, out: Option<&Path>) -> Result<()> {
         let dirty = world.take_dirty();
         remeshed = dirty.len();
         for i in dirty {
-            std::hint::black_box(mesh_chunk(&world, None, i));
+            std::hint::black_box(mesh_chunk(&world, None, world.chunk_pos(i)));
         }
         Ok(())
     })?;

@@ -45,8 +45,9 @@ pub struct ClientReport {
     pub name: String,
     pub state: ClientState,
     pub world_matches: bool,
-    /// Diferencia final entre la posición predicha y la del servidor.
-    pub position_error: i32,
+    /// Diferencia final entre la posición predicha y la del servidor, en
+    /// punto fijo Q47.16.
+    pub position_error: i64,
     pub prediction: PredictionStats,
     pub rtt_ms: f64,
     /// Media de bytes por segundo del servidor a este cliente y al revés.
@@ -104,9 +105,9 @@ impl Script {
         if tick.is_multiple_of(6)
             && let Some(world) = client.world()
         {
-            let eye = client.body().eye().map(|c| c as f32 / FIXED_ONE as f32);
+            let eye = client.body().eye().map(|c| c as f64 / FIXED_ONE as f64);
             let down = if self.rng.below(3) == 0 { -1.5 } else { -0.5 };
-            let aim = [self.heading[0], down, self.heading[1]];
+            let aim = [f64::from(self.heading[0]), down, f64::from(self.heading[1])];
             if let Some(hit) = raycast(world, eye, aim, 4.0) {
                 action = Some(if self.rng.below(8) == 0 {
                     let cell = std::array::from_fn(|i| hit.block[i] + hit.normal[i]);
@@ -187,7 +188,7 @@ pub fn run_net_test(config: &NetTestConfig) -> Result<NetTestReport, grisu_voxel
             let server_body = client
                 .player()
                 .and_then(|p| server.sim().players().get(usize::from(p)));
-            let position_error = server_body.map_or(i32::MAX, |b| {
+            let position_error = server_body.map_or(i64::MAX, |b| {
                 (0..3)
                     .map(|i| (b.feet[i] - client.body().feet[i]).abs())
                     .max()

@@ -1,7 +1,7 @@
 //! Prueba de integración: dibuja un terreno sin ventana y comprueba la
 //! imagen. Se salta sin GPU salvo con `HUSH_REQUIRE_GPU=1`.
 
-use glam::Vec3;
+use glam::DVec3;
 use grisu_render::{
     FlyCamera, Gpu, OFFSCREEN_FORMAT, TerrainStyle, TextureData, VoxelRenderer, capture,
 };
@@ -39,15 +39,18 @@ fn floor_and_pillar_render_with_their_textures() {
     let textures = [solid([40, 200, 40]), solid([220, 40, 40])];
     let mut terrain =
         VoxelRenderer::new(&gpu.device, &gpu.queue, OFFSCREEN_FORMAT, &textures).unwrap();
-    let stats = terrain.update(&gpu.device, &mut world);
+    let stats = terrain.update(&gpu.device, &mut world, None);
     assert_eq!(stats.chunks_meshed, world.chunk_count());
     assert!(terrain.face_count() > 0);
     // Una segunda actualización no regenera nada.
-    assert_eq!(terrain.update(&gpu.device, &mut world).chunks_meshed, 0);
+    assert_eq!(
+        terrain.update(&gpu.device, &mut world, None).chunks_meshed,
+        0
+    );
 
     // Cámara sobre el suelo mirando al pilar (hacia -Z).
     let camera = FlyCamera {
-        position: Vec3::new(16.5, 6.0, 20.0),
+        position: DVec3::new(16.5, 6.0, 20.0),
         pitch: -10f32.to_radians(),
         ..FlyCamera::default()
     };
@@ -58,7 +61,15 @@ fn floor_and_pillar_render_with_their_textures() {
         lamp_radius: 0.0,
     };
     let image = capture(&gpu, 96, 96, |encoder, color, depth| {
-        terrain.render(&gpu.queue, encoder, color, depth, &view, &style);
+        terrain.render(
+            &gpu.device,
+            &gpu.queue,
+            encoder,
+            color,
+            depth,
+            &view,
+            &style,
+        );
     })
     .unwrap();
 

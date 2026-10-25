@@ -153,8 +153,8 @@ impl Simulation {
     /// mineros actuales.
     pub fn state_hash(&self) -> u64 {
         let mut hash = self.state_hash ^ self.world.content_hash();
-        let mut mix = |v: i32| {
-            hash = (hash ^ u64::from(v as u32)).wrapping_mul(0x0000_0100_0000_01B3);
+        let mut mix = |v: i64| {
+            hash = (hash ^ v as u64).wrapping_mul(0x0000_0100_0000_01B3);
         };
         for body in &self.players {
             body.feet.iter().chain(&body.velocity).for_each(|&c| mix(c));

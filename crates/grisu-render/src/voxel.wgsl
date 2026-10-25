@@ -14,6 +14,9 @@ struct Globals {
 @group(0) @binding(0) var<uniform> globals: Globals;
 @group(0) @binding(1) var block_textures: texture_2d_array<f32>;
 @group(0) @binding(2) var block_sampler: sampler;
+// Origen del chunk de la cara, relativo al anchor de la cámara (un vec4 por
+// chunk, seleccionado con el offset dinámico del bind group 1).
+@group(1) @binding(0) var<uniform> chunk_origin: vec4<f32>;
 
 struct FaceIn {
     @location(0) a: u32,
@@ -33,7 +36,8 @@ struct VertexOut {
 
 @vertex
 fn vs_main(@builtin(vertex_index) vertex: u32, face: FaceIn) -> VertexOut {
-    // Debe coincidir con FACE_AXES en grisu-voxel/src/mesh.rs.
+    // Debe coincidir con el empaquetado de PackedFace en
+    // grisu-voxel/src/mesh.rs.
     var normals = array<vec3<f32>, 6>(
         vec3(1.0, 0.0, 0.0), vec3(-1.0, 0.0, 0.0),
         vec3(0.0, 1.0, 0.0), vec3(0.0, -1.0, 0.0),
@@ -61,16 +65,16 @@ fn vs_main(@builtin(vertex_index) vertex: u32, face: FaceIn) -> VertexOut {
     var flipped_order = array<u32, 6>(1u, 2u, 3u, 1u, 3u, 0u);
 
     let block = vec3<f32>(
-        f32(face.a & 0x7Fu),
-        f32((face.a >> 7u) & 0x7Fu),
-        f32((face.a >> 14u) & 0x7Fu),
+        f32(face.a & 0xFu),
+        f32((face.a >> 4u) & 0xFu),
+        f32((face.a >> 8u) & 0xFu),
     );
-    let dir = (face.a >> 21u) & 0x7u;
+    let dir = (face.a >> 12u) & 0x7u;
     let ao = vec4<u32>(
-        (face.a >> 24u) & 0x3u,
-        (face.a >> 26u) & 0x3u,
-        (face.a >> 28u) & 0x3u,
-        (face.a >> 30u) & 0x3u,
+        (face.a >> 15u) & 0x3u,
+        (face.a >> 17u) & 0x3u,
+        (face.a >> 19u) & 0x3u,
+        (face.a >> 21u) & 0x3u,
     );
 
     var corner = normal_order[vertex];
@@ -80,7 +84,10 @@ fn vs_main(@builtin(vertex_index) vertex: u32, face: FaceIn) -> VertexOut {
     let s = corner_signs[corner];
     let n = normals[dir];
     let local = 0.5 * (n + us[dir] * s.x + vs[dir] * s.y);
-    let world = block + vec3(0.5) + local;
+    // Posición relativa al anchor de la cámara: la cara es local al chunk y
+    // el origen del chunk llega ya relativo (ADR 0002).
+    let origin = chunk_origin.xyz;
+    let world = block + origin + vec3(0.5) + local;
 
     var out: VertexOut;
     out.clip = globals.view_proj * vec4<f32>(world, 1.0);
@@ -90,7 +97,9 @@ fn vs_main(@builtin(vertex_index) vertex: u32, face: FaceIn) -> VertexOut {
     out.block_light = f32((face.b >> 8u) & 0xFu) / 15.0;
     out.world = world;
     let sel = globals.selected;
-    out.highlight = select(0.0, 1.0, sel.w == 1 && all(vec3<i32>(block) == sel.xyz));
+    let block_rel = block + origin;
+    out.highlight =
+        select(0.0, 1.0, sel.w == 1 && all(vec3<i32>(block_rel) == sel.xyz));
     return out;
 }
 

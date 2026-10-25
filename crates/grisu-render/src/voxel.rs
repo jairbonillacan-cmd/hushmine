@@ -1,8 +1,9 @@
+use std::collections::BTreeMap;
 use std::time::Instant;
 
 use anyhow::Result;
 use bytemuck::{Pod, Zeroable};
-use grisu_voxel::{LightMap, PackedFace, VoxelWorld, mesh_chunk};
+use grisu_voxel::{ChunkPos, ChunkedVoxels, LightMap, PackedFace, mesh_chunk};
 use wgpu::util::DeviceExt;
 
 use crate::texture_array::upload_texture_array;
@@ -49,21 +50,28 @@ struct ChunkMesh {
 pub struct MeshStats {
     pub chunks_meshed: usize,
     pub faces: usize,
-    /// Celdas cuya luz cambió en esta actualización.
-    pub light_changed: usize,
     pub millis: f64,
 }
 
-/// Dibuja un [`VoxelWorld`]: una malla por chunk, regenerada solo cuando el
-/// chunk está sucio.
+/// Origen de un chunk, relativo al anchor de la vista, listo para el shader.
+type ChunkOrigin = [f32; 4];
+
+/// Dibuja un mundo de chunks ([`grisu_voxel::ChunkedVoxels`]): una malla por
+/// chunk, regenerada solo cuando el chunk está sucio.
+///
+/// Todo el dibujo es **relativo a la cámara** (ADR 0002): la vista trae el
+/// bloque anchor y, en el shader, cada cara local al chunk se desplaza con el
+/// origen de su chunk relativo a ese anchor. Así a millones de bloques del
+/// origen el shader solo ve números pequeños.
 pub struct VoxelRenderer {
     pipeline: wgpu::RenderPipeline,
     globals: wgpu::Buffer,
     bind_group: wgpu::BindGroup,
-    chunks: Vec<Option<ChunkMesh>>,
-    /// Emisión por tipo de bloque; con `None` no se calcula luz.
-    emission: Option<[u8; 256]>,
-    light: Option<LightMap>,
+    chunks: BTreeMap<ChunkPos, Option<ChunkMesh>>,
+    origins_layout: wgpu::BindGroupLayout,
+    origins_bg: wgpu::BindGroup,
+    origins: wgpu::Buffer,
+    origins_capacity: usize,
 }
 
 impl VoxelRenderer {
@@ -120,6 +128,33 @@ impl VoxelRenderer {
                 },
             ],
         });
+        // Origen del chunk de la cara que se dibuja, relativo al anchor de
+        // la cámara, en su propio grupo para poder crecer sin recrear el de
+        // texturas. Un vec4 por chunk, con offset dinámico (wgpu alinea los
+        // dinámicos a 256 bytes).
+        let origins_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("voxel-origins-bgl"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::VERTEX,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: true,
+                    min_binding_size: Some(wgpu::BufferSize::new(16).unwrap()),
+                },
+                count: None,
+            }],
+        });
+        let origins_capacity = Self::INITIAL_ORIGIN_CAPACITY;
+        let origins = Self::origin_buffer(device, origins_capacity);
+        let origins_bg = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("voxel-origins-bg"),
+            layout: &origins_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: Self::origins_binding(&origins),
+            }],
+        });
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("voxel-bg"),
             layout: &bind_group_layout,
@@ -140,7 +175,7 @@ impl VoxelRenderer {
         });
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("voxel-layout"),
-            bind_group_layouts: &[Some(&bind_group_layout)],
+            bind_group_layouts: &[Some(&bind_group_layout), Some(&origins_layout)],
             immediate_size: 0,
         });
 
@@ -190,47 +225,63 @@ impl VoxelRenderer {
             pipeline,
             globals,
             bind_group,
-            chunks: Vec::new(),
-            emission: None,
-            light: None,
+            chunks: BTreeMap::new(),
+            origins_layout,
+            origins_bg,
+            origins,
+            origins_capacity,
         })
     }
 
-    /// Activa la luz por bloques. `emission[b]` es la luz que emite el
-    /// bloque `b` (0-15). Sin llamar a esto, todo se dibuja con luz completa.
-    pub fn enable_lighting(&mut self, emission: [u8; 256]) {
-        self.emission = Some(emission);
-        self.light = None;
+    /// Orígenes de chunk que caben en el búfer al crearlo.
+    const INITIAL_ORIGIN_CAPACITY: usize = 4096;
+    /// Bytes por entrada del búfer de orígenes: un vec4, alineado al mínimo
+    /// de wgpu para offsets dinámicos de uniformes (256).
+    const ORIGIN_SLOT_BYTES: u32 = 256;
+
+    /// Ventana de 16 bytes (un vec4) del búfer de orígenes, para el bind
+    /// group con offset dinámico.
+    fn origins_binding(buffer: &wgpu::Buffer) -> wgpu::BindingResource<'_> {
+        wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+            buffer,
+            offset: 0,
+            size: wgpu::BufferSize::new(size_of::<ChunkOrigin>() as u64),
+        })
     }
 
-    /// Regenera las mallas de los chunks sucios y las sube a la GPU.
-    pub fn update(&mut self, device: &wgpu::Device, world: &mut VoxelWorld) -> MeshStats {
-        if self.chunks.len() != world.chunk_count() {
-            self.chunks = (0..world.chunk_count()).map(|_| None).collect();
-            world.mark_all_dirty();
-        }
+    fn origin_buffer(device: &wgpu::Device, capacity: usize) -> wgpu::Buffer {
+        device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("voxel-chunk-origins"),
+            size: u64::from(Self::ORIGIN_SLOT_BYTES) * capacity as u64,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        })
+    }
+
+    /// Regenera las mallas de los chunks sucios y las suba a la GPU. La luz
+    /// se calcula fuera (con [`LightMap`], en el juego) y aquí solo se usa
+    /// para teñir las caras.
+    pub fn update<W: ChunkedVoxels + ?Sized>(
+        &mut self,
+        device: &wgpu::Device,
+        world: &mut W,
+        light: Option<&LightMap>,
+    ) -> MeshStats {
         let start = Instant::now();
-        let mut light_changed = 0;
-        if let Some(emission) = self.emission {
-            match &mut self.light {
-                Some(light) if world.has_dirty() => light_changed = light.update(world),
-                Some(_) => {}
-                None => {
-                    self.light = Some(LightMap::new(world, emission));
-                    world.mark_all_dirty();
-                }
-            }
-        }
-        let dirty = world.take_dirty();
+        let dirty = world.take_dirty_chunks();
         let mut stats = MeshStats {
             chunks_meshed: dirty.len(),
-            light_changed,
             ..MeshStats::default()
         };
-        for index in dirty {
-            let faces = mesh_chunk(world, self.light.as_ref(), index);
+        for pos in dirty {
+            if !world.is_loaded(pos) {
+                // El chunk se descargó: su malla desaparece.
+                self.chunks.remove(&pos);
+                continue;
+            }
+            let faces = mesh_chunk(world, light, pos);
             stats.faces += faces.len();
-            self.chunks[index] = (!faces.is_empty()).then(|| ChunkMesh {
+            let mesh = (!faces.is_empty()).then(|| ChunkMesh {
                 faces: device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("chunk-faces"),
                     contents: bytemuck::cast_slice(&faces),
@@ -238,6 +289,7 @@ impl VoxelRenderer {
                 }),
                 count: faces.len() as u32,
             });
+            self.chunks.insert(pos, mesh);
         }
         stats.millis = start.elapsed().as_secs_f64() * 1e3;
         stats
@@ -245,12 +297,18 @@ impl VoxelRenderer {
 
     /// Caras visibles en total (para el HUD de depuración).
     pub fn face_count(&self) -> usize {
-        self.chunks.iter().flatten().map(|c| c.count as usize).sum()
+        self.chunks
+            .values()
+            .flatten()
+            .map(|c| c.count as usize)
+            .sum()
     }
 
     /// Graba el dibujo del terreno sobre `color`, borrándolo antes.
+    #[allow(clippy::too_many_arguments)]
     pub fn render(
-        &self,
+        &mut self,
+        device: &wgpu::Device,
         queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         color: &wgpu::TextureView,
@@ -258,15 +316,51 @@ impl VoxelRenderer {
         view: &View,
         style: &TerrainStyle,
     ) {
+        // Origen de cada chunk con malla, relativo al anchor de la vista, en
+        // el mismo orden en que se dibujan.
+        let origins: Vec<ChunkOrigin> = self
+            .chunks
+            .iter()
+            .filter_map(|(pos, mesh)| {
+                mesh.as_ref()?;
+                let rel = view.relative_block(pos.origin());
+                Some([rel[0] as f32, rel[1] as f32, rel[2] as f32, 0.0])
+            })
+            .collect();
+        if origins.len() > self.origins_capacity {
+            self.origins_capacity = origins.len().next_power_of_two();
+            self.origins = Self::origin_buffer(device, self.origins_capacity);
+            self.origins_bg = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("voxel-origins-bg"),
+                layout: &self.origins_layout,
+                entries: &[wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: Self::origins_binding(&self.origins),
+                }],
+            });
+        }
+        // Cada origen vive en su slot de 256 bytes, el hueco que saltará el
+        // offset dinámico.
+        for (i, origin) in origins.iter().enumerate() {
+            queue.write_buffer(
+                &self.origins,
+                u64::from(Self::ORIGIN_SLOT_BYTES) * i as u64,
+                bytemuck::bytes_of(origin),
+            );
+        }
+
         let fog = [
             CLEAR_COLOR.r as f32,
             CLEAR_COLOR.g as f32,
             CLEAR_COLOR.b as f32,
             style.fog_distance.max(1.0),
         ];
+        // El bloque señalado, en coordenadas relativas al anchor (las mismas
+        // en las que el shader sitúa las caras).
         let selected = style
             .selected
-            .map_or([0, 0, 0, 0], |[x, y, z]| [x, y, z, 1]);
+            .map(|b| view.relative_block(b))
+            .map_or([0, 0, 0, 0], |r| [r[0], r[1], r[2], 1]);
         let globals = Globals {
             view_proj: view.view_proj.to_cols_array_2d(),
             eye: view.eye.extend(style.lamp_radius).to_array(),
@@ -301,9 +395,10 @@ impl VoxelRenderer {
         });
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, &self.bind_group, &[]);
-        for chunk in self.chunks.iter().flatten() {
-            pass.set_vertex_buffer(0, chunk.faces.slice(..));
-            pass.draw(0..6, 0..chunk.count);
+        for (i, mesh) in self.chunks.values().flatten().enumerate() {
+            pass.set_vertex_buffer(0, mesh.faces.slice(..));
+            pass.set_bind_group(1, &self.origins_bg, &[(i as u32) * Self::ORIGIN_SLOT_BYTES]);
+            pass.draw(0..6, 0..mesh.count);
         }
     }
 }

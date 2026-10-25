@@ -16,6 +16,7 @@ use grisu_render::{
     BoxRenderer, Gpu, OFFSCREEN_FORMAT, OrbitCamera, TextureData, VoxelRenderer, capture,
     render_to_image,
 };
+use grisu_voxel::LightMap;
 use hush_sim::MatchConfig;
 use scenes::Scene;
 
@@ -159,8 +160,13 @@ fn shot(scene: Scene, seed: u64, out: &Path, size: [u32; 2], yaw: f32, pitch: f3
             let textures = hush_art::block_textures();
             let mut terrain =
                 VoxelRenderer::new(&gpu.device, &gpu.queue, OFFSCREEN_FORMAT, &textures)?;
-            terrain.enable_lighting(hush_art::emission_table());
-            let stats = terrain.update(&gpu.device, &mut scene.world);
+            // La luz se calcula fuera del renderer; los mundos abiertos
+            // (SparseWorld) se dibujan sin ella, a plena luz.
+            let light = scene
+                .world
+                .as_finite()
+                .map(|world| LightMap::new(world, hush_art::emission_table()));
+            let stats = terrain.update(&gpu.device, scene.world.as_chunked_mut(), light.as_ref());
             println!(
                 "{} chunks, {} caras, mallas en {:.1} ms",
                 stats.chunks_meshed, stats.faces, stats.millis
@@ -168,11 +174,18 @@ fn shot(scene: Scene, seed: u64, out: &Path, size: [u32; 2], yaw: f32, pitch: f3
             let view = scene.view(width as f32 / height as f32);
             let mut boxes = BoxRenderer::new(&gpu.device, OFFSCREEN_FORMAT);
             capture(&gpu, width, height, |encoder, color, depth| {
-                terrain.render(&gpu.queue, encoder, color, depth, &view, &scene.style);
+                terrain.render(
+                    &gpu.device,
+                    &gpu.queue,
+                    encoder,
+                    color,
+                    depth,
+                    &view,
+                    &scene.style,
+                );
                 let fog = scene.style.fog_distance;
-                let device = &gpu.device;
                 boxes.render(
-                    device,
+                    &gpu.device,
                     &gpu.queue,
                     encoder,
                     color,

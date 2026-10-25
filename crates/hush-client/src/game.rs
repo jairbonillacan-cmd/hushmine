@@ -4,13 +4,13 @@
 //! Controles: WASD para andar, espacio para saltar, ratón para mirar, clic
 //! izquierdo para cavar, clic derecho para poner y 1-6 para elegir bloque.
 
-use glam::Vec3;
+use glam::{DVec3, Vec3};
 use grisu_platform::{App, Input, KeyCode, MouseButton};
 use grisu_render::{
     BoxRenderer, ColorBox, CrosshairRenderer, DepthTarget, FlyCamera, Gpu, TerrainStyle,
     VoxelRenderer,
 };
-use grisu_voxel::{FIXED_ONE, RayHit, raycast};
+use grisu_voxel::{FIXED_ONE, LightMap, RayHit, raycast};
 use hush_net::{Action, ClientState};
 use hush_sim::{BlockKind, MoveInput, TICK_RATE};
 
@@ -20,12 +20,12 @@ use crate::session::Session;
 const MOUSE_SENSITIVITY: f32 = 0.0025;
 /// Alcance del raycast del cliente, algo menor que el del servidor para no
 /// proponer acciones que se van a rechazar.
-const AIM_REACH: f32 = 4.0;
+const AIM_REACH: f64 = 4.0;
 /// Máximo de ticks por fotograma, para no entrar en espiral si va lento.
 const MAX_TICKS_PER_FRAME: u32 = 5;
 const TICK_SECONDS: f32 = 1.0 / TICK_RATE as f32;
 /// Los demás jugadores se dibujan 100 ms en el pasado para interpolar.
-const REMOTE_DELAY_TICKS: f32 = 3.0;
+const REMOTE_DELAY_TICKS: f64 = 3.0;
 const FOG_DISTANCE: f32 = 56.0;
 /// Bloques que se pueden poner con las teclas 1-6.
 const PLACEABLE: [BlockKind; 6] = [
@@ -52,8 +52,10 @@ pub struct Game {
     camera: FlyCamera,
     accumulator: f32,
     /// Ojos del jugador en el tick anterior y en el actual, para interpolar.
-    prev_eye: Vec3,
-    eye: Vec3,
+    prev_eye: DVec3,
+    eye: DVec3,
+    /// Luz del mundo; se recalcula cuando hay chunks sucios.
+    light: Option<LightMap>,
     target: Option<RayHit>,
     place_block: BlockKind,
     queued: Option<Action>,
@@ -71,8 +73,9 @@ impl Game {
             session,
             camera: FlyCamera::default(),
             accumulator: 0.0,
-            prev_eye: Vec3::ZERO,
-            eye: Vec3::ZERO,
+            prev_eye: DVec3::ZERO,
+            eye: DVec3::ZERO,
+            light: None,
             target: None,
             place_block: BlockKind::Rock,
             queued: None,
@@ -127,9 +130,9 @@ impl Game {
         }
     }
 
-    fn predicted_eye(&self) -> Vec3 {
+    fn predicted_eye(&self) -> DVec3 {
         let eye = self.session.client().body().eye();
-        Vec3::from_array(eye.map(|c| c as f32 / FIXED_ONE as f32))
+        DVec3::from_array(eye.map(|c| c as f64 / FIXED_ONE as f64))
     }
 
     fn report_state(&mut self) {
@@ -153,16 +156,16 @@ impl Game {
         let Some(tick) = self.session.client().last_server_tick() else {
             return Vec::new();
         };
-        let at = tick as f32 + self.accumulator / TICK_SECONDS - REMOTE_DELAY_TICKS;
-        let width = 2.0 * hush_sim::HALF_WIDTH as f32 / FIXED_ONE as f32;
-        let height = hush_sim::HEIGHT as f32 / FIXED_ONE as f32;
+        let at = tick as f64 + self.accumulator as f64 / TICK_SECONDS as f64 - REMOTE_DELAY_TICKS;
+        let width = 2.0 * hush_sim::HALF_WIDTH as f64 / FIXED_ONE as f64;
+        let height = hush_sim::HEIGHT as f64 / FIXED_ONE as f64;
         self.session
             .client()
             .remote_players(at)
             .into_iter()
             .map(|(id, [x, y, z])| ColorBox {
-                min: Vec3::new(x - width / 2.0, y, z - width / 2.0),
-                size: Vec3::new(width, height, width),
+                min: DVec3::new(x - width / 2.0, y, z - width / 2.0),
+                size: Vec3::new(width as f32, height as f32, width as f32),
                 color: CREW_COLORS[usize::from(id) % CREW_COLORS.len()],
             })
             .collect()
@@ -196,10 +199,7 @@ impl App for Game {
             surface_format,
             &hush_art::block_textures(),
         ) {
-            Ok(mut terrain) => {
-                terrain.enable_lighting(hush_art::emission_table());
-                self.terrain = Some(terrain);
-            }
+            Ok(terrain) => self.terrain = Some(terrain),
             Err(err) => log::error!("no se pudo crear el renderizador del terreno: {err:#}"),
         }
         self.boxes = Some(BoxRenderer::new(&gpu.device, surface_format));
@@ -218,12 +218,14 @@ impl App for Game {
         self.session.flush();
 
         let alpha = self.accumulator / TICK_SECONDS;
-        self.camera.position = self.prev_eye.lerp(self.eye, alpha.clamp(0.0, 1.0));
+        self.camera.position = self
+            .prev_eye
+            .lerp(self.eye, f64::from(alpha.clamp(0.0, 1.0)));
         self.target = self.session.client().world().and_then(|world| {
             raycast(
                 world,
                 self.camera.position.to_array(),
-                self.camera.forward().to_array(),
+                self.camera.forward().to_array().map(f64::from),
                 AIM_REACH,
             )
         });
@@ -242,7 +244,15 @@ impl App for Game {
         };
         let playing = *self.session.client().state() == ClientState::Playing;
         if playing && let Some(world) = self.session.client_mut().world_mut() {
-            terrain.update(&gpu.device, world);
+            // La luz vive en el juego: se crea con el mapa y se recalcula
+            // cuando la simulación deja chunks sucios.
+            let light = self
+                .light
+                .get_or_insert_with(|| LightMap::new(world, hush_art::emission_table()));
+            if world.has_dirty() {
+                light.update(world);
+            }
+            terrain.update(&gpu.device, world, Some(light));
         }
         let aspect = depth.width as f32 / depth.height as f32;
         let view = self.camera.view(aspect);
@@ -251,7 +261,15 @@ impl App for Game {
             selected: self.target.map(|hit| hit.block),
             lamp_radius: 14.0,
         };
-        terrain.render(&gpu.queue, encoder, color, depth, &view, &style);
+        terrain.render(
+            &gpu.device,
+            &gpu.queue,
+            encoder,
+            color,
+            depth,
+            &view,
+            &style,
+        );
         let remotes = self.remote_boxes();
         if let Some(boxes) = self.boxes.as_mut() {
             boxes.render(

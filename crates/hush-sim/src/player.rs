@@ -2,25 +2,29 @@
 //!
 //! El cliente lo usa para predecir y el servidor para decidir; por eso solo
 //! hay enteros y la entrada llega ya cuantizada.
+//!
+//! Las posiciones son `i64` Q47.16 (ADR 0002): sirven igual en el mapa
+//! finito del modo Turno y en el mundo grande de ±7,5 millones de bloques.
 
 use grisu_voxel::{Aabb, FIXED_ONE, VoxelWorld, move_aabb};
 use serde::{Deserialize, Serialize};
 
-const ONE: i32 = FIXED_ONE;
+const ONE: i64 = FIXED_ONE;
 /// Media anchura del minero (0,3 bloques).
-pub const HALF_WIDTH: i32 = 3 * ONE / 10;
+pub const HALF_WIDTH: i64 = 3 * ONE / 10;
 /// Altura del minero (1,7 bloques).
-pub const HEIGHT: i32 = 17 * ONE / 10;
+pub const HEIGHT: i64 = 17 * ONE / 10;
 /// Altura de los ojos sobre los pies (1,55 bloques).
-pub const EYE_HEIGHT: i32 = 155 * ONE / 100;
+pub const EYE_HEIGHT: i64 = 155 * ONE / 100;
 /// Velocidad al andar: 4,3 bloques/s.
-const WALK_PER_TICK: i32 = 43 * ONE / 300;
+const WALK_PER_TICK: i64 = 43 * ONE / 300;
 /// Gravedad: 28 bloques/s².
-const GRAVITY_PER_TICK: i32 = 28 * ONE / 900;
-/// Velocidad inicial del salto (unos 1,25 bloques de altura).
-const JUMP_PER_TICK: i32 = 285;
+const GRAVITY_PER_TICK: i64 = 28 * ONE / 900;
+/// Velocidad inicial del salto (unos 1,25 bloques de altura): 285 unidades
+/// de 1/1024 de bloque, la escala del hito 1, convertida a Q47.16.
+const JUMP_PER_TICK: i64 = 285 * 64;
 /// Velocidad máxima de caída: 40 bloques/s.
-const MAX_FALL_PER_TICK: i32 = 40 * ONE / 30;
+const MAX_FALL_PER_TICK: i64 = 40 * ONE / 30;
 
 /// Entrada de un tick. La dirección deseada está en coordenadas del mundo y
 /// cuantizada a `-127..=127` por eje; el cliente la calcula a partir de su
@@ -53,14 +57,14 @@ impl MoveInput {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct PlayerBody {
-    /// Centro de la base, en punto fijo.
-    pub feet: [i32; 3],
-    pub velocity: [i32; 3],
+    /// Centro de la base, en punto fijo Q47.16.
+    pub feet: [i64; 3],
+    pub velocity: [i64; 3],
     pub on_ground: bool,
 }
 
 impl PlayerBody {
-    pub fn new(feet: [i32; 3]) -> Self {
+    pub fn new(feet: [i64; 3]) -> Self {
         Self {
             feet,
             velocity: [0; 3],
@@ -72,7 +76,7 @@ impl PlayerBody {
         Aabb::from_feet(self.feet, HALF_WIDTH, HEIGHT)
     }
 
-    pub fn eye(&self) -> [i32; 3] {
+    pub fn eye(&self) -> [i64; 3] {
         [self.feet[0], self.feet[1] + EYE_HEIGHT, self.feet[2]]
     }
 
@@ -80,8 +84,8 @@ impl PlayerBody {
     pub fn step(&mut self, world: &VoxelWorld, input: MoveInput) {
         // Sin inercia horizontal: el movimiento responde al instante, como en
         // Infiniminer. Se divide entre 127 con redondeo hacia cero.
-        self.velocity[0] = i32::from(input.wish_x) * WALK_PER_TICK / 127;
-        self.velocity[2] = i32::from(input.wish_z) * WALK_PER_TICK / 127;
+        self.velocity[0] = i64::from(input.wish_x) * WALK_PER_TICK / 127;
+        self.velocity[2] = i64::from(input.wish_z) * WALK_PER_TICK / 127;
         if input.jump && self.on_ground {
             self.velocity[1] = JUMP_PER_TICK;
         }
@@ -100,12 +104,16 @@ impl PlayerBody {
 
 /// Primer hueco libre para aparecer en la columna `(x, z)`: encima del
 /// bloque sólido más alto. Devuelve los pies en punto fijo.
-pub fn spawn_point(world: &VoxelWorld, x: i32, z: i32) -> [i32; 3] {
+pub fn spawn_point(world: &VoxelWorld, x: i32, z: i32) -> [i64; 3] {
     let top = (0..world.size()[1] as i32)
         .rev()
         .find(|&y| world.is_solid(x, y, z))
         .map_or(0, |y| y + 1);
-    [x * ONE + ONE / 2, top * ONE, z * ONE + ONE / 2]
+    [
+        i64::from(x) * ONE + ONE / 2,
+        i64::from(top) * ONE,
+        i64::from(z) * ONE + ONE / 2,
+    ]
 }
 
 #[cfg(test)]
@@ -147,7 +155,7 @@ mod tests {
         for _ in 0..30 {
             body.step(&w, input);
         }
-        let blocks = f64::from(body.feet[0] - start) / f64::from(ONE);
+        let blocks = (body.feet[0] - start) as f64 / ONE as f64;
         assert!((4.0..4.5).contains(&blocks), "anduvo {blocks} bloques");
     }
 
