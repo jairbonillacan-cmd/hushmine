@@ -51,7 +51,7 @@ Qué hace cada uno, en orden:
 1. Formatea el código.
 2. Pasa el analizador con los avisos tratados como errores.
 3. Ejecuta todas las pruebas.
-4. Genera una captura PNG sin ventana. **Ábrela y mírala.** Escenas: `cube`, `terrain`, `tunnel`, `shaft`, `dig`, `players` y `frontier` (a 7,5 M bloques del origen).
+4. Genera una captura PNG sin ventana. **Ábrela y mírala.** Escenas: `cube`, `terrain`, `tunnel`, `shaft`, `dig`, `players`, `frontier` (a 7,5 M bloques del origen), `third-person`, `story` (luz doble), y las de interfaz a 1024×640 (`--width 1024 --height 640`): `launcher` y `menu` (la semilla elige la página), `story-hud` (1 en partida, 2 fabricar, 3 pausa, 4 F3, 5 muerte) y `type` (la fuente).
 5. Simula una partida con bots que cavan; `broken_invariants` debe estar vacío.
 6. Juega una partida en red simulada (2 clientes, 6 bots); falla si algún cliente termina con otro mundo u otra posición que el servidor.
 7. Mide terreno, luz y mallas de 64³; falla si pasan de 50 ms (solo con `--release`).
@@ -59,7 +59,7 @@ Qué hace cada uno, en orden:
 9. Abre el juego con ventana (controles abajo).
 10. Revisa las licencias de las dependencias.
 
-**Modo historia:** `cargo run -p hush-client -- --story [--seed N]` abre la expedición local (supervivencia a 20 Hz: hitos, fisiología, enemigos, fabricación y clímax del Pozo Ancestral). En `hush-cli`, `story --seed N --ticks T [--peaceful] [--report out/story.json]` corre una expedición con un minero automático y `region --seed N` guarda y recarga una región `.hush` verificando la huella. La captura `shot --scene story` muestra una galería con antorchas al atardecer (luz dual). Las reglas viven en `hush_sim::story` (ver `docs/adr/0010-modo-historia.md`); el diseño de referencia está en `docs/supervivencia/`.
+**Modo historia:** `cargo run -p hush-client -- --story [--seed N]` abre la expedición local (supervivencia a 20 Hz: hitos, fisiología, enemigos, fabricación y clímax del Pozo Ancestral). Usa los mismos controles reasignables que el Turno; además, E usa bancos, hornos y arcones, F abre fabricar, R come, F3 muestra la telemetría y, en la pausa, Q sale. El lanzador lo arranca por defecto (modo «Historia»). En `hush-cli`, `story --seed N --ticks T [--peaceful] [--report out/story.json]` corre una expedición con un minero automático y `region --seed N` guarda y recarga una región `.hush` verificando la huella. La captura `shot --scene story` muestra una galería con antorchas al atardecer (luz dual). Las reglas viven en `hush_sim::story` (ver `docs/adr/0010-modo-historia.md`); el diseño de referencia está en `docs/supervivencia/`.
 
 **Controles del modo historia:** igual que el competitivo, más MAYÚS (agacharse), F (fabricación), E (usar banco/horno/arcón/válvulas/engranajes/motor), R (comer), F3 (telemetría).
 
