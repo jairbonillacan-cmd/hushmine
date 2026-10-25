@@ -874,6 +874,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "hush-launcher"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "env_logger",
+ "glam",
+ "grisu-platform",
+ "grisu-render",
+ "grisu-voxel",
+ "hush-art",
+ "hush-sim",
+ "log",
+ "wgpu",
+]
+
+[[package]]
 name = "hush-net"
 version = "0.0.1"
 dependencies = [
