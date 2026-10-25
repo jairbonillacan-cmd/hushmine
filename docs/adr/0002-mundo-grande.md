@@ -1,7 +1,7 @@
 # ADR 0002: preparar el motor para un mundo de 15 M × 15 M bloques
 
 - **Fecha:** 24 de octubre de 2026
-- **Estado:** propuesta
+- **Estado:** aceptada (W0 en progreso)
 - **Plan detallado:** `docs/mundo/`
 
 ## Contexto

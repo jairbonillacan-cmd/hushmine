@@ -7,6 +7,7 @@
 
 mod chunk;
 mod collide;
+mod collide64;
 mod light;
 mod light_dual;
 mod mesh;
@@ -15,6 +16,9 @@ mod world;
 
 pub use chunk::{CHUNK_SIZE, CHUNK_VOLUME, Chunk, ChunkDecodeError};
 pub use collide::{Aabb, FIXED_ONE, MoveResult, move_aabb};
+pub use collide64::{
+    Aabb64, FIXED64_ONE, MAX_SWEEP_LAYERS, MoveResult64, move_aabb64, move_aabb64_world,
+};
 pub use light::{LightMap, MAX_LIGHT, emission_of};
 pub use light_dual::DualLightMap;
 pub use mesh::{Direction, PackedFace, mesh_chunk, mesh_chunk_dual};

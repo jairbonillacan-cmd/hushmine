@@ -416,6 +416,8 @@ Si no aparecen esas decisiones, **se rediseña antes de pasar al hito 5**.
 > - La generación de terreno de `hush-sim` toma la forma de función pura `(semilla, ChunkPos) → Chunk`.
 >
 > Criterio de salida, el de `docs/mundo/04-verificacion-e-hitos.md`: pruebas de chunk, DDA y colisión en coordenadas negativas y extremas en verde, y el mapa de 64³ sin cambios visibles (mismas capturas, `netsim` consistente).
+>
+> **Avance (25 de octubre de 2026):** punto 1 iniciado — `grisu_voxel::Aabb64` y `move_aabb64` en Q47.16 (`collide64.rs`), con paridad exacta contra la colisión actual y pruebas en coordenadas negativas y en ±7 499 999 bloques. Falta migrar `PlayerBody`, `hush-net` y los puntos 2-4.
 
 **Gráficos:** el plan de cámaras (primera y tercera persona), animación por piezas, texturas de 32×32 y shaders propios está en `docs/graficos/` y las decisiones, en `docs/adr/0003-graficos.md`. En el hito 1 solo entra **G0** (2–3 días): tamaño de textura leído del manifiesto, luz de bloque en color, preprocesador de shaders y vistas de depuración. El resto se reparte entre los hitos 3 y 6 (unas 6–8 semanas en total).
 
