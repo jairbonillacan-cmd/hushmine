@@ -16,14 +16,15 @@ El plan completo está en `PLAN_v4.md`; las decisiones de arquitectura, en `docs
 | `grisu-voxel` | Chunks de 16³, edición, mallas con oclusión ambiental, luz BFS, raycast DDA, colisión en punto fijo |
 | `grisu-render` | wgpu: GPU, cámaras, terreno, cruz de apuntar, captura sin ventana |
 | `grisu-platform` | Ventana winit, entrada (teclado y ratón) y bucle principal (trait `App`) |
+| `grisu-noise` | Ruido entero determinista en punto fijo Q16.16 (gradiente, fBm, crestas, deformación de dominio, muestreo grueso) para generar el mundo |
 | `grisu-net` | Trait `Socket` (UDP y red simulada en memoria), `Connection` con canal fiable y ordenado y canal no fiable |
 | `hush-sim` | Reglas y simulación determinista, sin gráficos: bloques, terreno, movimiento, cavar y poner |
 | `hush-net` | Protocolo, servidor autoritativo y cliente con predicción, sin E/S; arnés de partidas en red simulada |
 | `hush-worldgen` | Generación pura del mundo de prueba W0: `(semilla, ChunkPos) → Chunk` con ruido entero, sin `f32` |
-| `hush-art` | Texturas provisionales de los bloques y su emisión de luz |
+| `hush-art` | Texturas de los bloques (PNG de `assets/textures/blocks` incrustados, lava animada) y su emisión de luz |
 | `hush-server` | Binario `hush-server` (servidor dedicado UDP) |
 | `hush-client` | Binario `hushmine` (el juego; servidor local en memoria o `--connect`) |
-| `hush-cli` | Binario `hush-cli` (sim, netsim, shot, bench, gpu) |
+| `hush-cli` | Binario `hush-cli` (sim, netsim, shot, bench, gpu, noise) |
 
 **Regla de dependencias:** ningún crate `grisu-*` depende de un crate `hush-*`.
 
@@ -49,7 +50,7 @@ Qué hace cada uno, en orden:
 1. Formatea el código.
 2. Pasa el analizador con los avisos tratados como errores.
 3. Ejecuta todas las pruebas.
-4. Genera una captura PNG sin ventana. **Ábrela y mírala.** Escenas: `cube`, `terrain`, `tunnel`, `shaft`, `dig` y `players`.
+4. Genera una captura PNG sin ventana. **Ábrela y mírala.** Escenas: `cube`, `terrain`, `tunnel`, `shaft`, `dig`, `players` y `frontier` (a 7,5 M bloques del origen).
 5. Simula una partida con bots que cavan; `broken_invariants` debe estar vacío.
 6. Juega una partida en red simulada (2 clientes, 6 bots); falla si algún cliente termina con otro mundo u otra posición que el servidor.
 7. Mide terreno, luz y mallas de 64³; falla si pasan de 50 ms (solo con `--release`).
