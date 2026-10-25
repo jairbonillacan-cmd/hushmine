@@ -56,9 +56,7 @@ fn changes_rejections_and_leaving_players() {
     for _ in 0..40 {
         sim.step();
     }
-    let feet = sim.players()[a]
-        .feet
-        .map(|c| c.div_euclid(grisu_voxel::FIXED_ONE));
+    let feet = sim.players()[a].feet.map(grisu_voxel::cell_of);
     let below = [feet[0], feet[1] - 1, feet[2]];
     sim.submit(Command::Dig {
         player: a,

@@ -4,10 +4,10 @@
 use grisu_voxel::{FIXED_ONE, raycast};
 use hush_sim::{Command, MatchConfig, MoveInput, Simulation};
 
-fn eye(sim: &Simulation, player: usize) -> [f32; 3] {
+fn eye(sim: &Simulation, player: usize) -> [f64; 3] {
     sim.players()[player]
         .eye()
-        .map(|c| c as f32 / FIXED_ONE as f32)
+        .map(|c| c as f64 / FIXED_ONE as f64)
 }
 
 #[test]
@@ -38,7 +38,7 @@ fn aiming_and_digging_carves_a_walkable_tunnel() {
         }
         sim.submit(Command::Move {
             player,
-            input: MoveInput::from_direction(toward_center, 0.0, false),
+            input: MoveInput::from_direction(toward_center as f32, 0.0, false),
         });
         let before: u32 = sim.stats().dug.values().sum();
         sim.step();
