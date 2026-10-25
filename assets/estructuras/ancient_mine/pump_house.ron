@@ -1,0 +1,19 @@
+// Casa de bombas del nivel más hondo: si las bombas (id 12) fallan, todo lo de
+// abajo queda inundado. Abre al norte, hacia el pozo.
+Piece(
+    id: "pump_house",
+    family: "ancient_mine",
+    is_cap: false,
+    size: [7, 5, 5],
+    fills: [
+        // Suelo interior
+        [1, 0, 1, 6, 1, 4, 2],
+        // Cámara de bombas, abierta a la cara norte
+        [1, 1, 0, 6, 4, 4, 0],
+        // Maquinaria de bombeo contra el muro sur
+        [2, 1, 2, 5, 3, 4, 12],
+    ],
+    connectors: [
+        (pos: [3, 1, 0], dir: "north", kind: "gallery"),
+    ],
+)

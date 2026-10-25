@@ -1,0 +1,22 @@
+// Galería en dirección: sigue la veta a lo largo, con raíles (id 13) y una
+// bolsa de mena (id 4) asomando en el muro oeste.
+Piece(
+    id: "drift_gallery",
+    family: "ancient_mine",
+    is_cap: false,
+    size: [3, 4, 9],
+    fills: [
+        // Suelo de roca
+        [0, 0, 0, 3, 1, 9, 2],
+        // Túnel excavado
+        [0, 1, 0, 3, 4, 9, 0],
+        // Raíles por el centro del suelo
+        [1, 0, 0, 2, 1, 9, 13],
+        // Bolsa de mena en el muro oeste
+        [0, 1, 3, 1, 4, 6, 4],
+    ],
+    connectors: [
+        (pos: [1, 1, 0], dir: "north", kind: "track"),
+        (pos: [1, 1, 9], dir: "south", kind: "track"),
+    ],
+)

@@ -1,0 +1,24 @@
+// Taller de ensaye: horno (id 12) contra el muro sur y pepitas de oro (id 5)
+// en el banco. Puerta al norte y calle al sur.
+Piece(
+    id: "assay_workshop",
+    family: "arrival_village",
+    is_cap: false,
+    size: [7, 5, 7],
+    fills: [
+        // Muros de piedra
+        [0, 0, 0, 7, 4, 7, 2],
+        // Interior hueco
+        [1, 1, 1, 6, 4, 6, 0],
+        // Hueco de la puerta norte
+        [3, 1, 0, 4, 3, 1, 0],
+        // Horno de ensaye
+        [2, 1, 5, 4, 3, 6, 12],
+        // Pepitas de oro en el banco
+        [5, 1, 2, 6, 2, 3, 5],
+    ],
+    connectors: [
+        (pos: [3, 1, 0], dir: "north", kind: "door"),
+        (pos: [3, 1, 7], dir: "south", kind: "street"),
+    ],
+)

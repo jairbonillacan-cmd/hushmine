@@ -1,0 +1,22 @@
+// Arco tapiado (is_cap): cierre de puerta en las cuatro horizontales; el vano
+// con su aire en la coronacion queda sellado con tierra.
+Piece(
+    id: "sealed_arch",
+    family: "still_hamlet",
+    is_cap: true,
+    size: [5, 4, 3],
+    fills: [
+        // Arco macizo de piedra
+        [0, 0, 0, 5, 4, 3, 2],
+        // Aire en la coronacion del arco
+        [1, 2, 1, 4, 3, 2, 0],
+        // Tapiado de tierra bajo el arco
+        [1, 0, 1, 4, 2, 2, 1],
+    ],
+    connectors: [
+        (pos: [2, 1, 0], dir: "north", kind: "door"),
+        (pos: [2, 1, 3], dir: "south", kind: "door"),
+        (pos: [5, 1, 1], dir: "east", kind: "door"),
+        (pos: [0, 1, 1], dir: "west", kind: "door"),
+    ],
+)
