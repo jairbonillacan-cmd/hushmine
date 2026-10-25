@@ -351,6 +351,14 @@ fn debug_views_render_distinct_images() {
         }
     }
 
+    // La vista Ao interpola entre esquinas: más tonos que los 4 de ao_curve.
+    let ao = shots[2].1.pixels().filter(|&&p| p != background);
+    let tones = ao
+        .map(|p| p.0)
+        .collect::<std::collections::BTreeSet<_>>()
+        .len();
+    assert!(tones > 4, "la vista Ao es plana: {tones} tonos");
+
     // La vista Light tiene píxeles claros (el patio, a plena luz de cielo) y
     // oscuros (el fondo de la galería derecha). Se mira solo el centro de la
     // imagen para no contar el cielo como oscuridad.

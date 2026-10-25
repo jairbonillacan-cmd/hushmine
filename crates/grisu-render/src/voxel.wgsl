@@ -61,8 +61,9 @@ struct VertexOut {
     // vertex shader, así que las vistas de depuración la pasan plana.
     @location(6) @interpolate(flat) dir: u32,
     // Factor PURO de oclusión ambiental de la esquina (ao_curve, sin el
-    // sombreado por dirección): lo pinta la vista `ao`.
-    @location(7) @interpolate(flat) ao: f32,
+    // sombreado por dirección): lo pinta la vista `ao`, interpolado entre
+    // esquinas igual que `light` para que se vea el degradado real.
+    @location(7) ao: f32,
     // Tinte damero del chunk; el grupo 1 solo es visible en el vertex
     // shader, así que el color de la vista `chunks` se calcula aquí.
     @location(8) @interpolate(flat) chunk_tint: vec3<f32>,
