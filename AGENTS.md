@@ -59,7 +59,7 @@ Qué hace cada uno, en orden:
 9. Abre el juego con ventana (controles abajo).
 10. Revisa las licencias de las dependencias.
 
-**Modo historia:** `cargo run -p hush-client -- --story [--seed N]` abre la expedición local (supervivencia a 20 Hz: hitos, fisiología, enemigos, fabricación y clímax del Pozo Ancestral). En `hush-cli`, `story --seed N --ticks T [--peaceful] [--report out/story.json]` corre una expedición con un minero automático y `region --seed N` guarda y recarga una región `.hush` verificando la huella. La captura `shot --scene story` muestra una galería con antorchas al atardecer (luz dual). Las reglas viven en `hush_sim::story` (ver `docs/adr/0006-modo-historia.md`); el diseño original está en `HUSHMINE_Modo_Historia_Diseno.md`.
+**Modo historia:** `cargo run -p hush-client -- --story [--seed N]` abre la expedición local (supervivencia a 20 Hz: hitos, fisiología, enemigos, fabricación y clímax del Pozo Ancestral). En `hush-cli`, `story --seed N --ticks T [--peaceful] [--report out/story.json]` corre una expedición con un minero automático y `region --seed N` guarda y recarga una región `.hush` verificando la huella. La captura `shot --scene story` muestra una galería con antorchas al atardecer (luz dual). Las reglas viven en `hush_sim::story` (ver `docs/adr/0010-modo-historia.md`); el diseño de referencia está en `docs/supervivencia/`.
 
 **Controles del modo historia:** igual que el competitivo, más MAYÚS (agacharse), F (fabricación), E (usar banco/horno/arcón/válvulas/engranajes/motor), R (comer), F3 (telemetría).
 

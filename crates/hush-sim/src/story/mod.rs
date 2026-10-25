@@ -10,6 +10,7 @@
 pub mod crafting;
 pub mod daylight;
 pub mod expedition;
+mod expedition_actions;
 mod expedition_tick;
 pub mod fluids;
 pub mod inventory;

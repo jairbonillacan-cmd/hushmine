@@ -1,8 +1,11 @@
-# ADR 0006: Modo historia, aventura y supervivencia
+# ADR 0010: Modo Historia, aventura y supervivencia
 
 - Estado: aceptado
 - Fecha: 2026-10-25
-- Documento de origen: `HUSHMINE_Modo_Historia_Diseno.md` (maestro de diseño)
+- Documento de origen: `HUSHMINE_Modo_Historia_Diseno.md` (maestro de diseño de GLM; no está en el
+  repositorio). El diseño de referencia del proyecto es `docs/supervivencia/`.
+- Numeración: escrito por GLM como 0006, renumerado al portarlo sobre W0 (0006 es `grisu-noise`,
+  0007 `hush-worldgen`, 0008 `grisu-world` y 0009 queda para `grisu-anim`).
 
 ## Contexto
 
@@ -23,8 +26,8 @@ simulación y sin dependencias nuevas permitidas a la ligera.
 Adaptar el diseño al motor existente en lugar de reescribir el motor:
 
 1. **Módulo `hush_sim::story`** con la simulación completa a 20 Hz
-   (`STORY_TICK_RATE`), determinista (enteros y Q10/Q8; el punto fijo de
-   Grisú es `FIXED_ONE = 1024`). El modo competitivo (`Simulation` a 30 Hz)
+   (`STORY_TICK_RATE`), determinista (enteros y Q8; posiciones en Q47.16
+   como el resto de la simulación desde W0: `FIXED_ONE = 65_536`). El modo competitivo (`Simulation` a 30 Hz)
    queda intacto.
 2. **Mundo finito**: las cotas del documento se reparten proporcionalmente
    a la altura del mapa (`Bands::new`): superficie = alto - cielo, y de
@@ -78,3 +81,10 @@ Adaptar el diseño al motor existente en lugar de reescribir el motor:
   no hay motor de sonido en el workspace todavía.
 - Las compilaciones de zstd y el hilo de presentación separado quedan
   anotados para cuando el mundo grande los exija.
+- **Port sobre W0 (25 de octubre de 2026):** el código se escribió sobre la
+  base anterior a W0 y se adaptó al motor actual (posiciones `i64`, mallas
+  con coordenadas locales al chunk y luz calculada por quien llama:
+  `VoxelRenderer::update_dual`). La expedición sigue en un `VoxelWorld`
+  finito; llevarla al `SparseWorld` y al generador `hush-worldgen` (W1) es
+  el paso siguiente, junto con unificar su catálogo de objetos con
+  `data/supervivencia/` (#16).
