@@ -6,8 +6,9 @@
 use grisu_net::bytes::{DecodeError, Reader, Writer};
 use hush_sim::{BlockChange, BlockKind, MoveInput, PlayerBody};
 
-/// Se incrementa con cada cambio incompatible del protocolo.
-pub const PROTOCOL_VERSION: u16 = 1;
+/// Se incrementa con cada cambio incompatible del protocolo. La versión 2
+/// envía las posiciones en `i64` Q47.16 (mundo grande, ADR 0002).
+pub const PROTOCOL_VERSION: u16 = 2;
 /// Longitud máxima del nombre de un jugador, en bytes.
 pub const MAX_NAME_LEN: usize = 32;
 /// Entradas que repite cada paquete del cliente, por si se pierden algunos.
@@ -44,7 +45,8 @@ pub enum ClientMsg {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RemotePlayer {
     pub id: u16,
-    pub feet: [i32; 3],
+    /// Pies, en punto fijo Q47.16.
+    pub feet: [i64; 3],
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -86,12 +88,22 @@ const A_NONE: u8 = 0;
 const A_DIG: u8 = 1;
 const A_PLACE: u8 = 2;
 
-fn put_cell(w: &mut Writer, c: [i32; 3]) {
+/// Celda de bloque: las coordenadas de bloque son `i32` (ADR 0002).
+fn put_block(w: &mut Writer, c: [i32; 3]) {
     w.i32(c[0]).i32(c[1]).i32(c[2]);
 }
 
-fn get_cell(r: &mut Reader) -> Result<[i32; 3], DecodeError> {
+fn get_block(r: &mut Reader) -> Result<[i32; 3], DecodeError> {
     Ok([r.i32()?, r.i32()?, r.i32()?])
+}
+
+/// Posición de un cuerpo, en punto fijo Q47.16 (`i64`).
+fn put_pos(w: &mut Writer, p: [i64; 3]) {
+    w.i64(p[0]).i64(p[1]).i64(p[2]);
+}
+
+fn get_pos(r: &mut Reader) -> Result<[i64; 3], DecodeError> {
+    Ok([r.i64()?, r.i64()?, r.i64()?])
 }
 
 fn put_text(w: &mut Writer, text: &str) {
@@ -118,11 +130,11 @@ fn put_frame(w: &mut Writer, f: &InputFrame) {
         }
         Some(Action::Dig(cell)) => {
             w.u8(A_DIG);
-            put_cell(w, cell);
+            put_block(w, cell);
         }
         Some(Action::Place(cell, block)) => {
             w.u8(A_PLACE);
-            put_cell(w, cell);
+            put_block(w, cell);
             w.u8(block.id());
         }
     }
@@ -138,9 +150,9 @@ fn get_frame(r: &mut Reader) -> Result<InputFrame, DecodeError> {
     };
     let action = match r.u8()? {
         A_NONE => None,
-        A_DIG => Some(Action::Dig(get_cell(r)?)),
+        A_DIG => Some(Action::Dig(get_block(r)?)),
         A_PLACE => {
-            let cell = get_cell(r)?;
+            let cell = get_block(r)?;
             let block = BlockKind::from_id(r.u8()?).map_err(|_| DecodeError::Invalid("bloque"))?;
             Some(Action::Place(cell, block))
         }
@@ -153,16 +165,17 @@ fn get_frame(r: &mut Reader) -> Result<InputFrame, DecodeError> {
     })
 }
 
+/// Posición en Q47.16 (`i64`) y velocidad en Q16.16 (`i32`, ADR 0002).
 fn put_body(w: &mut Writer, b: &PlayerBody) {
-    put_cell(w, b.feet);
-    put_cell(w, b.velocity);
+    put_pos(w, b.feet);
+    w.i32(b.velocity[0]).i32(b.velocity[1]).i32(b.velocity[2]);
     w.bool(b.on_ground);
 }
 
 fn get_body(r: &mut Reader) -> Result<PlayerBody, DecodeError> {
     Ok(PlayerBody {
-        feet: get_cell(r)?,
-        velocity: get_cell(r)?,
+        feet: get_pos(r)?,
+        velocity: [r.i32()?, r.i32()?, r.i32()?],
         on_ground: r.bool()?,
     })
 }
@@ -236,7 +249,7 @@ impl ServerMsg {
             Self::Changes(changes) => {
                 w.u8(S_CHANGES).u32(changes.len() as u32);
                 for c in changes {
-                    put_cell(&mut w, c.cell);
+                    put_block(&mut w, c.cell);
                     w.u8(c.block);
                 }
             }
@@ -251,7 +264,7 @@ impl ServerMsg {
                 w.u16(others.len() as u16);
                 for o in others {
                     w.u16(o.id);
-                    put_cell(&mut w, o.feet);
+                    put_pos(&mut w, o.feet);
                 }
             }
             Self::Refused(reason) => {
@@ -284,7 +297,7 @@ impl ServerMsg {
                 let mut changes = Vec::with_capacity(count);
                 for _ in 0..count {
                     changes.push(BlockChange {
-                        cell: get_cell(&mut r)?,
+                        cell: get_block(&mut r)?,
                         block: r.u8()?,
                     });
                 }
@@ -295,14 +308,16 @@ impl ServerMsg {
                 let last_input = r.u32()?;
                 let you = get_body(&mut r)?;
                 let count = usize::from(r.u16()?);
-                if count.saturating_mul(14) > r.remaining() {
+                // Cada «otro» ocupa 26 bytes (id + tres i64): se valida antes
+                // de reservar.
+                if count.saturating_mul(26) > r.remaining() {
                     return Err(DecodeError::UnexpectedEnd);
                 }
                 let mut others = Vec::with_capacity(count);
                 for _ in 0..count {
                     others.push(RemotePlayer {
                         id: r.u16()?,
-                        feet: get_cell(&mut r)?,
+                        feet: get_pos(&mut r)?,
                     });
                 }
                 Self::Snapshot {

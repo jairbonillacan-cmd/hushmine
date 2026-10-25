@@ -13,6 +13,8 @@ Registro de decisiones técnicas clave del proyecto:
 - [ADR 0003: cámaras, animación por piezas, texturas de 32×32 y shaders propios](adr/0003-graficos.md) (`docs/adr/0003-graficos.md`) — Primera y tercera persona, modelos RON por piezas, paso a 32×32, luz de bloque en color y posproceso (propuesta).
 - [ADR 0004: terreno de vóxeles, mallas y luz](adr/0004-terreno-voxel-y-mallas.md) (`docs/adr/0004-terreno-voxel-y-mallas.md`) — Chunks de 16³, caras de 8 bytes por instancias, oclusión ambiental, luz BFS en el cliente y colisión en punto fijo (aceptada).
 - [ADR 0005: capa de red propia sobre UDP](adr/0005-red-propia.md) (`docs/adr/0005-red-propia.md`) — `grisu-net` con red simulada determinista en lugar de `renet2` por ahora; protocolo y predicción en `hush-net` (aceptada).
+- [ADR 0006: ruido entero `grisu-noise`](adr/0006-grisu-noise.md) (`docs/adr/0006-grisu-noise.md`) — Crate de motor sin dependencias con ruido determinista en punto fijo para el mundo grande (aceptada).
+- [ADR 0007: generador puro `hush-worldgen`](adr/0007-hush-worldgen.md) (`docs/adr/0007-hush-worldgen.md`) — Mundo de prueba de W0 como función pura `(semilla, ChunkPos) → Chunk` (aceptada).
 
 ---
 
@@ -51,7 +53,7 @@ Plan del salto visual, en estado de propuesta:
 
 ### Mundo grande (`docs/mundo/`)
 
-Plan para un futuro modo Supervivencia / Historia en un mundo procedural de 15 millones × 15 millones de bloques:
+Plan del modo Historia (supervivencia), **la prioridad actual del proyecto**, en un mundo procedural de 15 millones × 15 millones de bloques:
 
 - [Índice y resumen (`README.md`)](mundo/README.md) — Qué cambia, cifras clave y nuevos crates.
 - [Escala y motor (`01-escala-y-motor.md`)](mundo/01-escala-y-motor.md) — Coordenadas, chunks con paleta, streaming, luz, render, guardado y red.

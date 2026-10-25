@@ -1,7 +1,7 @@
 //! Terreno, mineros y bots dentro de la [`Simulation`]: altas y bajas de
 //! jugadores, órdenes, cavar y poner, movimiento y sus invariantes.
 
-use grisu_voxel::{FIXED_ONE, VoxelWorld};
+use grisu_voxel::{VoxelWorld, cell_of};
 
 use crate::player::spawn_point;
 use crate::sim::{BlockChange, Command, EditStats, Rejection};
@@ -152,7 +152,7 @@ impl Simulation {
                     self.tick
                 ));
             }
-            let [x, _, z] = body.feet.map(|c| c.div_euclid(FIXED_ONE));
+            let [x, _, z] = body.feet.map(cell_of);
             if !self.world.in_bounds(x, 0, z) || body.feet[1] < 0 {
                 self.world_violations
                     .push(format!("tick {}: jugador {i} fuera del mapa", self.tick));

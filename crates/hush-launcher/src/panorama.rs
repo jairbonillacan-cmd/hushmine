@@ -4,7 +4,7 @@
 use anyhow::Result;
 use glam::Vec3;
 use grisu_render::{DepthTarget, Gpu, OrbitCamera, TerrainStyle, VoxelRenderer};
-use grisu_voxel::VoxelWorld;
+use grisu_voxel::{LightMap, VoxelWorld};
 use hush_art::{block_textures, emission_table};
 use hush_sim::{TerrainConfig, generate_terrain};
 
@@ -23,8 +23,9 @@ impl PanoramaRenderer {
         let mut world: VoxelWorld = generate_terrain(seed, &TerrainConfig::default())?;
         let textures = block_textures()?;
         let mut voxel = VoxelRenderer::new(&gpu.device, &gpu.queue, color_format, &textures)?;
-        voxel.enable_lighting(emission_table());
-        voxel.update(&gpu.device, &mut world);
+        // El terreno no cambia: la luz se calcula una vez y no hace falta guardarla.
+        let light = LightMap::new(&world, emission_table());
+        voxel.update(&gpu.device, &mut world, Some(&light));
         Ok(Self {
             voxel,
             angle: 0.9,

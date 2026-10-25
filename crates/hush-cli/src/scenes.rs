@@ -3,9 +3,11 @@
 
 use anyhow::Result;
 use clap::ValueEnum;
-use glam::Vec3;
+use glam::{DVec3, Vec3};
 use grisu_render::{ColorBox, FlyCamera, OrbitCamera, TerrainStyle, UiBatch, View};
-use grisu_voxel::{AIR, FIXED_ONE, VoxelWorld, raycast};
+use grisu_voxel::{
+    AIR, ChunkPos, ChunkedVoxels, FIXED_ONE, SparseWorld, VoxelWorld, VoxelsMut, raycast,
+};
 use hush_sim::{
     BlockKind, Command, MatchConfig, MoveInput, Simulation, TerrainConfig, generate_terrain,
 };
@@ -24,17 +26,46 @@ pub enum Scene {
     Dig,
     /// Otros jugadores (cajas de las dos cuadrillas) en la superficie.
     Players,
-    /// Cámara en tercera persona detrás del minero con su lámpara frontal.
+    /// El «Hito de la Frontera»: una estructura reconocible a 7,5 M bloques
+    /// del origen, en un `SparseWorld`, para revisar a ojo que el render
+    /// relativo no tiembla.
+    Frontier,
+    /// Cámara en tercera persona detrás del minero, con su lámpara.
     ThirdPerson,
-    /// Menú del Launcher / Pausa superpuesto sobre la escena 3D.
+    /// Menú de pausa del juego, dibujado con el mismo código que el cliente.
     Menu,
-    /// Panel completo del launcher. Capturar con `--width 1024 --height 640`.
+    /// Lanzador completo (el mismo dibujo que la ventana real).
     Launcher,
+}
+
+/// Mundo de una escena: finito (el mapa del Turno) o abierto ([`SparseWorld`]).
+pub enum SceneWorld {
+    Finite(VoxelWorld),
+    Sparse(SparseWorld),
+}
+
+impl SceneWorld {
+    /// El mundo detrás de la interfaz de chunks, tal como la ve el render.
+    /// Mutable: el renderer consume los chunks sucios.
+    pub fn as_chunked_mut(&mut self) -> &mut dyn ChunkedVoxels {
+        match self {
+            Self::Finite(world) => world,
+            Self::Sparse(world) => world,
+        }
+    }
+
+    /// El mundo finito, si lo hay: solo él tiene mapa de luz.
+    pub fn as_finite(&self) -> Option<&VoxelWorld> {
+        match self {
+            Self::Finite(world) => Some(world),
+            Self::Sparse(_) => None,
+        }
+    }
 }
 
 /// Mundo, punto de vista y estilo de una escena de terreno.
 pub struct TerrainScene {
-    pub world: VoxelWorld,
+    pub world: SceneWorld,
     camera: Camera,
     pub style: TerrainStyle,
     /// Entidades (otros jugadores) que se dibujan sobre el terreno.
@@ -63,11 +94,16 @@ impl TerrainScene {
 
 /// Construye una escena de terreno. `Scene::Cube` no tiene terreno.
 pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
+    if scene == Scene::Cube {
+        return Ok(None);
+    }
+    if scene == Scene::Frontier {
+        return Ok(Some(frontier_scene()));
+    }
     let mut world = generate_terrain(seed, &TerrainConfig::default())?;
     let scene = match scene {
-        Scene::Cube => return Ok(None),
         Scene::Terrain => TerrainScene {
-            world,
+            world: SceneWorld::Finite(world),
             camera: Camera::Orbit(OrbitCamera {
                 target: Vec3::new(32.0, 26.0, 32.0),
                 distance: 120.0,
@@ -87,9 +123,9 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
         Scene::Tunnel => {
             carve_tunnel(&mut world);
             TerrainScene {
-                world,
+                world: SceneWorld::Finite(world),
                 camera: Camera::Fly(FlyCamera {
-                    position: Vec3::new(9.5, 31.6, 32.5),
+                    position: DVec3::new(9.5, 31.6, 32.5),
                     // Mirando hacia +X.
                     yaw: -std::f32::consts::FRAC_PI_2,
                     pitch: -4f32.to_radians(),
@@ -113,9 +149,9 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
         Scene::Shaft => {
             carve_shaft(&mut world);
             TerrainScene {
-                world,
+                world: SceneWorld::Finite(world),
                 camera: Camera::Fly(FlyCamera {
-                    position: Vec3::new(32.5, 57.0, 32.5),
+                    position: DVec3::new(32.5, 57.0, 32.5),
                     yaw: 0.0,
                     pitch: -89f32.to_radians(),
                     ..FlyCamera::default()
@@ -130,6 +166,7 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
                 },
             }
         }
+        Scene::Cube | Scene::Frontier => unreachable!("cubo y frontera no generan terreno"),
     };
     Ok(Some(scene))
 }
@@ -182,12 +219,12 @@ fn dig_scene(seed: u64) -> Result<TerrainScene> {
     for _ in 0..60 {
         sim.step();
     }
-    let to_fixed = |c: i32| c as f32 / FIXED_ONE as f32;
-    let start_x = to_fixed(sim.players()[player].feet[0]);
+    let to_blocks = |c: i64| c as f64 / FIXED_ONE as f64;
+    let start_x = to_blocks(sim.players()[player].feet[0]);
     let toward = if start_x < 32.0 { 1.0 } else { -1.0 };
-    let aim = Vec3::new(toward, -0.6, 0.0);
+    let aim = DVec3::new(toward, -0.6, 0.0);
     for _ in 0..90 {
-        let eye = sim.players()[player].eye().map(to_fixed);
+        let eye = sim.players()[player].eye().map(to_blocks);
         if let Some(hit) = raycast(sim.world(), eye, aim.to_array(), 4.0) {
             sim.submit(Command::Dig {
                 player,
@@ -196,11 +233,11 @@ fn dig_scene(seed: u64) -> Result<TerrainScene> {
         }
         sim.submit(Command::Move {
             player,
-            input: MoveInput::from_direction(toward, 0.0, false),
+            input: MoveInput::from_direction(toward as f32, 0.0, false),
         });
         sim.step();
     }
-    let eye = Vec3::from_array(sim.players()[player].eye().map(to_fixed));
+    let eye = DVec3::from_array(sim.players()[player].eye().map(to_blocks));
     let selected = raycast(sim.world(), eye.to_array(), aim.to_array(), 4.0).map(|h| h.block);
     // Se mira un poco más abajo que el rayo para ver el suelo de la rampa.
     let yaw = if toward > 0.0 {
@@ -209,7 +246,7 @@ fn dig_scene(seed: u64) -> Result<TerrainScene> {
         std::f32::consts::FRAC_PI_2
     };
     Ok(TerrainScene {
-        world: sim.world().clone(),
+        world: SceneWorld::Finite(sim.world().clone()),
         camera: Camera::Fly(FlyCamera {
             position: eye,
             yaw,
@@ -231,10 +268,10 @@ fn dig_scene(seed: u64) -> Result<TerrainScene> {
 fn players_scene(world: VoxelWorld) -> TerrainScene {
     let ground = |x: i32, z: i32| {
         let feet = hush_sim::spawn_point(&world, x, z);
-        Vec3::new(
-            x as f32 + 0.5,
-            feet[1] as f32 / FIXED_ONE as f32,
-            z as f32 + 0.5,
+        DVec3::new(
+            f64::from(x) + 0.5,
+            feet[1] as f64 / FIXED_ONE as f64,
+            f64::from(z) + 0.5,
         )
     };
     let colors = [[0.80, 0.38, 0.14], [0.16, 0.34, 0.80], [0.80, 0.38, 0.14]];
@@ -244,20 +281,20 @@ fn players_scene(world: VoxelWorld) -> TerrainScene {
         .map(|(&(x, z), color)| {
             let feet = ground(x, z);
             ColorBox {
-                min: feet - Vec3::new(0.3, 0.0, 0.3),
+                min: feet - DVec3::new(0.3, 0.0, 0.3),
                 size: Vec3::new(0.6, 1.7, 0.6),
                 color,
             }
         })
         .collect();
-    let eye = ground(33, 32) + Vec3::new(0.0, 1.55, 0.0);
+    let eye = ground(33, 32) + DVec3::new(0.0, 1.55, 0.0);
     TerrainScene {
         camera: Camera::Fly(FlyCamera {
             position: eye,
             pitch: -12f32.to_radians(),
             ..FlyCamera::default()
         }),
-        world,
+        world: SceneWorld::Finite(world),
         boxes,
         ui: UiBatch::new(),
         style: TerrainStyle {
@@ -271,17 +308,17 @@ fn players_scene(world: VoxelWorld) -> TerrainScene {
 
 /// Cámara en tercera persona detrás de un minero que mira a otros dos.
 fn third_person_scene(world: VoxelWorld) -> TerrainScene {
+    let feet = hush_sim::spawn_point(&world, 33, 30);
+    let my_feet = DVec3::new(33.5, feet[1] as f64 / FIXED_ONE as f64, 30.5);
+    let eye = my_feet + DVec3::new(0.0, 1.55, 0.0);
     let mut base = players_scene(world);
-    let feet = hush_sim::spawn_point(&base.world, 33, 30);
-    let my_feet = Vec3::new(33.5, feet[1] as f32 / FIXED_ONE as f32, 30.5);
-    let eye = my_feet + Vec3::new(0.0, 1.55, 0.0);
     base.boxes.push(ColorBox {
-        min: my_feet - Vec3::new(0.3, 0.0, 0.3),
+        min: my_feet - DVec3::new(0.3, 0.0, 0.3),
         size: Vec3::new(0.6, 1.7, 0.6),
         color: [0.80, 0.38, 0.14],
     });
     base.boxes.push(ColorBox {
-        min: eye + Vec3::new(0.0, 0.0, -0.27) - Vec3::splat(0.12),
+        min: eye + DVec3::new(0.0, 0.0, -0.27) - DVec3::splat(0.12),
         size: Vec3::splat(0.24),
         color: [0.98, 0.88, 0.45],
     });
@@ -296,9 +333,9 @@ fn third_person_scene(world: VoxelWorld) -> TerrainScene {
     base
 }
 
-/// Panel completo del launcher sobre el mapa visto desde lejos. El dibujo es
-/// el mismo que el de la ventana real, a 1024×640. La semilla elige la
-/// página: 2 Instalaciones, 3 Opciones, 4 Acerca de; cualquier otra, Jugar.
+/// Lanzador completo sobre el mapa visto desde lejos, con el mismo dibujo
+/// que la ventana real. La semilla elige la página: 2 Instalaciones,
+/// 3 Opciones, 4 Acerca de; cualquier otra, Jugar.
 fn launcher_scene(world: VoxelWorld, seed: u64) -> TerrainScene {
     use hush_launcher::draw::draw as draw_launcher;
     use hush_launcher::state::{LauncherState, Page};
@@ -317,8 +354,7 @@ fn launcher_scene(world: VoxelWorld, seed: u64) -> TerrainScene {
         _ => Page::Play,
     };
     state.select_page(page);
-    // Fijamos la animación para que el pulso y el fundido salgan igual en
-    // cada captura, y generamos la miniatura del mapa de la semilla.
+    // Animación fija para que cada captura salga igual.
     state.animation = 0.4;
     state.page_fade = hush_launcher::theme::FADE_TIME;
     if let Ok(textures) = hush_art::block_textures() {
@@ -327,7 +363,7 @@ fn launcher_scene(world: VoxelWorld, seed: u64) -> TerrainScene {
     let mut ui = UiBatch::new();
     draw_launcher(&mut ui, &state, 1024.0, 640.0);
     TerrainScene {
-        world,
+        world: SceneWorld::Finite(world),
         camera: Camera::Orbit(hush_launcher::panorama::panorama_camera(0.9)),
         boxes: Vec::new(),
         ui,
@@ -340,56 +376,80 @@ fn launcher_scene(world: VoxelWorld, seed: u64) -> TerrainScene {
     }
 }
 
-/// Escena con el menú de Launcher / Pausa dibujado encima del mundo 3D.
-fn menu_scene(world: VoxelWorld) -> TerrainScene {
-    let mut scene = third_person_scene(world);
-    let mut ui = UiBatch::new();
-    ui.rect(0.0, 0.0, 512.0, 512.0, [0.02, 0.03, 0.04, 0.78]);
-    ui.panel(
-        36.0,
-        56.0,
-        440.0,
-        396.0,
-        [0.05, 0.07, 0.09, 0.96],
-        [0.85, 0.69, 0.32, 1.0],
-        3.0,
-    );
-    ui.rect(39.0, 59.0, 434.0, 44.0, [0.10, 0.12, 0.16, 1.0]);
-    ui.text_centered(
-        256.0,
-        74.0,
-        2.0,
-        [0.93, 0.90, 0.83, 1.0],
-        "HUSHMINE // LAUNCHER & MENU",
-    );
-    let items = [
-        ("INICIAR PARTIDA LOCAL", true),
-        ("BOTS EN PARTIDA: < 4 >", false),
-        ("VISTA DE CAMARA: < 3A PERSONA >", false),
-        ("MODO DE CARRERA: < MANTENER >", false),
-        ("CAMBIAR CONTROLES Y RATON", false),
-        ("SALIR DEL JUEGO", false),
-    ];
-    for (idx, (label, active)) in items.iter().enumerate() {
-        let y = 120.0 + idx as f32 * 48.0;
-        let bg = if *active {
-            [0.16, 0.24, 0.18, 0.98]
-        } else {
-            [0.09, 0.11, 0.14, 0.92]
-        };
-        let border = if *active {
-            [0.41, 0.94, 0.56, 1.0]
-        } else {
-            [0.28, 0.31, 0.38, 1.0]
-        };
-        ui.panel(60.0, y, 392.0, 38.0, bg, border, 2.0);
-        let col = if *active {
-            [0.78, 1.0, 0.84, 1.0]
-        } else {
-            [0.90, 0.88, 0.82, 1.0]
-        };
-        ui.text_centered(256.0, y + 12.0, 1.8, col, label);
+/// El «Hito de la Frontera»: una pirámide con obelisco, pilares y vetas de
+/// color sobre una losa, a 7,5 millones de bloques del origen. Un `f32` ahí
+/// solo distingue bloques enteros; con el render relativo al anchor la
+/// escena debe verse idéntica a como se vería junto al origen.
+fn frontier_scene() -> TerrainScene {
+    /// Esquina del mundo grande donde se apoya la escena (Q47.16 alcanza de
+    /// sobra: ±7,5 M bloques con 16 bits de fracción).
+    const BASE: [i32; 3] = [7_499_800, 0, -7_499_800];
+    let mut world = SparseWorld::new();
+    let at = |dx: i32, dy: i32, dz: i32| [BASE[0] + dx, BASE[1] + dy, BASE[2] + dz];
+    // Losa de roca dura de 25×25, un bloque de grueso.
+    world.fill(at(-12, -1, -12), at(12, -1, 12), BlockKind::HardRock.id());
+    // Pirámide de tres escalones con un obelisco coronado en oro.
+    world.fill(at(-4, 0, -4), at(4, 0, 4), BlockKind::Rock.id());
+    world.fill(at(-3, 1, -3), at(3, 1, 3), BlockKind::Rock.id());
+    world.fill(at(-2, 2, -2), at(2, 2, 2), BlockKind::Rock.id());
+    world.fill(at(0, 3, 0), at(0, 9, 0), BlockKind::Rock.id());
+    world.fill(at(0, 10, 0), at(0, 10, 0), BlockKind::Gold.id());
+    // Cuatro pilares de mena en las esquinas de la losa.
+    for [sx, sz] in [[-9, -9], [9, -9], [-9, 9], [9, 9]] {
+        world.fill(at(sx, 0, sz), at(sx, 3, sz), BlockKind::Ore.id());
     }
-    scene.ui = ui;
-    scene
+    // Franjas de diamante y oro para ver las texturas de lejos.
+    world.fill(at(-10, 0, -2), at(-8, 0, 2), BlockKind::Diamond.id());
+    world.fill(at(8, 0, -2), at(10, 0, 2), BlockKind::Gold.id());
+    // Los chunks quedan cargados y marcados como sucios por `set`/`fill`.
+    assert!(world.has_dirty_chunks());
+    assert!(world.is_loaded(ChunkPos::containing(BASE)));
+    let base = DVec3::new(f64::from(BASE[0]), f64::from(BASE[1]), f64::from(BASE[2]));
+    TerrainScene {
+        world: SceneWorld::Sparse(world),
+        camera: Camera::Fly(FlyCamera {
+            // Desde una esquina, mirando al obelisco en diagonal (+X, +Z).
+            position: base + DVec3::new(-11.5, 6.5, -11.5),
+            yaw: -3.0 * std::f32::consts::FRAC_PI_4,
+            pitch: -14f32.to_radians(),
+            ..FlyCamera::default()
+        }),
+        boxes: Vec::new(),
+        ui: UiBatch::new(),
+        style: TerrainStyle {
+            fog_distance: 90.0,
+            selected: Some(at(0, 10, 0)),
+            lamp_radius: 0.0,
+            time_seconds: 0.0,
+        },
+    }
+}
+
+/// Menú de pausa sobre la escena en tercera persona. Usa el mismo dibujo
+/// que el cliente (`hush_client::hud`) se sustituye en `main.rs`; aquí solo
+/// se prepara el mundo.
+fn menu_scene(world: VoxelWorld) -> TerrainScene {
+    third_person_scene(world)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn frontier_structure_is_far_from_the_origin_and_loaded() {
+        let scene = frontier_scene();
+        let SceneWorld::Sparse(world) = &scene.world else {
+            unreachable!("la frontera es un SparseWorld");
+        };
+        assert!(!world.is_empty());
+        // La cámara está a millones de bloques del origen.
+        let Camera::Fly(camera) = &scene.camera else {
+            unreachable!();
+        };
+        assert!(camera.position.x.abs() > 7.0e6);
+        assert!(camera.position.z.abs() > 7.0e6);
+        // Y el bloque señalado es el remate del obelisco.
+        assert_eq!(scene.style.selected, Some([7_499_800, 10, -7_499_800]));
+    }
 }

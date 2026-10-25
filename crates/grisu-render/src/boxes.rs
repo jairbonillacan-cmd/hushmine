@@ -1,12 +1,15 @@
 use bytemuck::{Pod, Zeroable};
-use glam::Vec3;
+use glam::{DVec3, Vec3};
 
 use crate::{CLEAR_COLOR, DepthTarget, View};
 
 /// Caja de color alineada con los ejes (jugadores, marcadores...).
+///
+/// `min` es un punto del mundo en `f64`: a millones de bloques del origen
+/// sigue siendo exacto, y al dibujar se hace relativo a la cámara.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ColorBox {
-    pub min: Vec3,
+    pub min: DVec3,
     pub size: Vec3,
     /// RGB lineal.
     pub color: [f32; 3],
@@ -205,7 +208,8 @@ impl BoxRenderer {
         let instances: Vec<Instance> = boxes
             .iter()
             .map(|b| Instance {
-                min: b.min.to_array(),
+                // Relativo al ancla de la cámara: coordenadas pequeñas.
+                min: view.relative(b.min).to_array(),
                 size: b.size.to_array(),
                 color: b.color,
             })

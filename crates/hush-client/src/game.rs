@@ -1,14 +1,15 @@
-//! Juego: lee la entrada configurable, gestiona el menú (Launcher, Pausa con
-//! Escape y Controles), alterna entre primera y tercera persona, envía las
-//! órdenes al servidor a 30 Hz y dibuja el mundo y la interfaz.
+//! Juego: lee la entrada configurable, gestiona el menú (lanzador, pausa con
+//! Escape y controles), alterna entre primera y tercera persona, envía las
+//! órdenes al servidor a 30 Hz a través de la [`Session`] y dibuja la réplica
+//! del mundo con la posición predicha y la interfaz encima.
 
-use glam::Vec3;
+use glam::{DVec3, Vec3};
 use grisu_platform::{App, Input, KeyCode, MouseButton};
 use grisu_render::{
     BoxRenderer, CameraMode, ColorBox, CrosshairRenderer, DepthTarget, FlyCamera, Gpu,
     TerrainStyle, UiBatch, UiRenderer, View, VoxelRenderer,
 };
-use grisu_voxel::{FIXED_ONE, RayHit, raycast};
+use grisu_voxel::{FIXED_ONE, LightMap, RayHit, raycast};
 use hush_net::{Action, ClientState};
 use hush_sim::{BlockKind, EYE_HEIGHT, HALF_WIDTH, HEIGHT, MoveInput, TICK_RATE};
 
@@ -17,11 +18,20 @@ use crate::hud::draw_ui;
 use crate::menu::{MenuCommand, MenuState};
 use crate::session::Session;
 
-const AIM_REACH: f32 = 4.0;
+/// Alcance del raycast del cliente, algo menor que el del servidor para no
+/// proponer acciones que se van a rechazar.
+const AIM_REACH: f64 = 4.0;
+/// Máximo de ticks por fotograma, para no entrar en espiral si va lento.
 const MAX_TICKS_PER_FRAME: u32 = 5;
 const TICK_SECONDS: f32 = 1.0 / TICK_RATE as f32;
-const REMOTE_DELAY_TICKS: f32 = 3.0;
+/// Los demás jugadores se dibujan 100 ms en el pasado para interpolar.
+const REMOTE_DELAY_TICKS: f64 = 3.0;
 const FOG_DISTANCE: f32 = 56.0;
+/// Margen entre la cámara en tercera persona y la pared que la recorta.
+const THIRD_PERSON_WALL_MARGIN: f64 = 0.35;
+/// Ensanchamiento del campo de visión al correr.
+const SPRINT_FOV_BOOST_DEG: f32 = 5.0;
+/// Bloques que se pueden poner con las teclas 1-6.
 const SLOT_BINDINGS: [(KeyCode, BlockKind); 6] = [
     (KeyCode::Digit1, BlockKind::Dirt),
     (KeyCode::Digit2, BlockKind::Rock),
@@ -30,8 +40,12 @@ const SLOT_BINDINGS: [(KeyCode, BlockKind); 6] = [
     (KeyCode::Digit5, BlockKind::Gold),
     (KeyCode::Digit6, BlockKind::Diamond),
 ];
+/// Colores de las cuadrillas: cobre y cobalto.
 const CREW_COLORS: [[f32; 3]; 2] = [[0.80, 0.38, 0.14], [0.16, 0.34, 0.80]];
+/// Luz del casco del minero propio en tercera persona (ámbar de sodio).
+const HELMET_LAMP_COLOR: [f32; 3] = [0.98, 0.88, 0.45];
 
+/// Cómo arranca el juego (lo decide `main` a partir de los argumentos).
 pub struct GameConfig {
     pub seed: u64,
     pub bots: u32,
@@ -47,13 +61,19 @@ pub struct Game {
     menu: MenuState,
     camera: FlyCamera,
     camera_mode: CameraMode,
+    /// Carrera activada con pulsación (modo `Toggle`).
     sprint_toggled: bool,
+    /// ¿Corre el minero en este tick? (para el HUD y el campo de visión).
     sprinting: bool,
     exit_requested: bool,
     accumulator: f32,
+    /// Segundos desde el arranque, para animar el terreno (lava).
     elapsed: f32,
-    prev_eye: Vec3,
-    eye: Vec3,
+    /// Ojos del jugador en el tick anterior y en el actual, para interpolar.
+    prev_eye: DVec3,
+    eye: DVec3,
+    /// Luz del mundo; se recalcula cuando hay chunks sucios.
+    light: Option<LightMap>,
     target: Option<RayHit>,
     place_block: BlockKind,
     queued: Option<Action>,
@@ -86,8 +106,9 @@ impl Game {
             exit_requested: false,
             accumulator: 0.0,
             elapsed: 0.0,
-            prev_eye: Vec3::ZERO,
-            eye: Vec3::ZERO,
+            prev_eye: DVec3::ZERO,
+            eye: DVec3::ZERO,
+            light: None,
             target: None,
             place_block: BlockKind::Rock,
             queued: None,
@@ -102,14 +123,23 @@ impl Game {
         }
     }
 
+    /// Empieza otra partida local desde el menú. El mundo es nuevo, así que
+    /// también se olvidan la luz y las mallas del anterior.
     fn restart_local(&mut self, seed: u64, bots: u32) {
-        if let Ok(new_session) = Session::local(seed, bots, &self.player_name) {
-            log::info!("nueva partida local: semilla {seed}, {bots} bots");
-            self.session = new_session;
-            self.last_state = ClientState::Connecting;
-            self.accumulator = 0.0;
-            self.queued = None;
-            self.target = None;
+        match Session::local(seed, bots, &self.player_name) {
+            Ok(session) => {
+                log::info!("nueva partida local: semilla {seed}, {bots} bots");
+                self.session = session;
+                self.last_state = ClientState::Connecting;
+                self.accumulator = 0.0;
+                self.queued = None;
+                self.target = None;
+                self.light = None;
+                if let Some(terrain) = self.terrain.as_mut() {
+                    terrain.clear();
+                }
+            }
+            Err(err) => log::error!("no se pudo empezar la partida local: {err:#}"),
         }
     }
 
@@ -125,6 +155,7 @@ impl Game {
         {
             self.sprint_toggled = !self.sprint_toggled;
         }
+        // Al pararse se apaga la carrera, como en la mayoría de juegos.
         if !moving || self.controls.sprint_mode == SprintMode::Hold {
             self.sprint_toggled = false;
         }
@@ -170,79 +201,90 @@ impl Game {
         }
     }
 
-    fn predicted_eye(&self) -> Vec3 {
+    fn predicted_eye(&self) -> DVec3 {
         let eye = self.session.client().body().eye();
-        Vec3::from_array(eye.map(|c| c as f32 / FIXED_ONE as f32))
+        DVec3::from_array(eye.map(|c| c as f64 / FIXED_ONE as f64))
     }
 
     fn report_state(&mut self) {
         let state = self.session.client().state();
         if *state != self.last_state {
-            if *state == ClientState::Playing {
-                let eye = self.predicted_eye();
-                self.prev_eye = eye;
-                self.eye = eye;
-                log::info!(
-                    "en partida como jugador {:?}",
-                    self.session.client().player()
-                );
+            match state {
+                ClientState::Loading { chunks, total } if chunks == total => {}
+                ClientState::Loading { .. } => log::info!("recibiendo el mapa..."),
+                ClientState::Playing => {
+                    // Sin esto la cámara viajaría desde el origen hasta el
+                    // minero durante el primer tick.
+                    let eye = self.predicted_eye();
+                    self.prev_eye = eye;
+                    self.eye = eye;
+                    log::info!(
+                        "en partida como jugador {:?}",
+                        self.session.client().player()
+                    );
+                }
+                ClientState::Disconnected(reason) => log::warn!("desconectado: {reason}"),
+                ClientState::Connecting => {}
             }
             self.last_state = state.clone();
         }
     }
 
+    /// Vista según el modo de cámara. En tercera persona, el brazo se
+    /// recorta contra el terreno para no atravesar paredes.
     fn active_view(&self, aspect: f32) -> View {
-        match self.camera_mode {
-            CameraMode::FirstPerson => self.camera.view(aspect),
-            CameraMode::ThirdPersonBack | CameraMode::ThirdPersonFront => {
-                let front = self.camera_mode == CameraMode::ThirdPersonFront;
-                let desired = self.controls.third_person_dist;
-                let dir = self.camera.third_person_arm_dir(front);
-                let clipped = self
-                    .session
-                    .client()
-                    .world()
-                    .and_then(|w| {
-                        raycast(w, self.camera.position.to_array(), dir.to_array(), desired)
-                    })
-                    .map_or(desired, |hit| (hit.distance - 0.35).max(0.0));
-                self.camera.third_person_view(aspect, clipped, front)
-            }
+        if !self.camera_mode.is_third_person() {
+            return self.camera.view(aspect);
         }
+        let front = self.camera_mode == CameraMode::ThirdPersonFront;
+        let desired = f64::from(self.controls.third_person_dist);
+        let dir = self.camera.third_person_arm_dir(front).as_dvec3();
+        let clipped = self
+            .session
+            .client()
+            .world()
+            .and_then(|w| raycast(w, self.camera.position.to_array(), dir.to_array(), desired))
+            .map_or(desired, |hit| {
+                (hit.distance - THIRD_PERSON_WALL_MARGIN).max(0.0)
+            });
+        self.camera.third_person_view(aspect, clipped as f32, front)
     }
 
+    /// Cajas de los demás jugadores y, en tercera persona, del propio minero
+    /// con su lámpara.
     fn entity_boxes(&self) -> Vec<ColorBox> {
         let Some(tick) = self.session.client().last_server_tick() else {
             return Vec::new();
         };
-        let at = tick as f32 + self.accumulator / TICK_SECONDS - REMOTE_DELAY_TICKS;
-        let width = 2.0 * HALF_WIDTH as f32 / FIXED_ONE as f32;
-        let height = HEIGHT as f32 / FIXED_ONE as f32;
+        let at = tick as f64 + self.accumulator as f64 / TICK_SECONDS as f64 - REMOTE_DELAY_TICKS;
+        let width = 2.0 * HALF_WIDTH as f64 / FIXED_ONE as f64;
+        let height = HEIGHT as f64 / FIXED_ONE as f64;
+        let size = Vec3::new(width as f32, height as f32, width as f32);
+        let crew = |id: u16| CREW_COLORS[usize::from(id) % CREW_COLORS.len()];
         let mut list: Vec<ColorBox> = self
             .session
             .client()
             .remote_players(at)
             .into_iter()
             .map(|(id, [x, y, z])| ColorBox {
-                min: Vec3::new(x - width / 2.0, y, z - width / 2.0),
-                size: Vec3::new(width, height, width),
-                color: CREW_COLORS[usize::from(id) % CREW_COLORS.len()],
+                min: DVec3::new(x - width / 2.0, y, z - width / 2.0),
+                size,
+                color: crew(id),
             })
             .collect();
-
         if self.camera_mode.is_third_person() {
-            let feet = self.camera.position - Vec3::Y * (EYE_HEIGHT as f32 / FIXED_ONE as f32);
-            let id = self.session.client().player().unwrap_or(0);
+            let feet = self.camera.position - DVec3::Y * (EYE_HEIGHT as f64 / FIXED_ONE as f64);
             list.push(ColorBox {
-                min: Vec3::new(feet.x - width / 2.0, feet.y, feet.z - width / 2.0),
-                size: Vec3::new(width, height, width),
-                color: CREW_COLORS[usize::from(id) % CREW_COLORS.len()],
+                min: DVec3::new(feet.x - width / 2.0, feet.y, feet.z - width / 2.0),
+                size,
+                color: crew(self.session.client().player().unwrap_or(0)),
             });
-            let lamp_pos = self.camera.position + self.camera.flat_forward() * (width * 0.45);
+            let lamp =
+                self.camera.position + self.camera.flat_forward().as_dvec3() * (width * 0.45);
             list.push(ColorBox {
-                min: lamp_pos - Vec3::splat(0.12),
+                min: lamp - DVec3::splat(0.12),
                 size: Vec3::splat(0.24),
-                color: [0.98, 0.88, 0.45],
+                color: HELMET_LAMP_COLOR,
             });
         }
         list
@@ -272,13 +314,14 @@ impl App for Game {
     fn init(&mut self, gpu: &Gpu, surface_format: wgpu::TextureFormat) {
         let terrain = hush_art::block_textures()
             .map_err(anyhow::Error::from)
-            .and_then(|t| VoxelRenderer::new(&gpu.device, &gpu.queue, surface_format, &t));
+            .and_then(|textures| {
+                VoxelRenderer::new(&gpu.device, &gpu.queue, surface_format, &textures)
+            });
         match terrain {
-            Ok(mut terrain) => {
-                terrain.enable_lighting(hush_art::emission_table());
-                self.terrain = Some(terrain);
+            Ok(terrain) => self.terrain = Some(terrain),
+            Err(err) => {
+                log::error!("no se pudieron cargar las texturas o crear el renderizador: {err:#}")
             }
-            Err(err) => log::error!("error al crear el renderizador de terreno: {err:#}"),
         }
         self.boxes = Some(BoxRenderer::new(&gpu.device, surface_format));
         self.crosshair = Some(CrosshairRenderer::new(&gpu.device, surface_format));
@@ -302,6 +345,7 @@ impl App for Game {
         self.session.poll();
         self.report_state();
 
+        // Con el menú abierto el minero se queda quieto, pero la partida sigue.
         let movement = if self.menu.is_open() {
             self.sprinting = false;
             MoveInput::default()
@@ -313,21 +357,25 @@ impl App for Game {
             self.move_input(input)
         };
 
-        let fov_boost = f32::from(u8::from(self.sprinting)) * 5.0f32.to_radians();
+        let fov_boost = f32::from(u8::from(self.sprinting)) * SPRINT_FOV_BOOST_DEG.to_radians();
         self.camera.fov_y = self.controls.fov_radians() + fov_boost;
         self.step_ticks(dt, movement);
         self.session.flush();
 
         let alpha = (self.accumulator / TICK_SECONDS).clamp(0.0, 1.0);
-        self.camera.position = self.prev_eye.lerp(self.eye, alpha);
-        let (pos, fwd) = (
-            self.camera.position.to_array(),
-            self.camera.forward().to_array(),
-        );
-        self.target = (!self.menu.is_open())
-            .then(|| self.session.client().world())
-            .flatten()
-            .and_then(|w| raycast(w, pos, fwd, AIM_REACH));
+        self.camera.position = self.prev_eye.lerp(self.eye, f64::from(alpha));
+        self.target = if self.menu.is_open() {
+            None
+        } else {
+            self.session.client().world().and_then(|world| {
+                raycast(
+                    world,
+                    self.camera.position.to_array(),
+                    self.camera.forward().to_array().map(f64::from),
+                    AIM_REACH,
+                )
+            })
+        };
         self.log_stats(dt);
     }
 
@@ -342,10 +390,17 @@ impl App for Game {
         let Some(terrain) = self.terrain.as_mut() else {
             return;
         };
-        if *self.session.client().state() == ClientState::Playing
-            && let Some(world) = self.session.client_mut().world_mut()
-        {
-            terrain.update(&gpu.device, world);
+        let playing = *self.session.client().state() == ClientState::Playing;
+        if playing && let Some(world) = self.session.client_mut().world_mut() {
+            // La luz vive en el juego: se crea con el mapa y se recalcula
+            // cuando la simulación deja chunks sucios.
+            let light = self
+                .light
+                .get_or_insert_with(|| LightMap::new(world, hush_art::emission_table()));
+            if world.has_dirty() {
+                light.update(world);
+            }
+            terrain.update(&gpu.device, world, Some(light));
         }
         let style = TerrainStyle {
             fog_distance: FOG_DISTANCE,
@@ -356,10 +411,9 @@ impl App for Game {
         terrain.render(&gpu.queue, encoder, color, depth, &view, &style);
         let entities = self.entity_boxes();
         if let Some(boxes) = self.boxes.as_mut() {
-            let (dev, q) = (&gpu.device, &gpu.queue);
             boxes.render(
-                dev,
-                q,
+                &gpu.device,
+                &gpu.queue,
                 encoder,
                 color,
                 depth,
@@ -374,19 +428,25 @@ impl App for Game {
             crosshair.render(&gpu.queue, encoder, color, depth.width, depth.height);
         }
         if let Some(ui) = self.ui.as_mut() {
-            let s = [depth.width, depth.height];
+            let size = [depth.width, depth.height];
             self.ui_batch.clear();
-            let sp = self.sprinting;
             draw_ui(
                 &self.menu,
                 &mut self.ui_batch,
-                s,
+                size,
                 &self.controls,
                 self.camera_mode,
-                sp,
+                self.sprinting,
                 self.place_block,
             );
-            ui.render(&gpu.device, &gpu.queue, encoder, color, s, &self.ui_batch);
+            ui.render(
+                &gpu.device,
+                &gpu.queue,
+                encoder,
+                color,
+                size,
+                &self.ui_batch,
+            );
         }
     }
 

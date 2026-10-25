@@ -1,5 +1,9 @@
 // Terreno de vóxeles: cada instancia es una cara empaquetada en 8 bytes
 // (ver grisu_voxel::PackedFace) que se expande aquí en dos triángulos.
+//
+// La posición de la cara es local a su chunk; el grupo 1 aporta el origen
+// del chunk relativo al ancla de la cámara, así que las coordenadas del
+// mundo pueden ser enormes o negativas sin perder precisión de f32.
 
 struct Globals {
     view_proj: mat4x4<f32>,
@@ -7,7 +11,7 @@ struct Globals {
     eye: vec4<f32>,
     // rgb: color de la niebla; a: distancia a la que la niebla es total.
     fog: vec4<f32>,
-    // xyz: bloque señalado; w: 1 si hay bloque señalado.
+    // xyz: bloque señalado, relativo al ancla; w: 1 si hay bloque señalado.
     selected: vec4<i32>,
     // Segundos desde el arranque, para animar la lava.
     time: f32,
@@ -26,9 +30,16 @@ const LAVA_LAYER: u32 = 6u;
 const LAVA_EXTRA_LAYER: u32 = 17u;
 const LAVA_FRAMES: u32 = 4u;
 
+// Origen del chunk que se dibuja, elegido con desplazamiento dinámico.
+struct ChunkOrigin {
+    // xyz: primer bloque del chunk relativo al ancla. w: sin uso.
+    origin: vec4<i32>,
+};
+
 @group(0) @binding(0) var<uniform> globals: Globals;
 @group(0) @binding(1) var block_textures: texture_2d_array<f32>;
 @group(0) @binding(2) var block_sampler: sampler;
+@group(1) @binding(0) var<uniform> chunk: ChunkOrigin;
 
 struct FaceIn {
     @location(0) a: u32,
@@ -75,17 +86,15 @@ fn vs_main(@builtin(vertex_index) vertex: u32, face: FaceIn) -> VertexOut {
     var normal_order = array<u32, 6>(0u, 1u, 2u, 0u, 2u, 3u);
     var flipped_order = array<u32, 6>(1u, 2u, 3u, 1u, 3u, 0u);
 
-    let block = vec3<f32>(
-        f32(face.a & 0x7Fu),
-        f32((face.a >> 7u) & 0x7Fu),
-        f32((face.a >> 14u) & 0x7Fu),
-    );
-    let dir = (face.a >> 21u) & 0x7u;
+    // Posición local al chunk: 4 bits por eje.
+    let cell = vec3<u32>(face.a & 0xFu, (face.a >> 4u) & 0xFu, (face.a >> 8u) & 0xFu);
+    let dir = (face.a >> 12u) & 0x7u;
+    // Oclusión de cada esquina: 2 bits desde el bit 15.
     let ao = vec4<u32>(
-        (face.a >> 24u) & 0x3u,
-        (face.a >> 26u) & 0x3u,
-        (face.a >> 28u) & 0x3u,
-        (face.a >> 30u) & 0x3u,
+        (face.a >> 15u) & 0x3u,
+        (face.a >> 17u) & 0x3u,
+        (face.a >> 19u) & 0x3u,
+        (face.a >> 21u) & 0x3u,
     );
 
     var corner = normal_order[vertex];
@@ -95,7 +104,7 @@ fn vs_main(@builtin(vertex_index) vertex: u32, face: FaceIn) -> VertexOut {
     let s = corner_signs[corner];
     let n = normals[dir];
     let local = 0.5 * (n + us[dir] * s.x + vs[dir] * s.y);
-    let world = block + vec3(0.5) + local;
+    let world = vec3<f32>(chunk.origin.xyz) + vec3<f32>(cell) + vec3(0.5) + local;
 
     var out: VertexOut;
     out.clip = globals.view_proj * vec4<f32>(world, 1.0);
@@ -112,7 +121,11 @@ fn vs_main(@builtin(vertex_index) vertex: u32, face: FaceIn) -> VertexOut {
     out.block_light = f32((face.b >> 8u) & 0xFu) / 15.0;
     out.world = world;
     let sel = globals.selected;
-    out.highlight = select(0.0, 1.0, sel.w == 1 && all(vec3<i32>(block) == sel.xyz));
+    out.highlight = select(
+        0.0,
+        1.0,
+        sel.w == 1 && all(chunk.origin.xyz + vec3<i32>(cell) == sel.xyz),
+    );
     return out;
 }
 

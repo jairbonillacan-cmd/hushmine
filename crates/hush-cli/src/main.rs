@@ -5,6 +5,7 @@
 
 mod bench;
 mod netsim;
+mod noise;
 mod scenes;
 
 use std::fs;
@@ -16,6 +17,7 @@ use grisu_render::{
     BoxRenderer, Gpu, OFFSCREEN_FORMAT, OrbitCamera, TextureData, UiRenderer, VoxelRenderer,
     capture, render_to_image,
 };
+use grisu_voxel::LightMap;
 use hush_sim::MatchConfig;
 use scenes::Scene;
 
@@ -97,6 +99,26 @@ enum Command {
         #[arg(long)]
         out: Option<PathBuf>,
     },
+    /// Dibuja un mapa 512×512 en gris de un fBm 2D de `grisu-noise`.
+    Noise {
+        #[arg(long, default_value_t = 42)]
+        seed: u64,
+        /// Ruta del PNG de salida.
+        #[arg(long, default_value = "out/noise.png")]
+        out: PathBuf,
+        /// Lado del mapa en píxeles (1 píxel = 1 bloque).
+        #[arg(long, default_value_t = 512)]
+        size: u32,
+        /// Octavas del fBm.
+        #[arg(long, default_value_t = 5)]
+        octaves: u32,
+        /// Período de la octava base, en bloques (potencia de dos).
+        #[arg(long, default_value_t = 64)]
+        period: u32,
+        /// Dibuja ruido en cresta en vez de fBm.
+        #[arg(long)]
+        ridged: bool,
+    },
     /// Muestra la GPU y el backend que usaría el juego.
     Gpu,
 }
@@ -139,6 +161,23 @@ fn main() -> Result<()> {
             report.as_deref(),
         ),
         Command::Bench { seed, runs, out } => bench::run(seed, runs, out.as_deref()),
+        Command::Noise {
+            seed,
+            out,
+            size,
+            octaves,
+            period,
+            ridged,
+        } => noise::run(
+            &noise::Options {
+                seed,
+                size,
+                octaves,
+                period,
+                ridged,
+            },
+            &out,
+        ),
         Command::Gpu => gpu_info(),
     }
 }
@@ -164,8 +203,13 @@ fn shot(scene: Scene, seed: u64, out: &Path, size: [u32; 2], yaw: f32, pitch: f3
             let textures = hush_art::block_textures()?;
             let mut terrain =
                 VoxelRenderer::new(&gpu.device, &gpu.queue, OFFSCREEN_FORMAT, &textures)?;
-            terrain.enable_lighting(hush_art::emission_table());
-            let stats = terrain.update(&gpu.device, &mut scene.world);
+            // La luz se calcula fuera del renderer; los mundos abiertos
+            // (SparseWorld) se dibujan sin ella, a plena luz.
+            let light = scene
+                .world
+                .as_finite()
+                .map(|world| LightMap::new(world, hush_art::emission_table()));
+            let stats = terrain.update(&gpu.device, scene.world.as_chunked_mut(), light.as_ref());
             println!(
                 "{} chunks, {} caras, mallas en {:.1} ms",
                 stats.chunks_meshed, stats.faces, stats.millis
@@ -176,9 +220,8 @@ fn shot(scene: Scene, seed: u64, out: &Path, size: [u32; 2], yaw: f32, pitch: f3
             capture(&gpu, width, height, |encoder, color, depth| {
                 terrain.render(&gpu.queue, encoder, color, depth, &view, &scene.style);
                 let fog = scene.style.fog_distance;
-                let device = &gpu.device;
                 boxes.render(
-                    device,
+                    &gpu.device,
                     &gpu.queue,
                     encoder,
                     color,
@@ -188,7 +231,7 @@ fn shot(scene: Scene, seed: u64, out: &Path, size: [u32; 2], yaw: f32, pitch: f3
                     &scene.boxes,
                 );
                 ui.render(
-                    device,
+                    &gpu.device,
                     &gpu.queue,
                     encoder,
                     color,

@@ -4,7 +4,7 @@
 //! expande en dos triángulos («vertex pulling» por instancias, que también
 //! funciona en WebGL2). La oclusión ambiental se calcula por vértice.
 
-use crate::{AIR, CHUNK_SIZE, LightMap, MAX_LIGHT, VoxelWorld};
+use crate::{AIR, CHUNK_SIZE, ChunkPos, LightMap, MAX_LIGHT, Voxels};
 
 /// Dirección de una cara. El orden coincide con la tabla del shader.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -60,7 +60,11 @@ pub const CORNERS: [(i32, i32); 4] = [(-1, -1), (1, -1), (1, 1), (-1, 1)];
 
 /// Cara visible empaquetada en 8 bytes.
 ///
-/// - `a`: x (7 bits) · y (7) · z (7) · dirección (3) · oclusión (4 × 2 bits).
+/// La posición es **local al chunk** (0-15 por eje): el render suma el
+/// origen del chunk relativo a la cámara, así que las coordenadas del
+/// mundo pueden ser enormes o negativas sin perder precisión.
+///
+/// - `a`: x (4 bits) · y (4) · z (4) · dirección (3) · oclusión (4 × 2 bits).
 /// - `b`: tipo de bloque (8 bits) · luz de la celda de delante (4 bits).
 ///
 /// La oclusión de cada esquina va de 0 (muy ocluida) a 3 (libre).
@@ -72,8 +76,8 @@ pub struct PackedFace {
 }
 
 impl PackedFace {
-    pub fn new(pos: [u32; 3], dir: Direction, ao: [u8; 4], block: u8, light: u8) -> Self {
-        debug_assert!(pos.iter().all(|&c| c < 128));
+    pub fn new(local: [u32; 3], dir: Direction, ao: [u8; 4], block: u8, light: u8) -> Self {
+        debug_assert!(local.iter().all(|&c| c < CHUNK_SIZE as u32));
         debug_assert!(ao.iter().all(|&o| o <= 3));
         debug_assert!(light <= MAX_LIGHT);
         let ao_bits = ao
@@ -81,22 +85,27 @@ impl PackedFace {
             .enumerate()
             .fold(0, |acc, (i, &o)| acc | (u32::from(o) << (2 * i)));
         Self {
-            a: pos[0] | (pos[1] << 7) | (pos[2] << 14) | ((dir as u32) << 21) | (ao_bits << 24),
+            a: local[0]
+                | (local[1] << 4)
+                | (local[2] << 8)
+                | ((dir as u32) << 12)
+                | (ao_bits << 15),
             b: u32::from(block) | (u32::from(light & 0xF) << 8),
         }
     }
 
-    pub fn pos(self) -> [u32; 3] {
-        [self.a & 0x7F, (self.a >> 7) & 0x7F, (self.a >> 14) & 0x7F]
+    /// Posición del bloque dentro de su chunk.
+    pub fn local(self) -> [u32; 3] {
+        [self.a & 0xF, (self.a >> 4) & 0xF, (self.a >> 8) & 0xF]
     }
 
     pub fn direction(self) -> Direction {
         // Los 3 bits solo pueden contener valores escritos por `new`.
-        Direction::from_index(((self.a >> 21) & 0x7) as u8).unwrap_or(Direction::PosY)
+        Direction::from_index(((self.a >> 12) & 0x7) as u8).unwrap_or(Direction::PosY)
     }
 
     pub fn ao(self) -> [u8; 4] {
-        std::array::from_fn(|i| ((self.a >> (24 + 2 * i)) & 0x3) as u8)
+        std::array::from_fn(|i| ((self.a >> (15 + 2 * i)) & 0x3) as u8)
     }
 
     pub fn block(self) -> u8 {
@@ -111,27 +120,24 @@ impl PackedFace {
 /// Genera las caras visibles de un chunk. Una cara es visible si el bloque
 /// vecino en esa dirección es aire (también fuera del mundo). Sin mapa de
 /// luz, todas las caras llevan luz completa.
-pub fn mesh_chunk(
-    world: &VoxelWorld,
+pub fn mesh_chunk<W: Voxels + ?Sized>(
+    world: &W,
     light: Option<&LightMap>,
-    chunk_index: usize,
+    chunk: ChunkPos,
 ) -> Vec<PackedFace> {
-    let chunk = world.chunk(chunk_index);
     let mut faces = Vec::new();
-    if chunk.is_empty() {
+    if world.chunk_is_empty(chunk) {
         return faces;
     }
-    let [cx, cy, cz] = world
-        .chunk_coords(chunk_index)
-        .map(|c| (c * CHUNK_SIZE) as i32);
+    let [cx, cy, cz] = chunk.origin();
     for ly in 0..CHUNK_SIZE {
         for lz in 0..CHUNK_SIZE {
             for lx in 0..CHUNK_SIZE {
-                let block = chunk.get(lx, ly, lz);
+                let p = [cx + lx as i32, cy + ly as i32, cz + lz as i32];
+                let block = world.get(p[0], p[1], p[2]);
                 if block == AIR {
                     continue;
                 }
-                let p = [cx + lx as i32, cy + ly as i32, cz + lz as i32];
                 for dir in Direction::ALL {
                     let n = dir.normal();
                     let front = add(p, n);
@@ -139,9 +145,9 @@ pub fn mesh_chunk(
                         continue;
                     }
                     let ao = face_ao(world, front, dir);
-                    let pos = p.map(|c| c as u32);
+                    let local = [lx, ly, lz].map(|c| c as u32);
                     let level = light.map_or(MAX_LIGHT, |l| l.get(front[0], front[1], front[2]));
-                    faces.push(PackedFace::new(pos, dir, ao, block, level));
+                    faces.push(PackedFace::new(local, dir, ao, block, level));
                 }
             }
         }
@@ -151,7 +157,7 @@ pub fn mesh_chunk(
 
 /// Oclusión de las cuatro esquinas de una cara, mirando la capa de aire
 /// que tiene delante (`front`).
-fn face_ao(world: &VoxelWorld, front: [i32; 3], dir: Direction) -> [u8; 4] {
+fn face_ao<W: Voxels + ?Sized>(world: &W, front: [i32; 3], dir: Direction) -> [u8; 4] {
     let (u, v) = dir.tangents();
     let solid = |p: [i32; 3]| world.is_solid(p[0], p[1], p[2]);
     CORNERS.map(|(su, sv)| {
@@ -182,6 +188,7 @@ fn scale(a: [i32; 3], s: i32) -> [i32; 3] {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{SparseWorld, VoxelWorld, VoxelsMut};
 
     fn cross(a: [i32; 3], b: [i32; 3]) -> [i32; 3] {
         [
@@ -201,8 +208,8 @@ mod tests {
 
     #[test]
     fn packing_round_trips() {
-        let face = PackedFace::new([127, 5, 64], Direction::NegZ, [0, 1, 2, 3], 200, 9);
-        assert_eq!(face.pos(), [127, 5, 64]);
+        let face = PackedFace::new([15, 5, 0], Direction::NegZ, [0, 1, 2, 3], 200, 9);
+        assert_eq!(face.local(), [15, 5, 0]);
         assert_eq!(face.direction(), Direction::NegZ);
         assert_eq!(face.ao(), [0, 1, 2, 3]);
         assert_eq!(face.block(), 200);
@@ -214,7 +221,7 @@ mod tests {
     fn lone_block_has_six_unoccluded_faces() {
         let mut w = VoxelWorld::new([16, 16, 16]).unwrap();
         w.set(5, 5, 5, 3);
-        let faces = mesh_chunk(&w, None, 0);
+        let faces = mesh_chunk(&w, None, ChunkPos::default());
         assert_eq!(faces.len(), 6);
         assert!(faces.iter().all(|f| f.ao() == [3; 4] && f.block() == 3));
     }
@@ -224,7 +231,7 @@ mod tests {
         let mut w = VoxelWorld::new([16, 16, 16]).unwrap();
         w.set(5, 5, 5, 1);
         w.set(6, 5, 5, 1);
-        assert_eq!(mesh_chunk(&w, None, 0).len(), 10);
+        assert_eq!(mesh_chunk(&w, None, ChunkPos::default()).len(), 10);
     }
 
     #[test]
@@ -232,10 +239,42 @@ mod tests {
         let mut w = VoxelWorld::new([32, 16, 16]).unwrap();
         w.fill([0, 0, 0], [31, 15, 15], 2);
         let total: usize = (0..w.chunk_count())
-            .map(|i| mesh_chunk(&w, None, i).len())
+            .map(|i| mesh_chunk(&w, None, w.chunk_pos(i)).len())
             .sum();
         let shell = 2 * (32 * 16 + 32 * 16 + 16 * 16);
         assert_eq!(total, shell);
+    }
+
+    #[test]
+    fn negative_chunks_mesh_with_local_coordinates() {
+        let mut w = SparseWorld::new();
+        w.set(-1, -1, -1, 4);
+        let chunk = ChunkPos::new(-1, -1, -1);
+        let faces = mesh_chunk(&w, None, chunk);
+        assert_eq!(faces.len(), 6);
+        assert!(
+            faces
+                .iter()
+                .all(|f| f.local() == [15, 15, 15] && f.ao() == [3; 4])
+        );
+        // El vecino en el chunk 0 tapa la cara +X.
+        w.set(0, -1, -1, 4);
+        assert_eq!(mesh_chunk(&w, None, chunk).len(), 5);
+        assert!(mesh_chunk(&w, None, ChunkPos::new(-2, -1, -1)).is_empty());
+    }
+
+    #[test]
+    fn same_shape_meshes_identically_anywhere() {
+        let build = |origin: [i32; 3]| {
+            let mut w = SparseWorld::new();
+            for (dx, dy, dz) in [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 0, 1)] {
+                w.set(origin[0] + dx, origin[1] + dy, origin[2] + dz, 2);
+            }
+            mesh_chunk(&w, None, ChunkPos::containing(origin))
+        };
+        let near = build([0, 0, 0]);
+        assert_eq!(build([7_499_984, -4096, -7_500_000]), near);
+        assert_eq!(build([-7_500_000, 1008, 7_499_984]), near);
     }
 
     #[test]
@@ -244,9 +283,9 @@ mod tests {
         w.fill([0, 0, 0], [15, 0, 15], 1);
         w.set(5, 1, 5, 1);
         let top_of = |x: u32, z: u32| {
-            mesh_chunk(&w, None, 0)
+            mesh_chunk(&w, None, ChunkPos::default())
                 .into_iter()
-                .find(|f| f.pos() == [x, 0, z] && f.direction() == Direction::PosY)
+                .find(|f| f.local() == [x, 0, z] && f.direction() == Direction::PosY)
                 .unwrap()
         };
         // El suelo junto al bloque tiene dos esquinas ocluidas.

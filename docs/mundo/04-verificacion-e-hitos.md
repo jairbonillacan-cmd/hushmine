@@ -67,11 +67,11 @@ Simula un jugador en vagoneta: chunks pendientes, memoria y tiempo de fotograma 
 
 ## 3. Hitos del mundo
 
-Los hitos W1–W7 llegan **después** del acceso anticipado del modo Turno (hito 7 de `PLAN_v4.md`) y solo si el juego tiene tracción. Hacerlos antes iría contra la regla del plan: el motor solo hace lo que HUSHMINE necesita en cada momento. **W0 es la excepción**: cuesta días ahora y semanas después.
+**Prioridad actual (24 de octubre de 2026):** el modo Historia va primero, así que los hitos W0–W7 se hacen **ahora, en este orden**, antes de retomar el modo Turno en el hito 3 de `PLAN_v4.md`. La regla del plan se mantiene: el motor solo hace lo que el juego necesita en cada momento, y en este momento el juego es el modo Historia.
 
 | Hito | Contenido | Condición de salida | Aprox. |
 |---|---|---|---|
-| **W0. Puertas abiertas** (dentro del hito 1) | Posición mundial `i64` Q47.16; chunk detrás de una interfaz (`get`/`set`/`fill`); `ChunkPos` con negativos; render relativo a la cámara; generador de mina de prueba con forma de función pura `(semilla, ChunkPos) → Chunk` | Pruebas de chunk, DDA y colisión en coordenadas negativas y en ±7 499 999 en verde. Mapa de 64³ sin cambios visibles | 2–4 días |
+| **W0. Puertas abiertas** (en curso, rama `w0/base`) | Posición mundial `i64` Q47.16; chunk detrás de una interfaz (`get`/`set`/`fill`); `ChunkPos` con negativos; render relativo a la cámara; generador de mina de prueba con forma de función pura `(semilla, ChunkPos) → Chunk` | Pruebas de chunk, DDA y colisión en coordenadas negativas y en ±7 499 999 en verde. Mapa de 64³ sin cambios visibles | 2–4 días |
 | **W1. Ruido y relieve** | `grisu-noise`; fases Columna, Densidad y Litología; `world map`, `world slice`, `world chunk`, `world bench` | Mapas y cortes PNG coherentes; p95 ≤ 3 ms por chunk; `INV-W01`, `W03` y `W11` en verde | 2–3 sem |
 | **W2. Mundo recorrible** | `grisu-world`: planificador, trabajadores, LRU, luz entre chunks, mallado incremental, archivos de región, horizonte lejano | Recorrer 10 km en el T490s sin tirones y con memoria estable; guardar, salir y volver deja el mundo igual (`INV-W02`, `W10`) | 3–4 sem |
 | **W3. Cuevas, fluidos y menas** | Todos los excavadores, acuíferos, lava, rocas, fallas, kimberlita, menas, decoración | `INV-W05` y `W07` en verde; capturas de escenas de cueva aprobadas a ojo | 3–4 sem |
@@ -86,7 +86,8 @@ Los hitos W1–W7 llegan **después** del acceso anticipado del modo Turno (hito
 
 | Riesgo | Mitigación |
 |---|---|
-| El mundo grande se come el juego competitivo | Solo W0 antes de la 1.0. W1–W7 dependen de que el modo Turno tenga tracción |
+| El modo Turno se rompe o se olvida mientras está en pausa | Sus pruebas (`netsim`, capturas, invariantes) siguen en la CI y el mapa finito implementa las mismas interfaces que el mundo grande |
+| W1–W7 son largos (unos 6–9 meses) y tardan en dar algo jugable | Cada hito termina en algo que se puede recorrer o jugar; pruebas con jugadores desde W2 |
 | El ruido entero sale feo o con artefactos de retícula | Rotación entera, deformación de dominio y revisión visual con `world map` desde W1. Si fallara, se prueba ruido *simplex* entero antes de pensar en `f32` |
 | La generación no cumple 1 ms por chunk en el T490s | Muestreo grueso con interpolación, caché por columna, perfilado con Tracy y, como último recurso, preset Bajo con R = 6 |
 | Costuras entre chunks o estructuras cortadas | Regla de funciones puras, `INV-W02` y `INV-W08` con `proptest` |

@@ -38,8 +38,8 @@ pub struct PredictionStats {
     pub snapshots: u64,
     /// Instantáneas en las que la posición predicha no coincidía.
     pub corrections: u64,
-    /// Mayor diferencia encontrada, en punto fijo (1024 = un bloque).
-    pub max_error: i32,
+    /// Mayor diferencia encontrada, en punto fijo Q47.16 (65536 = un bloque).
+    pub max_error: i64,
     /// Bloques de la réplica cambiados por el servidor (ediciones ajenas y
     /// correcciones de predicciones rechazadas).
     pub blocks_updated: u64,
@@ -125,8 +125,9 @@ impl NetClient {
         self.last_snapshot_tick
     }
 
-    /// Otros jugadores interpolados en el tick `server_tick` (con decimales).
-    pub fn remote_players(&self, server_tick: f32) -> Vec<(u16, [f32; 3])> {
+    /// Otros jugadores interpolados en el tick `server_tick` (en bloques,
+    /// con decimales, en `f64` para conservar precisión lejos del origen).
+    pub fn remote_players(&self, server_tick: f64) -> Vec<(u16, [f64; 3])> {
         self.remotes.sample(server_tick)
     }
 

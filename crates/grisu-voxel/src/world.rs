@@ -1,7 +1,7 @@
-use crate::{AIR, BlockId, CHUNK_SIZE, Chunk};
+use crate::{AIR, BlockId, CHUNK_SIZE, Chunk, ChunkPos, ChunkedVoxels, Voxels, VoxelsMut};
 
-/// Tamaño máximo de un mundo por eje, en bloques. Las caras empaquetadas
-/// guardan cada coordenada en 7 bits.
+/// Tamaño máximo de un mapa finito por eje, en bloques. Es el límite del
+/// modo Turno; el mundo abierto usa [`SparseWorld`](crate::SparseWorld).
 pub const MAX_WORLD_SIZE: u32 = 128;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -24,7 +24,7 @@ impl std::fmt::Display for WorldError {
 
 impl std::error::Error for WorldError {}
 
-/// Mundo finito formado por chunks de 16³.
+/// Mapa finito formado por chunks de 16³, con la esquina en el origen.
 ///
 /// Fuera de los límites todo es aire: así las caras exteriores del mapa se
 /// dibujan y los rayos salen sin chocar. Las reglas del juego deciden si los
@@ -90,6 +90,20 @@ impl VoxelWorld {
 
     pub fn chunk(&self, index: usize) -> &Chunk {
         &self.chunks[index]
+    }
+
+    /// Posición del chunk de índice `index`.
+    pub fn chunk_pos(&self, index: usize) -> ChunkPos {
+        let [x, y, z] = self.chunk_coords(index).map(|c| c as i32);
+        ChunkPos::new(x, y, z)
+    }
+
+    /// Índice del chunk en `pos`, si está dentro del mapa.
+    pub fn index_of(&self, pos: ChunkPos) -> Option<usize> {
+        let [dx, dy, dz] = self.chunk_dims.map(|d| d as i32);
+        let inside =
+            (0..dx).contains(&pos.x) && (0..dy).contains(&pos.y) && (0..dz).contains(&pos.z);
+        inside.then(|| self.chunk_index(pos.x as usize, pos.y as usize, pos.z as usize))
     }
 
     /// Sustituye un chunk entero (al recibir el mapa por red). Marca como
@@ -221,6 +235,46 @@ impl VoxelWorld {
     }
 }
 
+impl Voxels for VoxelWorld {
+    fn get(&self, x: i32, y: i32, z: i32) -> BlockId {
+        VoxelWorld::get(self, x, y, z)
+    }
+
+    fn blocks_movement(&self, x: i32, y: i32, z: i32) -> bool {
+        VoxelWorld::blocks_movement(self, x, y, z)
+    }
+
+    fn chunk_is_empty(&self, chunk: ChunkPos) -> bool {
+        self.index_of(chunk)
+            .is_none_or(|i| self.chunks[i].is_empty())
+    }
+}
+
+impl VoxelsMut for VoxelWorld {
+    fn set(&mut self, x: i32, y: i32, z: i32, block: BlockId) -> Option<BlockId> {
+        VoxelWorld::set(self, x, y, z, block)
+    }
+}
+
+impl ChunkedVoxels for VoxelWorld {
+    fn loaded_chunks(&self) -> Vec<ChunkPos> {
+        (0..self.chunks.len()).map(|i| self.chunk_pos(i)).collect()
+    }
+
+    fn is_loaded(&self, chunk: ChunkPos) -> bool {
+        self.index_of(chunk).is_some()
+    }
+
+    fn take_dirty_chunks(&mut self) -> Vec<ChunkPos> {
+        let dirty = self.take_dirty();
+        dirty.into_iter().map(|i| self.chunk_pos(i)).collect()
+    }
+
+    fn has_dirty_chunks(&self) -> bool {
+        self.has_dirty()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -254,7 +308,10 @@ mod tests {
         for i in 0..w.chunk_count() {
             let [x, y, z] = w.chunk_coords(i);
             assert_eq!(w.chunk_index(x, y, z), i);
+            assert_eq!(w.index_of(w.chunk_pos(i)), Some(i));
         }
+        assert_eq!(w.index_of(ChunkPos::new(-1, 0, 0)), None);
+        assert_eq!(w.index_of(ChunkPos::new(4, 0, 0)), None);
     }
 
     #[test]
