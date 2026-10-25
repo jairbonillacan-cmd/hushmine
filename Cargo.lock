@@ -849,6 +849,7 @@ dependencies = [
  "grisu-render",
  "grisu-voxel",
  "hush-art",
+ "hush-launcher",
  "hush-net",
  "hush-sim",
  "pollster",
@@ -868,6 +869,22 @@ dependencies = [
  "grisu-voxel",
  "hush-art",
  "hush-net",
+ "hush-sim",
+ "log",
+ "wgpu",
+]
+
+[[package]]
+name = "hush-launcher"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "env_logger",
+ "glam",
+ "grisu-platform",
+ "grisu-render",
+ "grisu-voxel",
+ "hush-art",
  "hush-sim",
  "log",
  "wgpu",

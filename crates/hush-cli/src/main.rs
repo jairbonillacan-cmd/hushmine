@@ -13,8 +13,8 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use grisu_render::{
-    BoxRenderer, Gpu, OFFSCREEN_FORMAT, OrbitCamera, TextureData, VoxelRenderer, capture,
-    render_to_image,
+    BoxRenderer, Gpu, OFFSCREEN_FORMAT, OrbitCamera, TextureData, UiRenderer, VoxelRenderer,
+    capture, render_to_image,
 };
 use hush_sim::MatchConfig;
 use scenes::Scene;
@@ -172,6 +172,7 @@ fn shot(scene: Scene, seed: u64, out: &Path, size: [u32; 2], yaw: f32, pitch: f3
             );
             let view = scene.view(width as f32 / height as f32);
             let mut boxes = BoxRenderer::new(&gpu.device, OFFSCREEN_FORMAT);
+            let mut ui = UiRenderer::new(&gpu.device, OFFSCREEN_FORMAT);
             capture(&gpu, width, height, |encoder, color, depth| {
                 terrain.render(&gpu.queue, encoder, color, depth, &view, &scene.style);
                 let fog = scene.style.fog_distance;
@@ -185,6 +186,14 @@ fn shot(scene: Scene, seed: u64, out: &Path, size: [u32; 2], yaw: f32, pitch: f3
                     &view,
                     fog,
                     &scene.boxes,
+                );
+                ui.render(
+                    device,
+                    &gpu.queue,
+                    encoder,
+                    color,
+                    [width, height],
+                    &scene.ui,
                 );
             })?
         }

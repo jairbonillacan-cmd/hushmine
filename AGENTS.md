@@ -20,6 +20,7 @@ El plan completo está en `PLAN_v4.md`; las decisiones de arquitectura, en `docs
 | `hush-art` | Texturas provisionales de los bloques y su emisión de luz |
 | `hush-server` | Binario `hush-server` (servidor dedicado UDP) |
 | `hush-client` | Binario `hushmine` (el juego; servidor local en memoria o `--connect`) |
+| `hush-launcher` | Panel del lanzador (`hush-launcher.exe`): estado, geometría y dibujo del panel en biblioteca, más el binario con ventana |
 | `hush-cli` | Binario `hush-cli` (sim, netsim, shot, bench, gpu) |
 
 **Regla de dependencias:** ningún crate `grisu-*` depende de un crate `hush-*`.

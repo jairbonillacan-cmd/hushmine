@@ -19,6 +19,7 @@ env_logger.workspace = true
 grisu-render.workspace = true
 grisu-voxel.workspace = true
 hush-art.workspace = true
+hush-launcher.workspace = true
 hush-net.workspace = true
 grisu-net.workspace = true
 hush-sim.workspace = true

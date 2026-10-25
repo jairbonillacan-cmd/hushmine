@@ -12,10 +12,12 @@ mod gpu;
 mod offscreen;
 mod texture;
 mod texture_array;
+mod ui;
+mod ui_font;
 mod voxel;
 
 pub use boxes::{BoxRenderer, ColorBox};
-pub use camera::{FlyCamera, OrbitCamera, View};
+pub use camera::{CameraMode, FlyCamera, OrbitCamera, View};
 pub use crosshair::CrosshairRenderer;
 pub use cube::CubeRenderer;
 pub use depth::DepthTarget;
@@ -23,6 +25,7 @@ pub use gpu::{Gpu, default_backends};
 pub use offscreen::{OFFSCREEN_FORMAT, capture, render_to_image};
 pub use texture::TextureData;
 pub use texture_array::upload_texture_array;
+pub use ui::{UiBatch, UiRect, UiRenderer};
 pub use voxel::{MeshStats, TerrainStyle, VoxelRenderer};
 
 /// Color de fondo: oscuridad de mina, ligeramente azulada.

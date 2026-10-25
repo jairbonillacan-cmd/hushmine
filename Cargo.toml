@@ -16,6 +16,7 @@ grisu-voxel = { path = "crates/grisu-voxel" }
 grisu-net = { path = "crates/grisu-net" }
 hush-sim = { path = "crates/hush-sim" }
 hush-art = { path = "crates/hush-art" }
+hush-launcher = { path = "crates/hush-launcher" }
 hush-net = { path = "crates/hush-net" }
 
 anyhow = "1"
