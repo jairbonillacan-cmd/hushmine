@@ -110,7 +110,8 @@ fn put_frame(w: &mut Writer, f: &InputFrame) {
     w.u32(f.seq)
         .i8(f.movement.wish_x)
         .i8(f.movement.wish_z)
-        .bool(f.movement.jump);
+        .bool(f.movement.jump)
+        .bool(f.movement.sprint);
     match f.action {
         None => {
             w.u8(A_NONE);
@@ -133,6 +134,7 @@ fn get_frame(r: &mut Reader) -> Result<InputFrame, DecodeError> {
         wish_x: r.i8()?,
         wish_z: r.i8()?,
         jump: r.bool()?,
+        sprint: r.bool()?,
     };
     let action = match r.u8()? {
         A_NONE => None,

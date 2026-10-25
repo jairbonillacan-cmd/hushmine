@@ -11,9 +11,9 @@ struct Globals {
     selected: vec4<i32>,
     // Segundos desde el arranque, para animar la lava.
     time: f32,
-    // Relleno hasta el tamaño del uniforme (múltiplo de 16). Tres f32
-    // sueltos: un vec3 alienaría a 16 y agrandaría el uniforme.
-    _pad0: f32,
+    // Multiplicador de la luz de cielo (0..1) según la hora del día.
+    daylight: f32,
+    // Relleno hasta el tamaño del uniforme (múltiplo de 16).
     _pad1: f32,
     _pad2: f32,
 };
@@ -25,6 +25,10 @@ const LAVA_ID: u32 = 7u;
 const LAVA_LAYER: u32 = 6u;
 const LAVA_EXTRA_LAYER: u32 = 17u;
 const LAVA_FRAMES: u32 = 4u;
+// Bloques del modo historia: sus texturas van despues de los PNG (17 capas)
+// y los fotogramas extra de la lava (3). Ver hush_art::STORY_LAYER_BASE.
+const STORY_ID_MIN: u32 = 18u;
+const STORY_LAYER_BASE: u32 = 20u;
 
 @group(0) @binding(0) var<uniform> globals: Globals;
 @group(0) @binding(1) var block_textures: texture_2d_array<f32>;
@@ -42,8 +46,10 @@ struct VertexOut {
     @location(2) light: f32,
     @location(3) world: vec3<f32>,
     @location(4) @interpolate(flat) highlight: f32,
-    // Luz de la celda de delante de la cara, de 0 a 1.
+    // Luz de bloque de la celda de delante de la cara, de 0 a 1.
     @location(5) @interpolate(flat) block_light: f32,
+    // Luz de cielo de la celda de delante de la cara, de 0 a 1.
+    @location(6) @interpolate(flat) sky_light: f32,
 };
 
 @vertex
@@ -107,9 +113,12 @@ fn vs_main(@builtin(vertex_index) vertex: u32, face: FaceIn) -> VertexOut {
     let block_id = face.b & 0xFFu;
     let frame = u32(max(globals.time, 0.0) * 4.0) % LAVA_FRAMES;
     let lava = select(LAVA_LAYER, LAVA_EXTRA_LAYER + frame - 1u, frame > 0u);
-    out.layer = select(block_id - 1u, lava, block_id == LAVA_ID);
+    let story = STORY_LAYER_BASE + block_id - STORY_ID_MIN;
+    let plain = select(block_id - 1u, story, block_id >= STORY_ID_MIN);
+    out.layer = select(plain, lava, block_id == LAVA_ID);
     out.light = shades[dir] * ao_curve[ao[corner]];
     out.block_light = f32((face.b >> 8u) & 0xFu) / 15.0;
+    out.sky_light = f32((face.b >> 12u) & 0xFu) / 15.0;
     out.world = world;
     let sel = globals.selected;
     out.highlight = select(0.0, 1.0, sel.w == 1 && all(vec3<i32>(block) == sel.xyz));
@@ -120,9 +129,11 @@ fn vs_main(@builtin(vertex_index) vertex: u32, face: FaceIn) -> VertexOut {
 fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     let texel = textureSample(block_textures, block_sampler, in.uv, in.layer).rgb;
     let dist = distance(in.world, globals.eye.xyz);
-    // Luz del mundo (cielo y emisores) con un mínimo para no ver negro puro,
-    // y la lámpara del casco, que alumbra alrededor del jugador.
-    let ambient = 0.04 + 0.96 * pow(in.block_light, 1.6);
+    // Luz del mundo: cielo modulado por la hora y emisores de bloque, con
+    // un mínimo para no ver negro puro; y la lámpara del casco, que alumbra
+    // alrededor del jugador.
+    let world_light = max(in.block_light, in.sky_light * globals.daylight);
+    let ambient = 0.04 + 0.96 * pow(world_light, 1.6);
     let lamp_radius = globals.eye.w;
     var lamp = 0.0;
     if lamp_radius > 0.0 {

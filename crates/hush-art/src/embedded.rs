@@ -225,7 +225,7 @@ fn decode(file: &'static str, bytes: &'static [u8]) -> Result<TextureData, Block
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::textured_blocks;
+    use crate::embedded_blocks;
     use std::fs;
     use std::path::{Path, PathBuf};
 
@@ -303,7 +303,7 @@ mod tests {
     fn one_16x16_layer_per_block_plus_lava_frames() {
         let textures = block_textures().expect("decodificar los PNG incrustados");
         // Una capa por bloque sólido (17) y los fotogramas extra de la lava.
-        assert_eq!(textured_blocks().len(), 17);
+        assert_eq!(embedded_blocks().len(), 17);
         assert_eq!(textures.len(), 17 + LAVA_EXTRA_FRAMES.len());
         for t in &textures {
             assert_eq!((t.width, t.height), (16, 16));
@@ -332,9 +332,9 @@ mod tests {
 
     #[test]
     fn layers_follow_block_identifiers() {
-        assert_eq!(TEXTURES.len(), textured_blocks().len());
+        assert_eq!(TEXTURES.len(), embedded_blocks().len());
         for (index, texture) in TEXTURES.iter().enumerate() {
-            assert_eq!(texture.block, textured_blocks()[index]);
+            assert_eq!(texture.block, embedded_blocks()[index]);
             assert_eq!(usize::from(texture.block.id()), index + 1);
         }
     }
@@ -344,7 +344,7 @@ mod tests {
     #[test]
     fn chosen_files_match_manifest() {
         let entries = parse_manifest();
-        for &block in textured_blocks() {
+        for &block in embedded_blocks() {
             let id = block.id();
             let of_block: Vec<_> = entries.iter().filter(|e| e.block_id == id).collect();
             assert!(

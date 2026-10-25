@@ -7,6 +7,7 @@ fn frame(seq: u32, action: Option<Action>) -> InputFrame {
             wish_x: -127,
             wish_z: 64,
             jump: true,
+            sprint: seq.is_multiple_of(2),
         },
         action,
     }
