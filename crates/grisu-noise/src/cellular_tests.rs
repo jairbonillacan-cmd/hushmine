@@ -15,11 +15,10 @@ fn afirma_invariantes(s: CellularSample, contexto: &str) {
         s.f2_sq,
         s.f1_sq
     );
-    assert_eq!(
-        s.edge_q16,
-        s.f2_sq - s.f1_sq,
-        "{contexto}: edge_q16 incoherente"
-    );
+    // El borde sale de las distancias sin saturar: es la resta, o más si f2 satura.
+    let resta = s.f2_sq - s.f1_sq;
+    let ok = s.edge_q16 == resta || (s.f2_sq == ONE as i32 && s.edge_q16 > resta);
+    assert!(ok, "{contexto}: edge_q16 incoherente");
 }
 
 /// Valores de referencia rellenados con la salida real; cualquier cambio

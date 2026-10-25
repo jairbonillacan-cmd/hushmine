@@ -25,7 +25,9 @@ pub struct CellularSample {
     pub f1_sq: i32,
     /// Segunda menor distancia al cuadrado, mismo formato.
     pub f2_sq: i32,
-    /// `(f2_sq - f1_sq).clamp(0, ONE)`: vale 0 en las fronteras entre celdas.
+    /// Diferencia entre las dos distancias, calculada antes de saturarlas y
+    /// acotada a `[0, ONE]`: vale 0 solo en las fronteras entre celdas,
+    /// aunque las dos distancias pasen de 1 celda.
     pub edge_q16: i32,
 }
 
@@ -46,15 +48,16 @@ pub struct Cellular3 {
     jitter_q16: i32,
 }
 
-/// Satura las dos distancias en `ONE` y deriva `edge_q16`.
+/// Deriva `edge_q16` de las distancias sin saturar y luego satura las dos
+/// en `ONE`. Al revés, dos distancias distintas por encima de 1 celda darían
+/// borde 0 lejos de cualquier frontera.
 fn finish(f1: i64, f2: i64, cell_hash: u64) -> CellularSample {
-    let f1_sq = f1.min(ONE) as i32;
-    let f2_sq = f2.min(ONE) as i32;
+    let edge_q16 = (f2 - f1).clamp(0, ONE) as i32;
     CellularSample {
         cell_hash,
-        f1_sq,
-        f2_sq,
-        edge_q16: (f2_sq - f1_sq).clamp(0, ONE as i32),
+        f1_sq: f1.min(ONE) as i32,
+        f2_sq: f2.min(ONE) as i32,
+        edge_q16,
     }
 }
 
@@ -208,3 +211,17 @@ impl Cellular3 {
 #[cfg(test)]
 #[path = "cellular_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+mod edge_tests {
+    use super::*;
+
+    /// Caso de la revisión de #10: las dos distancias pasan de 1 celda
+    /// (65 708 y 65 878 en Q16) y son distintas, así que no es frontera.
+    #[test]
+    fn edge_is_not_zero_when_both_distances_saturate() {
+        let s = Cellular2::new(42, 4).sample_block(4_861_678, 6_020_082);
+        assert_eq!((s.f1_sq, s.f2_sq), (ONE as i32, ONE as i32));
+        assert_eq!(s.edge_q16, 65_878 - 65_708);
+    }
+}
