@@ -6,12 +6,9 @@
 //! (el motor aún no guarda el equipo de cada celda).
 
 use std::fmt;
-use std::path::Path;
 
 use grisu_render::TextureData;
 use hush_sim::BlockKind;
-
-use crate::textured_blocks;
 
 /// Lado del PNG de los bloques, en píxeles.
 const SIZE: u32 = 16;
@@ -194,8 +191,9 @@ fn decode(texture: &EmbeddedTexture) -> Result<TextureData, BlockTextureError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::textured_blocks;
     use std::fs;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
 
     /// Entrada de `manifest.ron`, parseada con un análisis de texto simple.
     struct ManifestEntry {
