@@ -1,0 +1,29 @@
+// Castillete y bocamina de los Antiguos: torre del pozo en superficie con la
+// boca de entrada orientada al norte y el arranque del pozo maestro hacia abajo.
+// Anatomía en docs/mundo/03-estructuras.md §4.
+Piece(
+    id: "headframe_entry",
+    family: "ancient_mine",
+    is_cap: false,
+    size: [9, 14, 9],
+    fills: [
+        // Zapata de roca a pie de obra
+        [0, 0, 0, 9, 1, 9, 2],
+        // Hueco de la bocamina, abierto a la cara norte
+        [3, 0, 0, 6, 3, 4, 0],
+        // Collar del pozo: paso vertical al nivel del suelo
+        [3, 0, 3, 6, 3, 6, 0],
+        // Cuatro patas del castillete
+        [0, 0, 0, 2, 12, 2, 2],
+        [7, 0, 0, 9, 12, 2, 2],
+        [0, 0, 7, 2, 12, 9, 2],
+        [7, 0, 7, 9, 12, 9, 2],
+        // Plataforma superior y caseta de las poleas
+        [0, 12, 0, 9, 13, 9, 2],
+        [3, 13, 3, 6, 14, 6, 2],
+    ],
+    connectors: [
+        (pos: [4, 1, 0], dir: "north", kind: "door"),
+        (pos: [4, 0, 4], dir: "down", kind: "shaft"),
+    ],
+)

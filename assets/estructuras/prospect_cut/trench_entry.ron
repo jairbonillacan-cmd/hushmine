@@ -1,0 +1,19 @@
+// Trinchera de cateo: zanja de prospección corta y abierta, con la veta de
+// muestra (id 4) a la vista en el costado oeste. Pieza raíz de prospect_cut.
+Piece(
+    id: "trench_entry",
+    family: "prospect_cut",
+    is_cap: false,
+    size: [9, 4, 5],
+    fills: [
+        // Fondo de tierra de la zanja
+        [0, 0, 0, 9, 1, 5, 1],
+        // Zanja abierta a cielo de trinchera
+        [0, 1, 0, 9, 4, 5, 0],
+        // Veta de muestra en el costado oeste
+        [0, 1, 2, 1, 4, 4, 4],
+    ],
+    connectors: [
+        (pos: [0, 1, 1], dir: "west", kind: "gallery"),
+    ],
+)

@@ -1,0 +1,25 @@
+// Rebaje (cámara de explotación): hueco grande donde se sacó el mineral, con
+// cuatro pilares de seguridad y una veta de oro (id 5) en el techo.
+Piece(
+    id: "stope_chamber",
+    family: "ancient_mine",
+    is_cap: false,
+    size: [11, 6, 9],
+    fills: [
+        // Suelo de roca
+        [0, 0, 0, 11, 1, 9, 2],
+        // Cámara de rebaje
+        [0, 1, 0, 11, 6, 9, 0],
+        // Veta de oro en el techo (los pilares la atraviesan)
+        [0, 4, 4, 11, 5, 5, 5],
+        // Cuatro pilares de seguridad, de suelo a techo
+        [2, 1, 2, 4, 6, 4, 2],
+        [7, 1, 2, 9, 6, 4, 2],
+        [2, 1, 5, 4, 6, 7, 2],
+        [7, 1, 5, 9, 6, 7, 2],
+    ],
+    connectors: [
+        (pos: [0, 1, 4], dir: "west", kind: "gallery"),
+        (pos: [11, 1, 4], dir: "east", kind: "gallery"),
+    ],
+)

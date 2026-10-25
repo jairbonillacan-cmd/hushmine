@@ -1,0 +1,18 @@
+// Tramo de calle entre edificios: tarima de piedra a ras de suelo y el aire
+// despejado encima. Continua al norte y al sur.
+Piece(
+    id: "wooden_street",
+    family: "arrival_village",
+    is_cap: false,
+    size: [5, 2, 9],
+    fills: [
+        // Tarima de piedra
+        [0, 0, 0, 5, 1, 9, 2],
+        // Aire despejado sobre la tarima
+        [0, 1, 0, 5, 2, 9, 0],
+    ],
+    connectors: [
+        (pos: [2, 1, 0], dir: "north", kind: "street"),
+        (pos: [2, 1, 9], dir: "south", kind: "street"),
+    ],
+)

@@ -1,0 +1,108 @@
+// Catálogo de las 6 familias de estructuras del mundo grande.
+// Referencia: docs/mundo/03-estructuras.md §§ 2, 4 y 5.
+//
+// Convenciones (detalladas en docs/mundo/plantillas-estructuras.md):
+// - spacing_chunks y separation_chunks se miden en chunks de 16 bloques.
+// - probability_q16 va en punto fijo Q16.16: 65536 equivale al 100 %.
+// - max_radius_chunks acota el radio del plano, en chunks.
+// - max_pieces limita el número de piezas del plano; max_depth es la
+//   profundidad máxima en bloques desde el anclaje.
+// - anchor: surface | underground | hanging | floodable.
+// - age: recent | old | ancient.
+// - Biomas propuestos en docs/mundo/02-generacion.md §4, con ids en inglés:
+//   mountain_range=Cordillera, needle_forest=Bosque de agujas,
+//   altiplano=Altiplano, red_desert=Desierto rojo, mesa_badlands=Badlands con
+//   mesas, river_valley=Valle fluvial, tundra=Tundra y turberas,
+//   inland_sea=Lagos y mares interiores.
+FamilyCatalog(
+    families: [
+        // Mina de los Antiguos: corteza y manto alto, 3-8 niveles, radio <= 256 m.
+        (
+            id: "ancient_mine",
+            spacing_chunks: 96,
+            separation_chunks: 16,
+            probability_q16: 32768,
+            max_radius_chunks: 16,
+            max_pieces: 24,
+            max_depth: 320,
+            anchor: underground,
+            age: ancient,
+            root_piece: "headframe_entry",
+            biomes: ["mountain_range", "needle_forest", "altiplano", "mesa_badlands", "tundra"],
+        ),
+        // Cateo: trincheras de prospección cortas y muy frecuentes (10-40 m).
+        (
+            id: "prospect_cut",
+            spacing_chunks: 16,
+            separation_chunks: 4,
+            probability_q16: 40960,
+            max_radius_chunks: 3,
+            max_pieces: 2,
+            max_depth: 24,
+            anchor: surface,
+            age: old,
+            root_piece: "trench_entry",
+            biomes: [
+                "mountain_range", "needle_forest", "altiplano", "red_desert",
+                "mesa_badlands", "river_valley", "tundra", "inland_sea",
+            ],
+        ),
+        // Minas de la Consolidada: obras industriales activas. Sus piezas propias
+        // llegan en otro hito; de momento reutiliza el castillete como raíz.
+        (
+            id: "consolidated_mine",
+            spacing_chunks: 256,
+            separation_chunks: 24,
+            probability_q16: 24576,
+            max_radius_chunks: 10,
+            max_pieces: 20,
+            max_depth: 200,
+            anchor: underground,
+            age: recent,
+            root_piece: "headframe_entry",
+            biomes: ["mountain_range", "needle_forest", "altiplano", "river_valley"],
+        ),
+        // Pueblo de Llegados: valles, altiplano y desierto; vivo o fantasma.
+        (
+            id: "arrival_village",
+            spacing_chunks: 256,
+            separation_chunks: 32,
+            probability_q16: 24576,
+            max_radius_chunks: 8,
+            max_pieces: 16,
+            max_depth: 16,
+            anchor: surface,
+            age: recent,
+            root_piece: "lamp_house",
+            biomes: ["river_valley", "altiplano", "red_desert", "needle_forest"],
+        ),
+        // Aldea de los Quedos: cuevas grandes de corteza y manto.
+        (
+            id: "still_hamlet",
+            spacing_chunks: 192,
+            separation_chunks: 24,
+            probability_q16: 16384,
+            max_radius_chunks: 5,
+            max_pieces: 12,
+            max_depth: 64,
+            anchor: underground,
+            age: old,
+            root_piece: "quiet_plaza",
+            biomes: ["mountain_range", "mesa_badlands", "altiplano", "needle_forest"],
+        ),
+        // Torre de los Vigías: solo en cumbres, muy alta y rara.
+        (
+            id: "watchtower",
+            spacing_chunks: 512,
+            separation_chunks: 48,
+            probability_q16: 16384,
+            max_radius_chunks: 2,
+            max_pieces: 4,
+            max_depth: 24,
+            anchor: surface,
+            age: old,
+            root_piece: "seismo_post",
+            biomes: ["mountain_range"],
+        ),
+    ],
+)

@@ -1,0 +1,29 @@
+// Puesto del Vigia: torre muy alta sobre cuatro patas, con plataforma, cabina
+// del sismografo (id 12) y baliza (id 14) en lo mas alto. Puerta al sur.
+Piece(
+    id: "seismo_post",
+    family: "watchtower",
+    is_cap: false,
+    size: [7, 21, 7],
+    fills: [
+        // Cuatro patas de piedra
+        [0, 0, 0, 2, 16, 2, 2],
+        [5, 0, 0, 7, 16, 2, 2],
+        [0, 0, 5, 2, 16, 7, 2],
+        [5, 0, 5, 7, 16, 7, 2],
+        // Cruces de arriostramiento a media altura
+        [2, 7, 0, 5, 9, 1, 2],
+        [2, 7, 6, 5, 9, 7, 2],
+        // Plataforma
+        [0, 16, 0, 7, 17, 7, 2],
+        // Cabina hueca
+        [1, 17, 1, 6, 20, 6, 0],
+        // Sismografo local
+        [2, 18, 2, 5, 19, 5, 12],
+        // Baliza en lo mas alto
+        [3, 20, 3, 4, 21, 4, 14],
+    ],
+    connectors: [
+        (pos: [3, 1, 7], dir: "south", kind: "door"),
+    ],
+)

@@ -1,0 +1,17 @@
+// Galería transversal: túnel recto por roca estéril, del pozo hacia la veta.
+Piece(
+    id: "crosscut_gallery",
+    family: "ancient_mine",
+    is_cap: false,
+    size: [9, 4, 3],
+    fills: [
+        // Suelo de roca
+        [0, 0, 0, 9, 1, 3, 2],
+        // Túnel excavado
+        [0, 1, 0, 9, 4, 3, 0],
+    ],
+    connectors: [
+        (pos: [0, 1, 1], dir: "west", kind: "gallery"),
+        (pos: [9, 1, 1], dir: "east", kind: "gallery"),
+    ],
+)
