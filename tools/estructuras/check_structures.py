@@ -57,9 +57,13 @@ def _is_int(value) -> bool:
 
 
 def _connector_on_face(pos: list, size: list, direction: str) -> bool:
-    """Comprueba que pos va EN la cara exterior que exige su direccion."""
+    """Comprueba que pos va EN la cara exterior que exige su direccion y
+    dentro de la caja de la pieza en los otros dos ejes (0..size, como los
+    fills): un conector fuera alinearia piezas que no se tocan."""
     axis, cara_cero = _FACE_OF[direction]
-    return pos[axis] == (0 if cara_cero else size[axis])
+    if pos[axis] != (0 if cara_cero else size[axis]):
+        return False
+    return all(0 <= pos[i] <= size[i] for i in range(3) if i != axis)
 
 
 def validate_familias(familias: dict) -> list:
@@ -128,7 +132,7 @@ def validate_pieces(pieces: dict, familias: dict) -> list:
                 errores.append(f"{tag}: pos deben ser 3 enteros")
                 continue
             if not _connector_on_face(pos, size, direction):
-                errores.append(f"{tag}: pos {pos} no esta en la cara {direction}")
+                errores.append(f"{tag}: pos {pos} no esta en la cara {direction} de la pieza")
     return errores
 
 

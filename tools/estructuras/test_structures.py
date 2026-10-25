@@ -73,6 +73,18 @@ class EstructurasTest(unittest.TestCase):
         self.assertEqual(len(subidas), 1)
         self.assertEqual(subidas[0]["pos"][1], shaft["size"][1])
 
+    def test_connector_outside_the_piece_box_is_rejected(self) -> None:
+        import copy
+        pieces = copy.deepcopy(self.pieces)
+        shaft = pieces["main_shaft"]
+        subida = next(c for c in shaft["connectors"] if c["dir"] == "up")
+        # En la cara de arriba (y = size), pero con x fuera de la caja.
+        subida["pos"] = [shaft["size"][0] + 3, shaft["size"][1], 0]
+        errores = cs.validate_pieces(pieces, self.familias)
+        self.assertTrue(any("main_shaft" in e and "connector" in e for e in errores), errores)
+        subida["pos"] = [0, shaft["size"][1], -1]
+        self.assertTrue(cs.validate_pieces(pieces, self.familias))
+
     def test_block_ids_within_convention_a(self) -> None:
         for pieza in self.pieces.values():
             for fill in pieza["fills"]:
