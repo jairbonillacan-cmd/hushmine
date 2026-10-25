@@ -21,3 +21,6 @@ pub const ORE: BlockId = 4;
 pub const GOLD: BlockId = 5;
 /// Diamante (`BlockKind::Diamond`).
 pub const DIAMOND: BlockId = 6;
+/// Lava de las bolsas del manto (`id` 7 de la Convención A). Siempre se
+/// genera rodeada de roca sólida (`INV-W05`).
+pub const LAVA: BlockId = 7;
