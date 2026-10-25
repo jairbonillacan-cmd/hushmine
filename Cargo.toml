@@ -17,6 +17,7 @@ grisu-net = { path = "crates/grisu-net" }
 hush-sim = { path = "crates/hush-sim" }
 hush-art = { path = "crates/hush-art" }
 hush-net = { path = "crates/hush-net" }
+hush-worldgen = { path = "crates/hush-worldgen" }
 
 anyhow = "1"
 bytemuck = { version = "1", features = ["derive"] }
