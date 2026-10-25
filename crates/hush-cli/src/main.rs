@@ -181,6 +181,10 @@ fn main() -> Result<()> {
     }
 }
 
+/// Segundos de la captura, fijos para que el PNG sea reproducible. Con 0.5
+/// la lava muestra su fotograma 2: la captura ejercita la animación.
+const SHOT_TIME_SECONDS: f32 = 0.5;
+
 fn shot(scene: Scene, seed: u64, out: &Path, size: [u32; 2], yaw: f32, pitch: f32) -> Result<()> {
     let [width, height] = size;
     let gpu = pollster::block_on(Gpu::headless())?;
@@ -194,7 +198,8 @@ fn shot(scene: Scene, seed: u64, out: &Path, size: [u32; 2], yaw: f32, pitch: f3
             render_to_image(&gpu, width, height, &camera, &TextureData::test_ore())?
         }
         Some(mut scene) => {
-            let textures = hush_art::block_textures();
+            scene.style.time_seconds = SHOT_TIME_SECONDS;
+            let textures = hush_art::block_textures()?;
             let mut terrain =
                 VoxelRenderer::new(&gpu.device, &gpu.queue, OFFSCREEN_FORMAT, &textures)?;
             terrain.enable_lighting(hush_art::emission_table());

@@ -56,6 +56,7 @@ fn floor_and_pillar_render_with_their_textures() {
         fog_distance: 200.0,
         selected: None,
         lamp_radius: 0.0,
+        time_seconds: 0.0,
     };
     let image = capture(&gpu, 96, 96, |encoder, color, depth| {
         terrain.render(&gpu.queue, encoder, color, depth, &view, &style);
