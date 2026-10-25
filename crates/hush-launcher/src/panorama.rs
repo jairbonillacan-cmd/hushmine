@@ -59,13 +59,16 @@ impl PanoramaRenderer {
     }
 }
 
-/// Cámara orbital del panorama, pura para poder probarla.
+/// Cámara orbital del panorama, pura para poder probarla. Alta e inclinada
+/// (unos 40°), para que se vea la superficie del monte como una maqueta: casi
+/// horizontal, lo que llenaba la ventana era el corte lateral del mapa, las
+/// capas de roca.
 pub fn panorama_camera(angle: f32) -> OrbitCamera {
     OrbitCamera {
-        target: Vec3::new(32.0, 28.0, 32.0),
-        distance: 72.0,
+        target: Vec3::new(32.0, 22.0, 32.0),
+        distance: 96.0,
         yaw: angle,
-        pitch: 0.38,
+        pitch: 0.70,
         fov_y: 50f32.to_radians(),
     }
 }

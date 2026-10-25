@@ -54,6 +54,7 @@ fn draw_monitor(batch: &mut UiBatch, state: &LauncherState, rect: UiRect) {
     let head = format!("Semilla {}", state.current_seed());
     batch.text(ix + pad, iy + pad, TEXT_BODY, PHOSPHOR_BRIGHT, &head);
     let bots = match state.bots {
+        _ if state.start_mode.is_story() => "Expedición".to_owned(),
         1 => "1 bot".to_owned(),
         n => format!("{n} bots"),
     };
@@ -173,7 +174,11 @@ fn draw_play_button(batch: &mut UiBatch, state: &LauncherState, rect: UiRect) {
         label_y,
         TEXT_LARGE,
         INK_STAMP,
-        "Bajar al turno",
+        if state.start_mode.is_story() {
+            "Empezar la expedición"
+        } else {
+            "Bajar al turno"
+        },
     );
 }
 

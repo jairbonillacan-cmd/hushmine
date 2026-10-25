@@ -102,7 +102,7 @@ impl LauncherState {
         Self {
             versions,
             version_idx: 0,
-            start_mode: StartMode::DirectMatch,
+            start_mode: StartMode::Story,
             bots: 4,
             seed_idx: 0,
             miner_idx: 0,
@@ -304,8 +304,15 @@ impl LauncherState {
     /// Filas (etiqueta, valor) de la página Opciones.
     pub fn option_rows(&self) -> [(String, String); 5] {
         [
-            ("Arranque".into(), self.start_mode.label().to_owned()),
-            ("Bots".into(), self.bots.to_string()),
+            ("Modo".into(), self.start_mode.label().to_owned()),
+            (
+                "Bots".into(),
+                if self.start_mode.is_story() {
+                    "Solo en Turno".to_owned()
+                } else {
+                    self.bots.to_string()
+                },
+            ),
             ("Semilla del mapa".into(), self.current_seed().to_string()),
             ("Perfil".into(), self.current_miner().to_owned()),
             (

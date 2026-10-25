@@ -16,6 +16,8 @@ pub const PREVIEW_ROWS: usize = 16;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Preview {
     pub seed: u64,
+    /// Terreno del modo Historia (otro generador) o del Turno.
+    pub story: bool,
     pub cols: usize,
     pub rows: usize,
     pub colors: Vec<Color>,
@@ -87,15 +89,10 @@ pub fn surface_mosaic(
             match top {
                 Some((y, id)) => {
                     heights[slot] = y;
-                    // La textura `i` pertenece al bloque `i + 1`.
-                    cells[slot] = if id >= 1 {
-                        block_colors
-                            .get(id as usize - 1)
-                            .copied()
-                            .unwrap_or([0.25, 0.25, 0.25, 1.0])
-                    } else {
-                        [0.25, 0.25, 0.25, 1.0]
-                    };
+                    cells[slot] = block_colors
+                        .get(texture_layer(id))
+                        .copied()
+                        .unwrap_or([0.25, 0.25, 0.25, 1.0]);
                 }
                 None => heights[slot] = -1,
             }
@@ -116,23 +113,42 @@ pub fn surface_mosaic(
     cells
 }
 
-/// Regenera la vista previa del estado si la semilla elegida cambió.
+/// Capa del array de texturas de un bloque (`hush_art::all_block_textures`):
+/// la `i` es del bloque `i + 1`, y los del modo Historia van después de los
+/// fotogramas extra de la lava.
+fn texture_layer(id: u8) -> usize {
+    const STORY_ID_MIN: u8 = 18;
+    if id >= STORY_ID_MIN {
+        hush_art::STORY_LAYER_BASE as usize + usize::from(id - STORY_ID_MIN)
+    } else {
+        usize::from(id.max(1) - 1)
+    }
+}
+
+/// Regenera la vista previa del estado si la semilla o el modo cambiaron.
 /// Los fallos de generación dejan la vista previa anterior tal cual.
 pub fn refresh(state: &mut LauncherState, textures: &[TextureData]) {
     let seed = state.current_seed();
+    let story = state.start_mode.is_story();
     if state
         .preview
         .as_ref()
-        .is_some_and(|p| p.seed == seed && p.cols == PREVIEW_COLS)
+        .is_some_and(|p| p.seed == seed && p.story == story && p.cols == PREVIEW_COLS)
     {
         return;
     }
-    let Ok(world) = generate_terrain(seed, &TerrainConfig::default()) else {
+    let generated = if story {
+        hush_sim::story::generate_terrain(seed, &Default::default()).map(|g| g.world)
+    } else {
+        generate_terrain(seed, &TerrainConfig::default())
+    };
+    let Ok(world) = generated else {
         return;
     };
     let colors = surface_mosaic(&world, &block_colors(textures), PREVIEW_COLS, PREVIEW_ROWS);
     state.preview = Some(Preview {
         seed,
+        story,
         cols: PREVIEW_COLS,
         rows: PREVIEW_ROWS,
         colors,

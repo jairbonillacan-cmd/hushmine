@@ -45,8 +45,10 @@ impl GameVersion {
 /// Modo en el que arranca el cliente al pulsar Jugar.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum StartMode {
-    /// Entra directamente en la mina con la semilla y los bots elegidos.
+    /// Modo Historia: una expedición de supervivencia con la semilla elegida.
     #[default]
+    Story,
+    /// Turno: entra directamente en la mina con la semilla y los bots elegidos.
     DirectMatch,
     /// Abre primero la Caseta del Vigía dentro del cliente.
     InGameMenu,
@@ -57,9 +59,10 @@ pub enum StartMode {
 impl StartMode {
     pub fn next(self) -> Self {
         match self {
+            Self::Story => Self::DirectMatch,
             Self::DirectMatch => Self::InGameMenu,
             Self::InGameMenu => Self::ConnectLocalLan,
-            Self::ConnectLocalLan => Self::DirectMatch,
+            Self::ConnectLocalLan => Self::Story,
         }
     }
 
@@ -69,24 +72,33 @@ impl StartMode {
             Self::DirectMatch => 0,
             Self::InGameMenu => 1,
             Self::ConnectLocalLan => 2,
+            // El último índice: los ajustes guardados antes siguen valiendo.
+            Self::Story => 3,
         }
     }
 
     /// Inverso de [`StartMode::index`]; los valores fuera de rango dan vueltas.
     pub fn from_index(idx: usize) -> Self {
-        match idx % 3 {
+        match idx % 4 {
             0 => Self::DirectMatch,
             1 => Self::InGameMenu,
-            _ => Self::ConnectLocalLan,
+            2 => Self::ConnectLocalLan,
+            _ => Self::Story,
         }
     }
 
     pub fn label(self) -> &'static str {
         match self {
-            Self::DirectMatch => "Partida directa",
-            Self::InGameMenu => "Menú del juego",
-            Self::ConnectLocalLan => "Conectar por LAN",
+            Self::Story => "Historia",
+            Self::DirectMatch => "Turno, partida directa",
+            Self::InGameMenu => "Turno, menú del juego",
+            Self::ConnectLocalLan => "Turno por LAN",
         }
+    }
+
+    /// ¿Es el modo Historia? Allí no hay bots ni red.
+    pub fn is_story(self) -> bool {
+        self == Self::Story
     }
 }
 
@@ -290,23 +302,37 @@ pub fn launch_game(
     }
 
     let mut cmd = Command::new(&version.binary_path);
-    cmd.current_dir(root)
-        .arg("--seed")
-        .arg(seed.to_string())
-        .arg("--bots")
-        .arg(bots.to_string())
-        .arg("--name")
-        .arg(miner_name);
-
-    if version.kind == VersionKind::LanHostAndClient || mode == StartMode::ConnectLocalLan {
-        cmd.arg("--connect").arg("127.0.0.1:47400");
-    } else if mode == StartMode::InGameMenu {
-        cmd.arg("--launcher");
+    for arg in game_args(&version.kind, mode, seed, bots, miner_name) {
+        cmd.arg(arg);
     }
-
+    cmd.current_dir(root);
     cmd.spawn()
         .map(|child| format!("Juego lanzado (PID {}): {}", child.id(), version.label))
         .map_err(|err| format!("No se pudo lanzar el juego: {err}"))
+}
+
+/// Argumentos del cliente, puros para poder probarlos. La versión LAN es
+/// siempre del Turno, aunque el modo elegido sea Historia.
+pub fn game_args(
+    kind: &VersionKind,
+    mode: StartMode,
+    seed: u64,
+    bots: u32,
+    miner_name: &str,
+) -> Vec<String> {
+    let mut args = vec!["--seed".to_owned(), seed.to_string()];
+    if mode.is_story() && *kind != VersionKind::LanHostAndClient {
+        args.push("--story".to_owned());
+        return args;
+    }
+    args.extend(["--bots".to_owned(), bots.to_string()]);
+    args.extend(["--name".to_owned(), miner_name.to_owned()]);
+    if *kind == VersionKind::LanHostAndClient || mode == StartMode::ConnectLocalLan {
+        args.extend(["--connect".to_owned(), "127.0.0.1:47400".to_owned()]);
+    } else if mode == StartMode::InGameMenu {
+        args.push("--launcher".to_owned());
+    }
+    args
 }
 #[cfg(test)]
 mod tests {
@@ -322,9 +348,30 @@ mod tests {
         assert_eq!(list[2].kind, VersionKind::LanHostAndClient);
 
         let m = StartMode::default();
-        assert_eq!(m.next(), StartMode::InGameMenu);
-        assert_eq!(m.next().next(), StartMode::ConnectLocalLan);
-        assert_eq!(m.next().next().next(), StartMode::DirectMatch);
+        assert_eq!(m, StartMode::Story);
+        assert_eq!(m.next(), StartMode::DirectMatch);
+        assert_eq!(m.next().next().next().next(), StartMode::Story);
+        for mode in [m, m.next(), m.next().next(), m.next().next().next()] {
+            assert_eq!(StartMode::from_index(mode.index()), mode);
+        }
+    }
+
+    #[test]
+    fn story_launches_without_bots_or_network() {
+        let story = game_args(&VersionKind::Release, StartMode::Story, 7, 4, "Ana");
+        assert_eq!(story, ["--seed", "7", "--story"]);
+        // La versión LAN siempre es Turno.
+        let lan = game_args(
+            &VersionKind::LanHostAndClient,
+            StartMode::Story,
+            7,
+            4,
+            "Ana",
+        );
+        assert!(lan.contains(&"--connect".to_owned()));
+        assert!(!lan.contains(&"--story".to_owned()));
+        let menu = game_args(&VersionKind::Debug, StartMode::InGameMenu, 7, 2, "Ana");
+        assert_eq!(menu.last().map(String::as_str), Some("--launcher"));
     }
 
     #[test]

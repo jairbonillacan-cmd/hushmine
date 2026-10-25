@@ -26,7 +26,7 @@ pub(super) fn launcher_scene(world: VoxelWorld, seed: u64) -> TerrainScene {
     state.select_page(page);
     // Fundido terminado para que cada captura salga igual.
     state.page_fade = hush_launcher::theme::FADE_TIME;
-    if let Ok(textures) = hush_art::block_textures() {
+    if let Ok(textures) = hush_art::all_block_textures() {
         hush_launcher::thumbnail::refresh(&mut state, &textures);
     }
     let mut ui = UiBatch::new();

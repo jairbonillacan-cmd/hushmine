@@ -9,7 +9,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use anyhow::Result;
 use grisu_platform::{App, Input, KeyCode, MouseButton};
 use grisu_render::{CubeRenderer, DepthTarget, Gpu, TextureData, UiBatch, UiRenderer};
-use hush_art::block_textures;
+use hush_art::all_block_textures;
 use hush_launcher::draw;
 use hush_launcher::history;
 use hush_launcher::layout::{HitSlot, Layout, layout};
@@ -57,7 +57,8 @@ impl LauncherApp {
         if let Some(values) = saved {
             values.apply(&mut state);
         }
-        let textures = block_textures().unwrap_or_default();
+        // Con las capas del modo Historia, para su miniatura.
+        let textures = all_block_textures().unwrap_or_default();
         if !textures.is_empty() {
             thumbnail::refresh(&mut state, &textures);
         }
