@@ -1,4 +1,5 @@
-// Catálogo maestro de los 29 bloques de HUSHMINE (Convención A: ids 0 a 27).
+// Catálogo maestro de los 29 bloques de HUSHMINE (Convención A: ids 0 a 28;
+// del 18 en adelante, solo el modo Historia, ADR 0010).
 // Todas las durezas están expresadas en ticks de simulación a 30 Hz.
 // Un valor de 0 en dureza indica que el bloque no se puede picar.
 // El equipo propietario (Copper o Cobalt) no forma parte del id: se almacena

@@ -30,6 +30,13 @@ EXPECTED_BLOCK_NAMES: list[str] = [
     "beacon", "explosive", "bucket_station", "bucket_post",
 ]
 
+# Bloques del modo Historia (ADR 0010): ids 18 en adelante. El Turno no los
+# usa, así que no entran en la coherencia con classes.ron.
+EXPECTED_STORY_BLOCK_NAMES: list[str] = [
+    "plank", "prop_beam", "torch", "workbench", "furnace", "chest",
+    "gravel", "water", "obsidian", "coal_ore", "log",
+]
+
 
 def _is_pure_int(value: Any) -> bool:
     """Devuelve True si el valor es un int de Python pero no un bool."""
@@ -95,14 +102,17 @@ class BalanceDataAndSimulationTest(unittest.TestCase):
 
     def test_03_blocks_convention_a_and_cross_class_coherence(self) -> None:
         """Verifica la Convención A en blocks.ron y la coherencia cruzada con classes.ron."""
-        blocks = self.data["blocks.ron"]["blocks"]
-        self.assertEqual(len(blocks), 18, "blocks.ron debe contener exactamente 18 bloques (0..17)")
-        self.assertEqual([b["id"] for b in blocks], list(range(18)), "Los ids deben ir de 0 a 17 en orden")
+        all_blocks = self.data["blocks.ron"]["blocks"]
+        total = len(EXPECTED_BLOCK_NAMES) + len(EXPECTED_STORY_BLOCK_NAMES)
+        self.assertEqual(len(all_blocks), total, f"blocks.ron debe contener {total} bloques")
+        self.assertEqual([b["id"] for b in all_blocks], list(range(total)), "Los ids deben ir en orden")
         self.assertEqual(
-            [b["name"] for b in blocks],
-            EXPECTED_BLOCK_NAMES,
-            "Los nombres de los 18 bloques no coinciden con la Convención A",
+            [b["name"] for b in all_blocks],
+            EXPECTED_BLOCK_NAMES + EXPECTED_STORY_BLOCK_NAMES,
+            "Los nombres de los bloques no coinciden con la Convención A",
         )
+        # La coherencia con las clases es del Turno: solo sus 18 bloques.
+        blocks = all_blocks[: len(EXPECTED_BLOCK_NAMES)]
 
         required_fields = {
             "id", "name", "hardness", "solid", "transmits_noise",
@@ -111,7 +121,8 @@ class BalanceDataAndSimulationTest(unittest.TestCase):
         class_keys = ("prospector", "miner", "engineer", "sapper")
         blocks_by_id: dict[int, dict[str, Any]] = {}
 
-        for block in blocks:
+        # Los campos se comprueban en todos, también en los del modo Historia.
+        for block in all_blocks:
             b_id = block["id"]
             self.assertEqual(set(block.keys()), required_fields, f"Campos incorrectos en el bloque id={b_id}")
             self.assertTrue(_is_pure_int(block["id"]), f"id debe ser int en bloque {b_id}")
