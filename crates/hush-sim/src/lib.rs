@@ -28,6 +28,7 @@ pub mod seismograph;
 mod sim;
 mod sim_seismo;
 mod sim_world;
+pub mod story;
 mod terrain;
 
 pub use altar::{Altar, AltarError};
@@ -38,11 +39,15 @@ pub use edit::{EditError, REACH, dig as try_dig, place as try_place};
 pub use events::{EventLog, MatchEvent, MatchEventKind, Team};
 pub use fixed::{Fixed, FixedError};
 pub use loot::{GridPos, LootBag, LootContents, LootError, LootPickup, LootStore};
-pub use player::{EYE_HEIGHT, HALF_WIDTH, HEIGHT, MoveInput, PlayerBody, spawn_point};
+pub use player::{
+    CROUCH_EYE_HEIGHT, CROUCH_PER_TICK, EYE_HEIGHT, HALF_WIDTH, HEIGHT, MoveInput, PlayerBody,
+    SPRINT_PER_TICK, WALK_PER_TICK, spawn_point,
+};
 pub use report::SimReport;
 pub use rng::Rng;
 pub use seismograph::{NoiseSource, SeismoEvent, SeismoThreshold, Seismograph};
 pub use sim::{BlockChange, Command, EditStats, MatchConfig, Rejection, Simulation, TICK_RATE};
+pub use story::{Expedition, ItemId, Milestone, STORY_TICK_RATE, StoryConfig, StoryOrder};
 pub use terrain::{TerrainConfig, generate as generate_terrain};
 
 /// Ejecuta una partida completa sin gráficos y devuelve el informe.

@@ -1,12 +1,15 @@
 //! Cliente de HUSHMINE.
 //!
-//! Sin argumentos juega en local: el servidor corre dentro del cliente con
-//! el mismo código de red. Con `--connect` se une a un `hush-server`.
+//! Sin argumentos abre el Launcher integrado sobre una partida local con bots;
+//! con argumentos (`--seed`, `--bots`, `--connect`) entra directo a la partida
+//! salvo que se pase `--launcher`.
 //!
-//! Uso: `hushmine [--seed N] [--bots N] [--connect HOST:PUERTO] [--name NOMBRE]`.
+//! Uso: `hushmine [--seed N] [--bots N] [--connect HOST:PUERTO] [--name NOMBRE] [--launcher]`.
 
 mod game;
 mod session;
+mod story;
+mod story_orders;
 
 use std::net::{SocketAddr, ToSocketAddrs};
 
@@ -18,13 +21,17 @@ struct Args {
     bots: u32,
     connect: Option<String>,
     name: String,
+    launcher: bool,
+    /// Modo historia: expedición local de supervivencia.
+    story: bool,
 }
 
-const USAGE: &str = "uso: hushmine [--seed N] [--bots N] [--connect HOST:PUERTO] [--name NOMBRE]";
+const USAGE: &str = "uso: hushmine [--seed N] [--bots N] [--connect HOST:PUERTO]                      [--name NOMBRE] [--launcher] [--story]";
 
 fn main() -> Result<()> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     let args = parse_args(std::env::args().skip(1))?;
+    let remote_session = args.connect.is_some();
     let session = match &args.connect {
         Some(target) => {
             let addr = resolve(target)?;
@@ -40,7 +47,22 @@ fn main() -> Result<()> {
             session::Session::local(args.seed, args.bots, &args.name)?
         }
     };
-    grisu_platform::run("HUSHMINE", game::Game::new(session))
+    if args.story {
+        log::info!("modo historia: expedición local con semilla {}", args.seed);
+        let config = hush_sim::story::StoryConfig {
+            seed: args.seed,
+            ..hush_sim::story::StoryConfig::default()
+        };
+        return grisu_platform::run("HUSHMINE", story::story_app(config)?);
+    }
+    let cfg = game::GameConfig {
+        seed: args.seed,
+        bots: args.bots,
+        name: args.name,
+        start_in_launcher: args.launcher,
+        remote_session,
+    };
+    grisu_platform::run("HUSHMINE", game::Game::new(session, cfg))
 }
 
 /// `host:puerto`, o solo `host` con el puerto por defecto.
@@ -57,16 +79,23 @@ fn resolve(target: &str) -> Result<SocketAddr> {
         .with_context(|| format!("no se encontró {target}"))
 }
 
-fn parse_args(mut args: impl Iterator<Item = String>) -> Result<Args> {
+fn parse_args(args: impl Iterator<Item = String>) -> Result<Args> {
+    let raw: Vec<String> = args.collect();
+    // Si se ejecuta sin argumentos (doble clic en el ejecutable), abrimos el
+    // Launcher integrado con 4 bots por defecto.
+    let no_args = raw.is_empty();
     let mut parsed = Args {
         seed: 42,
-        bots: 0,
+        bots: if no_args { 4 } else { 0 },
         connect: None,
         name: "minero".into(),
+        launcher: no_args,
+        story: false,
     };
-    while let Some(arg) = args.next() {
+    let mut iter = raw.into_iter();
+    while let Some(arg) = iter.next() {
         let mut value = || {
-            args.next()
+            iter.next()
                 .with_context(|| format!("falta el valor de {arg}\n{USAGE}"))
         };
         match arg.as_str() {
@@ -74,6 +103,8 @@ fn parse_args(mut args: impl Iterator<Item = String>) -> Result<Args> {
             "--bots" => parsed.bots = value()?.parse().context("número de bots inválido")?,
             "--connect" => parsed.connect = Some(value()?),
             "--name" => parsed.name = value()?,
+            "--launcher" => parsed.launcher = true,
+            "--story" => parsed.story = true,
             other => bail!("argumento desconocido: {other}\n{USAGE}"),
         }
     }
@@ -91,7 +122,7 @@ mod tests {
     #[test]
     fn parses_arguments() {
         let a = parse(&[]).unwrap();
-        assert_eq!((a.seed, a.bots, a.connect), (42, 0, None));
+        assert_eq!((a.seed, a.bots, a.connect, a.launcher), (42, 4, None, true));
         let a = parse(&[
             "--seed",
             "7",
@@ -107,6 +138,10 @@ mod tests {
         assert_eq!(a.bots, 3);
         assert_eq!(a.connect.as_deref(), Some("1.2.3.4"));
         assert_eq!(a.name, "Ana");
+        assert!(!a.launcher);
+        assert!(parse(&["--launcher"]).unwrap().launcher);
+        assert!(parse(&["--story", "--seed", "9"]).unwrap().story);
+        assert!(!parse(&["--seed", "9"]).unwrap().story);
         assert!(parse(&["--seed", "x"]).is_err());
         assert!(parse(&["--seed"]).is_err());
         assert!(parse(&["--fast"]).is_err());

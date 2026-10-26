@@ -40,6 +40,41 @@ fn anchor_f64(anchor: [i32; 3]) -> DVec3 {
     )
 }
 
+/// Modo de cámara del jugador (ver `docs/graficos/01-camaras.md`).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum CameraMode {
+    /// Desde los ojos del minero (por defecto).
+    #[default]
+    FirstPerson,
+    /// Detrás del hombro, mirando hacia donde apunta el minero.
+    ThirdPersonBack,
+    /// Delante del minero, mirándolo de frente.
+    ThirdPersonFront,
+}
+
+impl CameraMode {
+    /// Pasa al siguiente modo de cámara en ciclo.
+    pub fn next(self) -> Self {
+        match self {
+            Self::FirstPerson => Self::ThirdPersonBack,
+            Self::ThirdPersonBack => Self::ThirdPersonFront,
+            Self::ThirdPersonFront => Self::FirstPerson,
+        }
+    }
+
+    pub fn is_third_person(self) -> bool {
+        !matches!(self, Self::FirstPerson)
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::FirstPerson => "Primera persona",
+            Self::ThirdPersonBack => "Desde atrás",
+            Self::ThirdPersonFront => "Desde delante",
+        }
+    }
+}
+
 /// Cámara que orbita alrededor de un punto. Sirve para las capturas desde
 /// fuera del mapa, cerca del origen.
 #[derive(Clone, Copy, Debug)]
@@ -152,6 +187,43 @@ impl FlyCamera {
             anchor,
         }
     }
+
+    /// Dirección unitaria desde los ojos del minero hacia el brazo de cámara
+    /// en tercera persona (`front = false` detrás, `front = true` delante).
+    pub fn third_person_arm_dir(&self, front: bool) -> Vec3 {
+        let base = if front {
+            self.forward()
+        } else {
+            -self.forward()
+        };
+        (base + Vec3::Y * 0.14).normalize_or_zero()
+    }
+
+    /// Vista en tercera persona con el brazo a `distance` bloques (ya
+    /// recortado contra el terreno). Por debajo de 0,45 bloques cae a
+    /// primera persona. Como `view`, es relativa al bloque del ojo.
+    pub fn third_person_view(&self, aspect: f32, distance: f32, front: bool) -> View {
+        if distance < 0.45 {
+            return self.view(aspect);
+        }
+        let arm = self.third_person_arm_dir(front).as_dvec3() * f64::from(distance);
+        let eye_world = self.position + arm;
+        let target_world = if front {
+            self.position - DVec3::Y * 0.35
+        } else {
+            self.position + self.forward().as_dvec3() * 8.0
+        };
+        let floor = eye_world.floor();
+        let anchor = [floor.x as i32, floor.y as i32, floor.z as i32];
+        let eye = (eye_world - floor).as_vec3();
+        let target = (target_world - floor).as_vec3();
+        let view = rh::view::look_at_mat4(eye, target, Vec3::Y);
+        View {
+            view_proj: perspective(self.fov_y, aspect) * view,
+            eye,
+            anchor,
+        }
+    }
 }
 
 fn perspective(fov_y: f32, aspect: f32) -> Mat4 {
@@ -211,5 +283,32 @@ mod tests {
         // Y un punto del mundo cae en el mismo sitio relativo.
         let p = DVec3::new(5.5, 1.0, -8.25);
         assert_eq!(a.relative(p), b.relative(p + offset));
+    }
+
+    #[test]
+    fn third_person_camera_cycles_and_offsets_eye() {
+        let mode = CameraMode::default();
+        assert_eq!(mode, CameraMode::FirstPerson);
+        assert_eq!(mode.next(), CameraMode::ThirdPersonBack);
+        assert_eq!(mode.next().next(), CameraMode::ThirdPersonFront);
+        assert_eq!(mode.next().next().next(), CameraMode::FirstPerson);
+
+        for base in [
+            DVec3::new(10.5, 20.5, 10.5),
+            DVec3::new(-7_499_800.5, 600.5, 7_499_800.5),
+        ] {
+            let cam = FlyCamera {
+                position: base,
+                ..FlyCamera::default()
+            };
+            let world_eye = |v: View| v.eye.as_dvec3() + anchor_f64(v.anchor);
+            // Con yaw = 0 la cámara mira hacia -Z: detrás es +Z y delante es -Z.
+            let back = world_eye(cam.third_person_view(16.0 / 9.0, 3.5, false));
+            assert!(back.z > cam.position.z + 3.0, "{base}: {back}");
+            let front = world_eye(cam.third_person_view(16.0 / 9.0, 3.5, true));
+            assert!(front.z < cam.position.z - 3.0, "{base}: {front}");
+            let cramped = world_eye(cam.third_person_view(16.0 / 9.0, 0.2, false));
+            assert!((cramped - cam.position).length() < 1e-6);
+        }
     }
 }

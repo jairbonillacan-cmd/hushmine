@@ -4,7 +4,7 @@
 use anyhow::Result;
 use clap::ValueEnum;
 use glam::{DVec3, Vec3};
-use grisu_render::{ColorBox, FlyCamera, OrbitCamera, TerrainStyle, View};
+use grisu_render::{ColorBox, FlyCamera, OrbitCamera, TerrainStyle, UiBatch, View};
 use grisu_voxel::{
     AIR, ChunkPos, ChunkedVoxels, FIXED_ONE, SparseWorld, VoxelWorld, VoxelsMut, raycast,
 };
@@ -30,12 +30,29 @@ pub enum Scene {
     /// del origen, en un `SparseWorld`, para revisar a ojo que el render
     /// relativo no tiembla.
     Frontier,
+    /// Cámara en tercera persona detrás del minero, con su lámpara.
+    ThirdPerson,
+    /// Menú de pausa del juego, dibujado con el mismo código que el cliente.
+    Menu,
+    /// Muestra de la fuente de la interfaz (mayúsculas, minúsculas, tildes,
+    /// cifras) a varios tamaños, para revisar el texto de menús y HUD.
+    Type,
+    /// Lanzador completo (el mismo dibujo que la ventana real).
+    Launcher,
+    /// Mundo del modo historia al atardecer: estratos, antorcha y pozo.
+    Story,
+    /// HUD del modo Historia sobre la expedición, dibujado con el mismo
+    /// código que el juego. La semilla elige la capa: 2 fabricar, 3 pausa,
+    /// 4 telemetría F3, 5 muerte; cualquier otra, el HUD en partida.
+    StoryHud,
 }
 
 /// Mundo de una escena: finito (el mapa del Turno) o abierto ([`SparseWorld`]).
 pub enum SceneWorld {
     Finite(VoxelWorld),
     Sparse(SparseWorld),
+    /// Mundo finito del modo Historia, que se dibuja con luz doble.
+    Story(VoxelWorld),
 }
 
 impl SceneWorld {
@@ -43,16 +60,24 @@ impl SceneWorld {
     /// Mutable: el renderer consume los chunks sucios.
     pub fn as_chunked_mut(&mut self) -> &mut dyn ChunkedVoxels {
         match self {
-            Self::Finite(world) => world,
+            Self::Finite(world) | Self::Story(world) => world,
             Self::Sparse(world) => world,
         }
     }
 
-    /// El mundo finito, si lo hay: solo él tiene mapa de luz.
+    /// El mundo finito con luz de un canal, si lo hay.
     pub fn as_finite(&self) -> Option<&VoxelWorld> {
         match self {
             Self::Finite(world) => Some(world),
-            Self::Sparse(_) => None,
+            Self::Sparse(_) | Self::Story(_) => None,
+        }
+    }
+
+    /// El mundo del modo Historia, que lleva luz doble.
+    pub fn as_story(&self) -> Option<&VoxelWorld> {
+        match self {
+            Self::Story(world) => Some(world),
+            _ => None,
         }
     }
 }
@@ -64,11 +89,14 @@ pub struct TerrainScene {
     pub style: TerrainStyle,
     /// Entidades (otros jugadores) que se dibujan sobre el terreno.
     pub boxes: Vec<ColorBox>,
+    /// Interfaz 2D opcional para verificar el menú y el HUD.
+    pub ui: UiBatch,
 }
 
 enum Camera {
     Orbit(OrbitCamera),
     Fly(FlyCamera),
+    ThirdPerson { cam: FlyCamera, distance: f32 },
 }
 
 impl TerrainScene {
@@ -76,6 +104,9 @@ impl TerrainScene {
         match &self.camera {
             Camera::Orbit(c) => c.view(aspect),
             Camera::Fly(c) => c.view(aspect),
+            Camera::ThirdPerson { cam, distance } => {
+                cam.third_person_view(aspect, *distance, false)
+            }
         }
     }
 }
@@ -100,11 +131,13 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
                 fov_y: 50f32.to_radians(),
             }),
             boxes: Vec::new(),
+            ui: UiBatch::new(),
             style: TerrainStyle {
                 fog_distance: 400.0,
                 selected: None,
                 lamp_radius: 0.0,
                 time_seconds: 0.0,
+                ..TerrainStyle::default()
             },
         },
         Scene::Tunnel => {
@@ -119,16 +152,24 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
                     ..FlyCamera::default()
                 }),
                 boxes: Vec::new(),
+                ui: UiBatch::new(),
                 style: TerrainStyle {
                     fog_distance: 40.0,
                     selected: Some([14, 29, 33]),
                     lamp_radius: 14.0,
                     time_seconds: 0.0,
+                    ..TerrainStyle::default()
                 },
             }
         }
         Scene::Dig => dig_scene(seed)?,
         Scene::Players => players_scene(world),
+        Scene::ThirdPerson => third_person_scene(world),
+        Scene::Menu => menu_scene(world, seed),
+        Scene::Launcher => launcher_scene(world, seed),
+        Scene::Type => type_scene(world),
+        Scene::Story => return story_scene(seed),
+        Scene::StoryHud => return story_hud_scene(seed),
         Scene::Shaft => {
             carve_shaft(&mut world);
             TerrainScene {
@@ -140,11 +181,13 @@ pub fn build(scene: Scene, seed: u64) -> Result<Option<TerrainScene>> {
                     ..FlyCamera::default()
                 }),
                 boxes: Vec::new(),
+                ui: UiBatch::new(),
                 style: TerrainStyle {
                     fog_distance: 70.0,
                     selected: None,
                     lamp_radius: 14.0,
                     time_seconds: 0.0,
+                    ..TerrainStyle::default()
                 },
             }
         }
@@ -236,11 +279,11 @@ fn dig_scene(seed: u64) -> Result<TerrainScene> {
             ..FlyCamera::default()
         }),
         boxes: Vec::new(),
+        ui: UiBatch::new(),
         style: TerrainStyle {
             fog_distance: 40.0,
             selected,
-            lamp_radius: 14.0,
-            time_seconds: 0.0,
+            ..TerrainStyle::default()
         },
     })
 }
@@ -277,81 +320,47 @@ fn players_scene(world: VoxelWorld) -> TerrainScene {
         }),
         world: SceneWorld::Finite(world),
         boxes,
+        ui: UiBatch::new(),
         style: TerrainStyle {
             fog_distance: 56.0,
-            selected: None,
-            lamp_radius: 14.0,
-            time_seconds: 0.0,
+            ..TerrainStyle::default()
         },
     }
 }
 
-/// El «Hito de la Frontera»: una pirámide con obelisco, pilares y vetas de
-/// color sobre una losa, a 7,5 millones de bloques del origen. Un `f32` ahí
-/// solo distingue bloques enteros; con el render relativo al anchor la
-/// escena debe verse idéntica a como se vería junto al origen.
-fn frontier_scene() -> TerrainScene {
-    /// Esquina del mundo grande donde se apoya la escena (Q47.16 alcanza de
-    /// sobra: ±7,5 M bloques con 16 bits de fracción).
-    const BASE: [i32; 3] = [7_499_800, 0, -7_499_800];
-    let mut world = SparseWorld::new();
-    let at = |dx: i32, dy: i32, dz: i32| [BASE[0] + dx, BASE[1] + dy, BASE[2] + dz];
-    // Losa de roca dura de 25×25, un bloque de grueso.
-    world.fill(at(-12, -1, -12), at(12, -1, 12), BlockKind::HardRock.id());
-    // Pirámide de tres escalones con un obelisco coronado en oro.
-    world.fill(at(-4, 0, -4), at(4, 0, 4), BlockKind::Rock.id());
-    world.fill(at(-3, 1, -3), at(3, 1, 3), BlockKind::Rock.id());
-    world.fill(at(-2, 2, -2), at(2, 2, 2), BlockKind::Rock.id());
-    world.fill(at(0, 3, 0), at(0, 9, 0), BlockKind::Rock.id());
-    world.fill(at(0, 10, 0), at(0, 10, 0), BlockKind::Gold.id());
-    // Cuatro pilares de mena en las esquinas de la losa.
-    for [sx, sz] in [[-9, -9], [9, -9], [-9, 9], [9, 9]] {
-        world.fill(at(sx, 0, sz), at(sx, 3, sz), BlockKind::Ore.id());
-    }
-    // Franjas de diamante y oro para ver las texturas de lejos.
-    world.fill(at(-10, 0, -2), at(-8, 0, 2), BlockKind::Diamond.id());
-    world.fill(at(8, 0, -2), at(10, 0, 2), BlockKind::Gold.id());
-    // Los chunks quedan cargados y marcados como sucios por `set`/`fill`.
-    assert!(world.has_dirty_chunks());
-    assert!(world.is_loaded(ChunkPos::containing(BASE)));
-    let base = DVec3::new(f64::from(BASE[0]), f64::from(BASE[1]), f64::from(BASE[2]));
-    TerrainScene {
-        world: SceneWorld::Sparse(world),
-        camera: Camera::Fly(FlyCamera {
-            // Desde una esquina, mirando al obelisco en diagonal (+X, +Z).
-            position: base + DVec3::new(-11.5, 6.5, -11.5),
-            yaw: -3.0 * std::f32::consts::FRAC_PI_4,
+/// Cámara en tercera persona detrás de un minero que mira a otros dos.
+fn third_person_scene(world: VoxelWorld) -> TerrainScene {
+    let feet = hush_sim::spawn_point(&world, 33, 30);
+    let my_feet = DVec3::new(33.5, feet[1] as f64 / FIXED_ONE as f64, 30.5);
+    let eye = my_feet + DVec3::new(0.0, 1.55, 0.0);
+    let mut base = players_scene(world);
+    base.boxes.push(ColorBox {
+        min: my_feet - DVec3::new(0.3, 0.0, 0.3),
+        size: Vec3::new(0.6, 1.7, 0.6),
+        color: [0.80, 0.38, 0.14],
+    });
+    base.boxes.push(ColorBox {
+        min: eye + DVec3::new(0.0, 0.0, -0.27) - DVec3::splat(0.12),
+        size: Vec3::splat(0.24),
+        color: [0.98, 0.88, 0.45],
+    });
+    base.camera = Camera::ThirdPerson {
+        cam: FlyCamera {
+            position: eye,
             pitch: -14f32.to_radians(),
             ..FlyCamera::default()
-        }),
-        boxes: Vec::new(),
-        style: TerrainStyle {
-            fog_distance: 90.0,
-            selected: Some(at(0, 10, 0)),
-            lamp_radius: 0.0,
-            time_seconds: 0.0,
         },
-    }
+        distance: 3.2,
+    };
+    base
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn frontier_structure_is_far_from_the_origin_and_loaded() {
-        let scene = frontier_scene();
-        let SceneWorld::Sparse(world) = &scene.world else {
-            unreachable!("la frontera es un SparseWorld");
-        };
-        assert!(!world.is_empty());
-        // La cámara está a millones de bloques del origen.
-        let Camera::Fly(camera) = &scene.camera else {
-            unreachable!();
-        };
-        assert!(camera.position.x.abs() > 7.0e6);
-        assert!(camera.position.z.abs() > 7.0e6);
-        // Y el bloque señalado es el remate del obelisco.
-        assert_eq!(scene.style.selected, Some([7_499_800, 10, -7_499_800]));
-    }
-}
+#[path = "scenes_ui.rs"]
+mod ui;
+use ui::{launcher_scene, menu_scene, type_scene};
+#[path = "scenes_frontier.rs"]
+mod frontier;
+use frontier::frontier_scene;
+#[path = "scenes_story.rs"]
+mod story;
+use story::{story_hud_scene, story_scene};

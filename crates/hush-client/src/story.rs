@@ -1,0 +1,311 @@
+//! Modo historia del cliente: expedición local a 20 Hz con ciclo diurno,
+//! fisiología, inventario y telemetría F3.
+//!
+//! Controles (los mismos reasignables que el modo Turno, en
+//! `out/controls.cfg`): clic captura el ratón; WASD anda; MAYÚS corre; CTRL
+//! se agacha (despacio, en silencio y sin caerse por los bordes); ESPACIO
+//! salta; clic izquierdo pica (mantener); clic derecho pone
+//! el bloque empuñado; E interactúa (banco, horno, arcón, válvulas,
+//! engranajes, motor); F fabrica (menú compacto); R come; 1-9 elige casilla
+//! de la barra; F3 abre la telemetría; ESC suelta el ratón o cierra.
+
+use glam::{DVec3, Vec3};
+use grisu_platform::{App, Input, KeyCode, MouseButton};
+use grisu_render::{
+    BoxRenderer, CameraMode, ColorBox, CrosshairRenderer, DepthTarget, FlyCamera, Gpu, MeshStats,
+    TerrainStyle, UiBatch, UiRenderer, VoxelRenderer,
+};
+use grisu_voxel::{DualLightMap, FIXED_ONE, RayHit, raycast};
+use hush_sim::MoveInput;
+use hush_sim::story::{Expedition, STORY_TICK_RATE, StoryConfig, StoryOrder};
+
+use hush_client::controls::Controls;
+
+use hush_client::story_hud;
+use hush_client::story_view::{FpsTracker, HudView};
+
+use crate::story_orders::{CraftMenu, move_input_from_camera};
+
+#[path = "story_input.rs"]
+mod input;
+
+const AIM_REACH: f64 = 5.0;
+const MAX_TICKS_PER_FRAME: u32 = 5;
+const TICK_SECONDS: f32 = 1.0 / STORY_TICK_RATE as f32;
+const FOG_DISTANCE: f32 = 56.0;
+const MOB_COLORS: [[f32; 3]; 4] = [
+    [0.75, 0.20, 0.15],
+    [0.85, 0.55, 0.15],
+    [0.80, 0.80, 0.70],
+    [0.45, 0.60, 0.20],
+];
+
+pub struct StoryApp {
+    expedition: Expedition,
+    controls: Controls,
+    camera: FlyCamera,
+    camera_mode: CameraMode,
+    exit_requested: bool,
+    paused: bool,
+    f3_open: bool,
+    accumulator: f32,
+    elapsed: f32,
+    eye: DVec3,
+    prev_eye: DVec3,
+    target: Option<RayHit>,
+    held_to_dig: bool,
+    craft: CraftMenu,
+    fps: FpsTracker,
+    banner: Option<(&'static str, f32)>,
+    terrain: Option<VoxelRenderer>,
+    /// Luz doble (cielo y emisores) del mundo de la expedición; la calcula el
+    /// juego y el renderer solo la empaqueta en las caras.
+    light: Option<DualLightMap>,
+    boxes: Option<BoxRenderer>,
+    crosshair: Option<CrosshairRenderer>,
+    ui: Option<UiRenderer>,
+    ui_batch: UiBatch,
+    last_mesh: MeshStats,
+}
+
+impl StoryApp {
+    pub fn new(config: StoryConfig) -> anyhow::Result<Self> {
+        Ok(Self {
+            expedition: Expedition::new(config)?,
+            controls: Controls::load_or_default(),
+            camera: FlyCamera::default(),
+            camera_mode: CameraMode::FirstPerson,
+            exit_requested: false,
+            paused: false,
+            f3_open: false,
+            accumulator: 0.0,
+            elapsed: 0.0,
+            eye: DVec3::ZERO,
+            prev_eye: DVec3::ZERO,
+            target: None,
+            held_to_dig: false,
+            craft: CraftMenu::default(),
+            fps: FpsTracker::default(),
+            banner: None,
+            terrain: None,
+            light: None,
+            boxes: None,
+            crosshair: None,
+            ui: None,
+            ui_batch: UiBatch::new(),
+            last_mesh: MeshStats::default(),
+        })
+    }
+
+    fn eye_from_body(&self) -> DVec3 {
+        fixed_to_world(self.expedition.body().eye())
+    }
+
+    fn mob_boxes(&self) -> Vec<ColorBox> {
+        self.expedition
+            .mobs()
+            .list
+            .iter()
+            .map(|mob| {
+                let color = MOB_COLORS[mob.kind as usize % MOB_COLORS.len()];
+                ColorBox {
+                    min: DVec3::new(
+                        f64::from(mob.cell[0]),
+                        f64::from(mob.cell[1]),
+                        f64::from(mob.cell[2]),
+                    ),
+                    size: Vec3::new(0.7, 1.6, 0.7),
+                    color,
+                }
+            })
+            .collect()
+    }
+
+    fn fog_color(&self) -> [f32; 3] {
+        let factor = self.expedition.clock().sky_factor_q8() as f32 / 256.0;
+        // De noche la niebla se oscurece hacia el azul profundo.
+        [
+            0.04 + 0.07 * factor,
+            0.05 + 0.09 * factor,
+            0.08 + 0.11 * factor,
+        ]
+    }
+}
+
+impl App for StoryApp {
+    fn init(&mut self, gpu: &Gpu, surface_format: wgpu::TextureFormat) {
+        let spawn = self.expedition.body().feet;
+        self.eye = fixed_to_world(spawn);
+        self.prev_eye = self.eye;
+        self.camera.position = self.eye;
+
+        let terrain = hush_art::all_block_textures()
+            .map_err(anyhow::Error::from)
+            .and_then(|t| VoxelRenderer::new(&gpu.device, &gpu.queue, surface_format, &t));
+        match terrain {
+            Ok(terrain) => self.terrain = Some(terrain),
+            Err(err) => log::error!("error al crear el renderizador de terreno: {err:#}"),
+        }
+        self.boxes = Some(BoxRenderer::new(&gpu.device, surface_format));
+        self.crosshair = Some(CrosshairRenderer::new(&gpu.device, surface_format));
+        self.ui = Some(UiRenderer::new(&gpu.device, surface_format));
+    }
+
+    fn update(&mut self, dt: f32, input: &Input) {
+        self.elapsed += dt;
+        self.fps.frame(dt);
+        if let Some((_, ttl)) = &mut self.banner {
+            *ttl -= dt;
+            if *ttl <= 0.0 {
+                self.banner = None;
+            }
+        }
+
+        // Muerto, la expedición ha terminado: Escape cierra el juego.
+        if self.expedition.is_dead() && input.was_pressed(KeyCode::Escape) {
+            self.exit_requested = true;
+        }
+        // En pausa, Q sale del juego (antes solo se podía cerrar la ventana).
+        if self.paused && input.was_pressed(KeyCode::KeyQ) {
+            self.exit_requested = true;
+        }
+        if input.was_pressed(KeyCode::Escape) {
+            if self.paused || self.craft.is_open() {
+                self.craft.close();
+                self.paused = false;
+            } else {
+                self.paused = true;
+            }
+        }
+        if input.was_pressed(KeyCode::F3) {
+            self.f3_open = !self.f3_open;
+        }
+        if input.was_pressed(KeyCode::F5) {
+            self.camera_mode = self.camera_mode.next();
+        }
+        self.craft.update(input);
+
+        let ui_capture = self.paused || self.craft.is_open();
+        if !ui_capture {
+            let (dx, dy) = input.mouse_delta();
+            self.camera.rotate(-dx * 0.0022, -dy * 0.0022);
+            self.held_to_dig = input.is_button_held(MouseButton::Left);
+        } else {
+            self.held_to_dig = false;
+        }
+
+        let orders = self.tick_orders(input);
+        self.step_simulation(dt, orders);
+        self.consume_events();
+
+        let alpha = (self.accumulator / TICK_SECONDS).clamp(0.0, 1.0);
+        self.camera.position = self.prev_eye.lerp(self.eye, f64::from(alpha));
+        if ui_capture {
+            self.target = None;
+        } else {
+            self.target = raycast(
+                self.expedition.world(),
+                self.camera.position.to_array(),
+                self.camera.forward().as_dvec3().to_array(),
+                AIM_REACH,
+            );
+        }
+    }
+
+    fn render(
+        &mut self,
+        gpu: &Gpu,
+        encoder: &mut wgpu::CommandEncoder,
+        color: &wgpu::TextureView,
+        depth: &DepthTarget,
+    ) {
+        let view = match self.camera_mode {
+            CameraMode::FirstPerson => self.camera.view(depth.width as f32 / depth.height as f32),
+            CameraMode::ThirdPersonBack | CameraMode::ThirdPersonFront => {
+                self.camera.third_person_view(
+                    depth.width as f32 / depth.height as f32,
+                    3.5,
+                    self.camera_mode == CameraMode::ThirdPersonFront,
+                )
+            }
+        };
+        let style = TerrainStyle {
+            fog_distance: FOG_DISTANCE,
+            fog_color: self.fog_color(),
+            selected: self.target.map(|hit| hit.block),
+            lamp_radius: 0.0,
+            time_seconds: self.elapsed,
+            daylight: self.expedition.clock().sky_factor_q8() as f32 / 256.0,
+        };
+        let mobs = self.mob_boxes();
+        let Some(terrain) = self.terrain.as_mut() else {
+            return;
+        };
+        let world = self.expedition.world_mut();
+        let light = match self.light.as_mut() {
+            Some(light) => {
+                if world.has_dirty() {
+                    light.update(world);
+                }
+                light
+            }
+            None => {
+                world.mark_all_dirty();
+                self.light
+                    .insert(DualLightMap::new(world, hush_art::emission_table()))
+            }
+        };
+        self.last_mesh = terrain.update_dual(&gpu.device, world, Some(light));
+        terrain.render(&gpu.queue, encoder, color, depth, &view, &style);
+        if let Some(boxes) = self.boxes.as_mut() {
+            boxes.render(
+                &gpu.device,
+                &gpu.queue,
+                encoder,
+                color,
+                depth,
+                &view,
+                FOG_DISTANCE,
+                &mobs,
+            );
+        }
+        if !self.paused
+            && !self.craft.is_open()
+            && let Some(crosshair) = &self.crosshair
+        {
+            crosshair.render(&gpu.queue, encoder, color, depth.width, depth.height);
+        }
+        let size = [depth.width, depth.height];
+        // El HUD se dibuja desde una vista con datos propios: así el lote y
+        // el renderizador no compiten por `self`.
+        let view = self.hud_view();
+        let mut batch = std::mem::take(&mut self.ui_batch);
+        batch.clear();
+        story_hud::draw(&mut batch, size, &view);
+        if let Some(ui) = self.ui.as_mut() {
+            ui.render(&gpu.device, &gpu.queue, encoder, color, size, &batch);
+        }
+        self.ui_batch = batch;
+    }
+
+    fn wants_cursor_grab(&self) -> bool {
+        !self.paused && !self.craft.is_open()
+    }
+
+    fn should_exit(&self) -> bool {
+        self.exit_requested
+    }
+}
+
+/// Posición en punto fijo (Q47.16) a coordenadas del mundo.
+fn fixed_to_world(p: [i64; 3]) -> DVec3 {
+    DVec3::from_array(p.map(|c| c as f64 / FIXED_ONE as f64))
+}
+
+/// Constructor desde la configuración para `main.rs`.
+pub fn story_app(config: StoryConfig) -> anyhow::Result<StoryApp> {
+    StoryApp::new(config)
+}
+
+#[path = "story_access.rs"]
+mod access;

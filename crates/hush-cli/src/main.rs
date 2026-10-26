@@ -7,6 +7,7 @@ mod bench;
 mod netsim;
 mod noise;
 mod scenes;
+mod story_cmd;
 mod world_args;
 mod world_bench;
 mod world_chunk;
@@ -18,10 +19,10 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use grisu_render::{
-    BoxRenderer, Gpu, OFFSCREEN_FORMAT, OrbitCamera, TextureData, VoxelRenderer, capture,
-    render_to_image,
+    BoxRenderer, Gpu, OFFSCREEN_FORMAT, OrbitCamera, TextureData, UiRenderer, VoxelRenderer,
+    capture, render_to_image,
 };
-use grisu_voxel::LightMap;
+use grisu_voxel::{DualLightMap, LightMap};
 use hush_sim::MatchConfig;
 use scenes::Scene;
 use world_args::WorldAction;
@@ -131,6 +132,30 @@ enum Command {
         #[command(subcommand)]
         action: WorldAction,
     },
+    /// Corre una expedición del modo historia sin gráficos y escribe un
+    /// informe JSON (hitos, fisiología, enemigos, eventos).
+    Story {
+        #[arg(long, default_value_t = 42)]
+        seed: u64,
+        /// Ticks a simular (20 por segundo).
+        #[arg(long, default_value_t = 6_000)]
+        ticks: u32,
+        /// Sin enemigos (modo tranquilo).
+        #[arg(long, default_value_t = false)]
+        peaceful: bool,
+        /// Ruta del informe JSON. Si se omite, se imprime en pantalla.
+        #[arg(long)]
+        report: Option<PathBuf>,
+    },
+    /// Guarda el mundo de historia en una región `.hush` y la recarga para
+    /// verificar que la huella no cambia.
+    Region {
+        #[arg(long, default_value_t = 42)]
+        seed: u64,
+        /// Ruta del archivo `.hush`.
+        #[arg(long, default_value = "out/region.hush")]
+        out: PathBuf,
+    },
 }
 
 fn main() -> Result<()> {
@@ -190,6 +215,13 @@ fn main() -> Result<()> {
         ),
         Command::Gpu => gpu_info(),
         Command::World { action } => world_args::run(action),
+        Command::Story {
+            seed,
+            ticks,
+            peaceful,
+            report,
+        } => story_cmd::story(seed, ticks, peaceful, report.as_deref()),
+        Command::Region { seed, out } => story_cmd::region(seed, &out),
     }
 }
 
@@ -211,7 +243,8 @@ fn shot(scene: Scene, seed: u64, out: &Path, size: [u32; 2], yaw: f32, pitch: f3
         }
         Some(mut scene) => {
             scene.style.time_seconds = SHOT_TIME_SECONDS;
-            let textures = hush_art::block_textures()?;
+            // Con las capas de los bloques del modo Historia al final.
+            let textures = hush_art::all_block_textures()?;
             let mut terrain =
                 VoxelRenderer::new(&gpu.device, &gpu.queue, OFFSCREEN_FORMAT, &textures)?;
             // La luz se calcula fuera del renderer; los mundos abiertos
@@ -220,13 +253,23 @@ fn shot(scene: Scene, seed: u64, out: &Path, size: [u32; 2], yaw: f32, pitch: f3
                 .world
                 .as_finite()
                 .map(|world| LightMap::new(world, hush_art::emission_table()));
-            let stats = terrain.update(&gpu.device, scene.world.as_chunked_mut(), light.as_ref());
+            let dual = scene
+                .world
+                .as_story()
+                .map(|world| DualLightMap::new(world, hush_art::emission_table()));
+            let stats = match dual.as_ref() {
+                Some(dual) => {
+                    terrain.update_dual(&gpu.device, scene.world.as_chunked_mut(), Some(dual))
+                }
+                None => terrain.update(&gpu.device, scene.world.as_chunked_mut(), light.as_ref()),
+            };
             println!(
                 "{} chunks, {} caras, mallas en {:.1} ms",
                 stats.chunks_meshed, stats.faces, stats.millis
             );
             let view = scene.view(width as f32 / height as f32);
             let mut boxes = BoxRenderer::new(&gpu.device, OFFSCREEN_FORMAT);
+            let mut ui = UiRenderer::new(&gpu.device, OFFSCREEN_FORMAT);
             capture(&gpu, width, height, |encoder, color, depth| {
                 terrain.render(&gpu.queue, encoder, color, depth, &view, &scene.style);
                 let fog = scene.style.fog_distance;
@@ -239,6 +282,14 @@ fn shot(scene: Scene, seed: u64, out: &Path, size: [u32; 2], yaw: f32, pitch: f3
                     &view,
                     fog,
                     &scene.boxes,
+                );
+                ui.render(
+                    &gpu.device,
+                    &gpu.queue,
+                    encoder,
+                    color,
+                    [width, height],
+                    &scene.ui,
                 );
             })?
         }
@@ -298,49 +349,5 @@ pub(crate) fn create_parent_dir(path: &Path) -> Result<()> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::world_chunk::{parse_chunk, sha256_hex};
-    use super::world_img::{MapLayer, SliceAxis, parse_pair, render_map, render_slice};
-
-    #[test]
-    fn parse_pair_accepts_two_i32_and_rejects_more() {
-        assert_eq!(parse_pair("0,0"), Some((0, 0)));
-        assert_eq!(parse_pair("-468750,468749"), Some((-468750, 468749)));
-        assert_eq!(parse_pair("1,2,3"), None);
-    }
-
-    #[test]
-    fn parse_chunk_accepts_three_i32_and_rejects_two() {
-        assert_eq!(
-            parse_chunk("-468750,-1,468749"),
-            Some((-468750, -1, 468749))
-        );
-        assert_eq!(parse_chunk("1,2"), None);
-    }
-
-    #[test]
-    fn sha256_hex_matches_fips_vector() {
-        let hex = sha256_hex(b"abc");
-        assert_eq!(hex.len(), 64);
-        assert_eq!(
-            hex,
-            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
-        );
-    }
-
-    #[test]
-    fn render_map_returns_size_by_size() {
-        assert_eq!(
-            render_map(42, (0, 0), 8, MapLayer::Height).dimensions(),
-            (8, 8)
-        );
-    }
-
-    #[test]
-    fn render_slice_dimensions_match_range() {
-        assert_eq!(
-            render_slice(42, SliceAxis::X, 0, (0, 0), (15, 8)).dimensions(),
-            (16, 9)
-        );
-    }
-}
+#[path = "main_tests.rs"]
+mod tests;

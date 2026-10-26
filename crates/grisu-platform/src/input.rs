@@ -11,9 +11,12 @@ pub use winit::keyboard::KeyCode;
 pub struct Input {
     held: HashSet<KeyCode>,
     pressed: HashSet<KeyCode>,
+    last_key_pressed: Option<KeyCode>,
     buttons_held: HashSet<MouseButton>,
     buttons_pressed: HashSet<MouseButton>,
     mouse_delta: (f32, f32),
+    cursor_pos: (f32, f32),
+    window_size: (u32, u32),
     cursor_grabbed: bool,
 }
 
@@ -24,6 +27,11 @@ impl Input {
 
     pub fn was_pressed(&self, key: KeyCode) -> bool {
         self.pressed.contains(&key)
+    }
+
+    /// Última tecla pulsada en este fotograma (útil para reasignar controles).
+    pub fn last_key_pressed(&self) -> Option<KeyCode> {
+        self.last_key_pressed
     }
 
     pub fn is_button_held(&self, button: MouseButton) -> bool {
@@ -40,6 +48,16 @@ impl Input {
         self.mouse_delta
     }
 
+    /// Posición actual del cursor dentro de la ventana, en píxeles físicos.
+    pub fn cursor_pos(&self) -> (f32, f32) {
+        self.cursor_pos
+    }
+
+    /// Tamaño actual del área cliente de la ventana, en píxeles físicos.
+    pub fn window_size(&self) -> (u32, u32) {
+        self.window_size
+    }
+
     /// ¿Está el cursor capturado por el juego (modo de primera persona)?
     pub fn cursor_grabbed(&self) -> bool {
         self.cursor_grabbed
@@ -49,6 +67,7 @@ impl Input {
         if down {
             if self.held.insert(key) {
                 self.pressed.insert(key);
+                self.last_key_pressed = Some(key);
             }
         } else {
             self.held.remove(&key);
@@ -72,6 +91,14 @@ impl Input {
         }
     }
 
+    pub(crate) fn set_cursor_pos(&mut self, x: f32, y: f32) {
+        self.cursor_pos = (x, y);
+    }
+
+    pub(crate) fn set_window_size(&mut self, width: u32, height: u32) {
+        self.window_size = (width, height);
+    }
+
     pub(crate) fn set_grabbed(&mut self, grabbed: bool) {
         self.cursor_grabbed = grabbed;
         if !grabbed {
@@ -80,9 +107,38 @@ impl Input {
         }
     }
 
+    /// Entrada fabricada sin ventana, para probar menús y controles. Las
+    /// pulsaciones se añaden con [`Input::simulate_key`] y
+    /// [`Input::simulate_button`], y se olvidan con [`Input::simulate_frame`].
+    pub fn simulated(window_size: (u32, u32), cursor_pos: (f32, f32)) -> Self {
+        Self {
+            window_size,
+            cursor_pos,
+            ..Self::default()
+        }
+    }
+
+    pub fn simulate_key(&mut self, key: KeyCode, down: bool) {
+        self.key(key, down);
+    }
+
+    pub fn simulate_button(&mut self, button: MouseButton, down: bool) {
+        self.button(button, down);
+    }
+
+    pub fn simulate_cursor(&mut self, x: f32, y: f32) {
+        self.set_cursor_pos(x, y);
+    }
+
+    /// Pasa al fotograma siguiente: lo pulsado deja de contar como nuevo.
+    pub fn simulate_frame(&mut self) {
+        self.end_frame();
+    }
+
     /// Olvida lo que solo vale para un fotograma.
     pub(crate) fn end_frame(&mut self) {
         self.pressed.clear();
+        self.last_key_pressed = None;
         self.buttons_pressed.clear();
         self.mouse_delta = (0.0, 0.0);
     }

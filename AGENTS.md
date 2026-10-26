@@ -24,7 +24,8 @@ El plan completo está en `PLAN_v4.md`; las decisiones de arquitectura, en `docs
 | `hush-art` | Texturas de los bloques (PNG de `assets/textures/blocks` incrustados, lava animada) y su emisión de luz |
 | `hush-server` | Binario `hush-server` (servidor dedicado UDP) |
 | `hush-client` | Binario `hushmine` (el juego; servidor local en memoria o `--connect`) |
-| `hush-cli` | Binario `hush-cli` (sim, netsim, shot, bench, gpu, noise) |
+| `hush-launcher` | Panel del lanzador (`hush-launcher.exe`): estado, geometría y dibujo del panel en biblioteca, más el binario con ventana |
+| `hush-cli` | Binario `hush-cli` (sim, netsim, shot, bench, gpu, noise, story, region) |
 
 **Regla de dependencias:** ningún crate `grisu-*` depende de un crate `hush-*`.
 
@@ -50,7 +51,7 @@ Qué hace cada uno, en orden:
 1. Formatea el código.
 2. Pasa el analizador con los avisos tratados como errores.
 3. Ejecuta todas las pruebas.
-4. Genera una captura PNG sin ventana. **Ábrela y mírala.** Escenas: `cube`, `terrain`, `tunnel`, `shaft`, `dig`, `players` y `frontier` (a 7,5 M bloques del origen).
+4. Genera una captura PNG sin ventana. **Ábrela y mírala.** Escenas: `cube`, `terrain`, `tunnel`, `shaft`, `dig`, `players`, `frontier` (a 7,5 M bloques del origen), `third-person`, `story` (luz doble), y las de interfaz a 1024×640 (`--width 1024 --height 640`): `launcher` y `menu` (la semilla elige la página), `story-hud` (1 en partida, 2 fabricar, 3 pausa, 4 F3, 5 muerte) y `type` (la fuente).
 5. Simula una partida con bots que cavan; `broken_invariants` debe estar vacío.
 6. Juega una partida en red simulada (2 clientes, 6 bots); falla si algún cliente termina con otro mundo u otra posición que el servidor.
 7. Mide terreno, luz y mallas de 64³; falla si pasan de 50 ms (solo con `--release`).
@@ -58,11 +59,15 @@ Qué hace cada uno, en orden:
 9. Abre el juego con ventana (controles abajo).
 10. Revisa las licencias de las dependencias.
 
+**Modo historia:** `cargo run -p hush-client -- --story [--seed N]` abre la expedición local (supervivencia a 20 Hz: hitos, fisiología, enemigos, fabricación y clímax del Pozo Ancestral). Usa los mismos controles reasignables que el Turno; además, E usa bancos, hornos y arcones, F abre fabricar, R come, F3 muestra la telemetría y, en la pausa, Q sale. El lanzador lo arranca por defecto (modo «Historia»). En `hush-cli`, `story --seed N --ticks T [--peaceful] [--report out/story.json]` corre una expedición con un minero automático y `region --seed N` guarda y recarga una región `.hush` verificando la huella. La captura `shot --scene story` muestra una galería con antorchas al atardecer (luz dual). Las reglas viven en `hush_sim::story` (ver `docs/adr/0010-modo-historia.md`); el diseño de referencia está en `docs/supervivencia/`.
+
+**Controles del modo historia:** igual que el competitivo, más MAYÚS (agacharse), F (fabricación), E (usar banco/horno/arcón/válvulas/engranajes/motor), R (comer), F3 (telemetría).
+
 **Multijugador por LAN:** `cargo run --release -p hush-server -- --bots 4` en una máquina y `cargo run --release -p hush-client -- --connect IP` en las demás (puerto UDP 47400 por defecto). Sin `--connect`, el cliente juega en local con un servidor en memoria (`--bots N` añade bots).
 
 **Red:** nada en `grisu-net` ni en `hush-net` lee el reloj del sistema; todo recibe `now_ms`. Así las pruebas con latencia y pérdida son deterministas. Mantenlo así.
 
-**Controles del cliente:** clic para capturar el ratón; WASD para andar, espacio para saltar, clic izquierdo para cavar, clic derecho para poner y 1-6 para elegir bloque. Escape suelta el ratón y, si ya estaba suelto, cierra el juego.
+**Controles del cliente:** clic para capturar el ratón; WASD para andar, Mayús para correr, Ctrl para agacharse (despacio, en silencio y sin caerse por los bordes), espacio para saltar, clic izquierdo para cavar, clic derecho para poner y 1-6 para elegir bloque. Escape suelta el ratón y, si ya estaba suelto, cierra el juego.
 
 Con `HUSH_REQUIRE_GPU=1`, las pruebas de GPU fallan en vez de saltarse cuando no hay adaptador.
 **El directorio de compilación puede ser global** en algunas máquinas (por ejemplo, `C:\Users\T490s\fossil-target\`); `cargo metadata` indica cuál es.

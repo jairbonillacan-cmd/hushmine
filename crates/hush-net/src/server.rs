@@ -308,6 +308,7 @@ impl Server {
             .map(|(id, body)| RemotePlayer {
                 id: id as u16,
                 feet: body.feet,
+                crouching: body.crouching,
             })
             .collect();
         for client in self.clients.values_mut() {

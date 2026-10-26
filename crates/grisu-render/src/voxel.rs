@@ -3,14 +3,17 @@ use std::time::Instant;
 
 use anyhow::Result;
 use bytemuck::{Pod, Zeroable};
-use grisu_voxel::{ChunkPos, ChunkedVoxels, LightMap, PackedFace, mesh_chunk};
+use grisu_voxel::{
+    ChunkPos, ChunkedVoxels, DualLightMap, LightMap, PackedFace, mesh_chunk, mesh_chunk_dual,
+};
 use wgpu::util::DeviceExt;
 
 use crate::chunk_origins::ChunkOrigins;
 use crate::debug_view::DebugView;
 use crate::shader_prep::{ShaderConfig, preprocess_wgsl};
+use crate::terrain_style::TerrainStyle;
 use crate::texture_array::upload_texture_array;
-use crate::{CLEAR_COLOR, DepthTarget, TextureData, View};
+use crate::{DepthTarget, TextureData, View};
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Pod, Zeroable)]
@@ -23,32 +26,10 @@ struct Globals {
     time: f32,
     /// Vista de depuración del terreno ([`DebugView`]); 0 = dibujo normal.
     debug_view: u32,
+    /// Multiplicador de la luz de cielo (0-1) según la hora del día.
+    daylight: f32,
     /// Relleno hasta el tamaño del uniforme (múltiplo de 16: 128 bytes).
-    pad: [u32; 2],
-}
-
-/// Ajustes de dibujo del terreno que cambian cada fotograma.
-#[derive(Clone, Copy, Debug)]
-pub struct TerrainStyle {
-    /// Distancia, en bloques, a la que la niebla tapa todo.
-    pub fog_distance: f32,
-    /// Bloque señalado por el jugador (coordenadas del mundo), que se resalta.
-    pub selected: Option<[i32; 3]>,
-    /// Alcance de la lámpara del casco, en bloques (0 = apagada).
-    pub lamp_radius: f32,
-    /// Segundos desde el arranque; anima los bloques con fotogramas (lava).
-    pub time_seconds: f32,
-}
-
-impl Default for TerrainStyle {
-    fn default() -> Self {
-        Self {
-            fog_distance: 48.0,
-            selected: None,
-            lamp_radius: 14.0,
-            time_seconds: 0.0,
-        }
-    }
+    pad: u32,
 }
 
 /// Malla de un chunk ya subida a la GPU.
@@ -241,6 +222,27 @@ impl VoxelRenderer {
         world: &mut W,
         light: Option<&LightMap>,
     ) -> MeshStats {
+        self.remesh(device, world, |w, pos| mesh_chunk(w, light, pos))
+    }
+
+    /// Como [`Self::update`], con el mapa de luz doble del modo Historia: las
+    /// caras guardan cielo y bloque por separado y el shader los combina con
+    /// [`TerrainStyle::daylight`].
+    pub fn update_dual<W: ChunkedVoxels + ?Sized>(
+        &mut self,
+        device: &wgpu::Device,
+        world: &mut W,
+        light: Option<&DualLightMap>,
+    ) -> MeshStats {
+        self.remesh(device, world, |w, pos| mesh_chunk_dual(w, light, pos))
+    }
+
+    fn remesh<W: ChunkedVoxels + ?Sized>(
+        &mut self,
+        device: &wgpu::Device,
+        world: &mut W,
+        mesh: impl Fn(&W, ChunkPos) -> Vec<PackedFace>,
+    ) -> MeshStats {
         let start = Instant::now();
         // Los chunks descargados sueltan su malla, aunque no estén sucios.
         self.chunks.retain(|&pos, _| world.is_loaded(pos));
@@ -252,7 +254,7 @@ impl VoxelRenderer {
                 continue;
             }
             stats.chunks_meshed += 1;
-            let faces = mesh_chunk(world, light, pos);
+            let faces = mesh(world, pos);
             stats.faces += faces.len();
             if faces.is_empty() {
                 self.chunks.remove(&pos);
@@ -275,9 +277,19 @@ impl VoxelRenderer {
         stats
     }
 
+    /// Olvida todas las mallas (al cambiar de mundo).
+    pub fn clear(&mut self) {
+        self.chunks.clear();
+    }
+
     /// Caras visibles en total (para el HUD de depuración).
     pub fn face_count(&self) -> usize {
         self.chunks.values().map(|c| c.count as usize).sum()
+    }
+
+    /// Chunks con malla (para la telemetría de F3).
+    pub fn meshed_chunks(&self) -> usize {
+        self.chunks.len()
     }
 
     /// Graba el dibujo del terreno sobre `color`, borrándolo antes.
@@ -290,12 +302,15 @@ impl VoxelRenderer {
         view: &View,
         style: &TerrainStyle,
     ) {
-        let fog = [
-            CLEAR_COLOR.r as f32,
-            CLEAR_COLOR.g as f32,
-            CLEAR_COLOR.b as f32,
-            style.fog_distance.max(1.0),
-        ];
+        let [fr, fg, fb] = style.fog_color;
+        let fog = [fr, fg, fb, style.fog_distance.max(1.0)];
+        // El fondo es la misma niebla: de noche el cielo se oscurece con ella.
+        let clear = wgpu::Color {
+            r: f64::from(fr),
+            g: f64::from(fg),
+            b: f64::from(fb),
+            a: 1.0,
+        };
         // El bloque señalado también viaja relativo al ancla.
         let selected = style.selected.map_or([0, 0, 0, 0], |block| {
             let relative = view.relative_block(block);
@@ -308,7 +323,8 @@ impl VoxelRenderer {
             selected,
             time: style.time_seconds,
             debug_view: self.debug_view as u32,
-            pad: [0, 0],
+            daylight: style.daylight.clamp(0.0, 1.0),
+            pad: 0,
         };
         queue.write_buffer(&self.globals, 0, bytemuck::bytes_of(&globals));
 
@@ -328,7 +344,7 @@ impl VoxelRenderer {
                 depth_slice: None,
                 resolve_target: None,
                 ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(CLEAR_COLOR),
+                    load: wgpu::LoadOp::Clear(clear),
                     store: wgpu::StoreOp::Store,
                 },
             })],

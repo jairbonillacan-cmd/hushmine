@@ -1,4 +1,6 @@
 /target
 /out
+/versions
+/HushmineLauncher.exe
 *.log
 __pycache__/

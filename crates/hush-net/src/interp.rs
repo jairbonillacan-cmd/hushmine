@@ -13,12 +13,15 @@ const MAX_SAMPLES: usize = 60;
 pub struct RemoteTracks {
     latest_tick: u32,
     tracks: BTreeMap<u16, VecDeque<(u32, [i64; 3])>>,
+    /// Si cada jugador iba agachado en su última instantánea.
+    crouching: BTreeMap<u16, bool>,
 }
 
 impl RemoteTracks {
     pub fn push(&mut self, tick: u32, players: &[RemotePlayer]) {
         self.latest_tick = self.latest_tick.max(tick);
         for p in players {
+            self.crouching.insert(p.id, p.crouching);
             let track = self.tracks.entry(p.id).or_default();
             track.push_back((tick, p.feet));
             if track.len() > MAX_SAMPLES {
@@ -29,6 +32,13 @@ impl RemoteTracks {
         let latest = self.latest_tick;
         self.tracks
             .retain(|_, t| t.back().is_some_and(|(last, _)| latest - last < 30));
+        let tracks = &self.tracks;
+        self.crouching.retain(|id, _| tracks.contains_key(id));
+    }
+
+    /// Si el jugador iba agachado en su última instantánea.
+    pub fn is_crouching(&self, id: u16) -> bool {
+        self.crouching.get(&id).copied().unwrap_or(false)
     }
 
     /// Posición (pies, en bloques) de cada jugador en el tick `tick`,
@@ -68,6 +78,7 @@ mod tests {
         let at = |x: i64| RemotePlayer {
             id: 4,
             feet: [x * FIXED_ONE, 0, 0],
+            crouching: false,
         };
         tracks.push(10, &[at(0)]);
         tracks.push(12, &[at(2)]);
@@ -83,6 +94,7 @@ mod tests {
         let at = |x: i64| RemotePlayer {
             id: 9,
             feet: [(base + x) * FIXED_ONE, 0, 0],
+            crouching: false,
         };
         tracks.push(10, &[at(0)]);
         tracks.push(12, &[at(2)]);
@@ -98,6 +110,7 @@ mod tests {
             &[RemotePlayer {
                 id: 1,
                 feet: [0; 3],
+                crouching: false,
             }],
         );
         tracks.push(40, &[]);

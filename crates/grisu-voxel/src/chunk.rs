@@ -34,6 +34,13 @@ impl Chunk {
         }
     }
 
+    /// Construye un chunk a partir de sus 4096 bytes en orden de memoria.
+    pub fn from_bytes(blocks: [BlockId; CHUNK_VOLUME]) -> Self {
+        Self {
+            blocks: Box::new(blocks),
+        }
+    }
+
     /// Índice lineal de una posición local. Las coordenadas deben ser < 16.
     #[inline]
     pub fn index(x: usize, y: usize, z: usize) -> usize {

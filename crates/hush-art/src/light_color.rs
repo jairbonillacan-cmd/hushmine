@@ -52,11 +52,14 @@ impl RgbLight {
 
 /// Color que emite cada bloque (4 bits por canal), indexado por su
 /// identificador: la lava da naranja cálido, la baliza ámbar de lámpara de
-/// sodio, el eléctrico una chispa azulada tenue y el campo de fuerza un
-/// resplandor tenue. El resto no emite.
+/// sodio, el eléctrico una chispa azulada tenue, el campo de fuerza un
+/// resplandor tenue y la antorcha del modo Historia una llama anaranjada. El
+/// resto no emite.
 pub fn emission_rgb_table() -> [RgbLight; 256] {
     let mut table = [RgbLight::default(); 256];
-    table[usize::from(BlockKind::Lava.id())] = RgbLight { r: 13, g: 6, b: 1 };
+    table[usize::from(BlockKind::Lava.id())] = RgbLight { r: 15, g: 7, b: 1 };
+    // La antorcha del modo Historia: llama anaranjada, algo menos que la lava.
+    table[usize::from(BlockKind::Torch.id())] = RgbLight { r: 14, g: 10, b: 4 };
     table[usize::from(BlockKind::ForceField.id())] = RgbLight { r: 4, g: 7, b: 10 };
     table[usize::from(BlockKind::Electric.id())] = RgbLight { r: 3, g: 6, b: 9 };
     table[usize::from(BlockKind::Beacon.id())] = RgbLight { r: 14, g: 11, b: 4 };
@@ -99,22 +102,28 @@ mod tests {
         assert_eq!(sky, 15);
     }
 
-    /// La lava coincide con la tabla escalar en su canal rojo (13).
+    /// La lava coincide con la tabla escalar en su canal rojo (15).
     #[test]
     fn lava_red_channel_matches_scalar_table() {
         let id = usize::from(BlockKind::Lava.id());
         let lava = emission_rgb_table()[id];
         assert_eq!(lava.r, crate::emission_table()[id]);
-        assert_eq!(lava, RgbLight { r: 13, g: 6, b: 1 });
+        assert_eq!(lava, RgbLight { r: 15, g: 7, b: 1 });
+        let torch = usize::from(BlockKind::Torch.id());
+        assert_eq!(
+            emission_rgb_table()[torch].max_channel(),
+            crate::emission_table()[torch]
+        );
     }
 
-    /// Solo los cuatro bloques emisores tienen luz; el resto es negro.
+    /// Solo los cinco bloques emisores tienen luz; el resto es negro.
     #[test]
-    fn only_the_four_emissive_blocks_glow() {
+    fn only_the_five_emissive_blocks_glow() {
         let table = emission_rgb_table();
         for block in BlockKind::ALL {
             let expected = match block {
-                BlockKind::Lava => RgbLight { r: 13, g: 6, b: 1 },
+                BlockKind::Lava => RgbLight { r: 15, g: 7, b: 1 },
+                BlockKind::Torch => RgbLight { r: 14, g: 10, b: 4 },
                 BlockKind::ForceField => RgbLight { r: 4, g: 7, b: 10 },
                 BlockKind::Electric => RgbLight { r: 3, g: 6, b: 9 },
                 BlockKind::Beacon => RgbLight { r: 14, g: 11, b: 4 },
